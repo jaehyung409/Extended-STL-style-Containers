@@ -39,6 +39,7 @@ struct Array {
             if (element == DefaultValue<T>::value)
                 return &element - data;
         }
+        return capacity();
     }
     void print(){
         for(const auto& element : data) {
@@ -60,6 +61,8 @@ struct Array {
     void reverse_array_two_pointer();
     void reverse_array_recursive(int left, int right);
     void reverse_array_stack();
+
+    void get_leader();
 };
 
 
