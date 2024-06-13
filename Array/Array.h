@@ -58,6 +58,8 @@ struct Array {
     void sort_remove(T element);
     void reverse_array_extra_array();
     void reverse_array_two_pointer();
+    void reverse_array_recursive(int left, int right);
+    void reverse_array_stack();
 };
 
 
