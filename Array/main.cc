@@ -1,7 +1,7 @@
 #include <iostream>
-#include <Array.h>
-#include <Sorted.h>
-#include <Unsorted.h>
+#include "Array.h"
+#include "Sorted.h"
+#include "Unsorted.h"
 
 
 int main(){

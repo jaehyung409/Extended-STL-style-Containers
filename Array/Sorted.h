@@ -5,7 +5,7 @@
 #ifndef JAEHYUNG_SORTED_H
 #define JAEHYUNG_SORTED_H
 
-#include <Array.h>
+#include "Array.h"
 
 template <typename T, size_t N>
 int Array<T, N>::sort_find(const T element, const int low, const int high){
