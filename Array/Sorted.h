@@ -2,8 +2,8 @@
 // Created by user on 24. 5. 29.
 //
 
-#ifndef JAEHYUNG_SORTED_H
-#define JAEHYUNG_SORTED_H
+#ifndef ARRAY_SORTED_H
+#define ARRAY_SORTED_H
 
 #include "Array.h"
 
@@ -41,4 +41,4 @@ void Array<T, N>::sort_remove(const T element){
 }//시간복잡도 O(N) 공간복잡도 O(1)
 
 
-#endif //JAEHYUNG_SORTED_H
+#endif //ARRAY_SORTED_H

@@ -2,8 +2,8 @@
 // Created by user on 24. 5. 29.
 //
 
-#ifndef JAEHYUNG_ARRAY_H
-#define JAEHYUNG_ARRAY_H
+#ifndef ARRAY_ARRAY_H
+#define ARRAY_ARRAY_H
 
 #include <stdexcept>
 #include <algorithm>
@@ -42,4 +42,5 @@ struct Array {
 };
 
 
-#endif //JAEHYUNG_ARRAY_H
+#endif //ARRAY_ARRAY_H
+
