@@ -17,6 +17,7 @@ int Array<T, N>::find(const T element){
     return i != N ? i : -1;
 }// 시간복잡도 O(N) 공간복잡도 O(1)
 
+template <typename T, size_t N>
 void Array<T, N>::insert(const T element, const int index){
     if(index >= N) {
         throw std::out_of_range("index out_of_range");
@@ -27,6 +28,7 @@ void Array<T, N>::insert(const T element, const int index){
     data[index] = element;
 }// 시간복잡도 O(N) 공간복잡도 O(1)
 
+template <typename T, size_t N>
 void Array<T, N>::remove(const T element){
     const int index = find(element);
     if(index == -1) return;

@@ -18,6 +18,7 @@ int Array<T, N>::sort_find(const T element, const int low, const int high){
     return sort_find(element, low, mid - 1);
 }//시간복잡도 O(logN) 공간복잡도 O(logN)
 
+template <typename T, size_t N>
 void Array<T, N>::sort_insert(const T element){
     if(data[N-1] != 0) {
         throw std::out_of_range("array is full");
@@ -29,6 +30,7 @@ void Array<T, N>::sort_insert(const T element){
     data[i+1] = element;
 }//시간복잡도 O(N) 공간복잡도 O(1)
 
+template <typename T, size_t N>
 void Array<T, N>::sort_remove(const T element){
     int index = sort_find(element, 0, N);
     if(index == -1) return;
