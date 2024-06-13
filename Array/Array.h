@@ -63,6 +63,11 @@ struct Array {
     void reverse_array_stack();
 
     void get_leader();
+    bool pair_sum_unsorted(T sum);
+    bool pair_sum_unsorted_using_remainders(T sum);
+    bool pair_sum_sorted_two_point(T sum);
+    bool pair_sum_sorted_binary_search(T sum);
+    bool pair_sum_sorted_hashing(T sum);
 };
 
 

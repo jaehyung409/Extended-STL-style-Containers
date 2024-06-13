@@ -48,5 +48,5 @@ void Array<T, N>::reverse_array_stack() {
     for(int i = 0; i < size(); i++){
         data[i] = stack[top--];
     }
-}
+}//시간복잡도 O(N) 공간복잡도 O(N)
 #endif //ARRAY_REVERSE_H
