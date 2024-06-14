@@ -94,7 +94,7 @@ template <typename T, size_t N>
 bool Array<T, N>::pair_sum_sorted_binary_search(T sum) {
     if (size() == 0) return false;
     for(int i = 0; i < size(); i++){
-        int index = sort_find(sum - data[i], i+1, size()-1);
+        int index = sort_find_binary(sum - data[i], i + 1, size() - 1);
         if(index != -1){
             std::cout << data[i] << ' ' << data[index] << '\n';
             return true;

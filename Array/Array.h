@@ -54,7 +54,8 @@ struct Array {
     int find(T element);
     void insert(T element, int index);
     void remove(T element);
-    int sort_find(T element, int low, int high);
+    int sort_find_binary(T element, int low, int high);
+    int sort_find_ternary(T element, int low, int high);
     void sort_insert(T element);
     void sort_remove(T element);
     void reverse_array_extra_array();
