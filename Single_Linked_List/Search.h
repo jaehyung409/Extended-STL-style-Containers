@@ -20,8 +20,8 @@ bool SingleLinkedList<T>::search_iterative(T data) {
 
 template <typename T>
 bool SingleLinkedList<T>::search_recursive(Node<T>* node, T data) {
-    if(node == nullptr) return false;
-    if(node->data == data) return true;
+    if (node == nullptr) return false;
+    if (node->data == data) return true;
     return search_recursive(node->next, data);
 }//시간복잡도 O(N), 공간복잡도 O(N)
 

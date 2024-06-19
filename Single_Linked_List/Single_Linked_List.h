@@ -47,6 +47,9 @@ struct SingleLinkedList{
     void insert(int index, T data);
     bool search_iterative(T data);
     bool search_recursive(Node<T>* node, T data);
+    int get_size_iterative();
+    int get_size_recursive(Node<T>* node);
+    int get_size_tail_recursive(Node<T>* node, int get_size = 0);
 };
 
 #endif //SINGLE_LINKED_LIST_SINGLE_LINKED_LIST_H
