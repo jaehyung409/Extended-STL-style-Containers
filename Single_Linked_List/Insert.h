@@ -9,7 +9,7 @@
 
 template <typename T>
 void SingleLinkedList<T>::push_front(T data){
-    Node<T>* new_node = new Node<T>;
+    auto* new_node = new Node<T>;
     new_node->data = data;
     if (get_size() == 0){
         tail = new_node;
@@ -23,7 +23,7 @@ void SingleLinkedList<T>::push_front(T data){
 
 template <typename T>
 void SingleLinkedList<T>::push_back(T data){
-    Node<T>* new_node = new Node<T>;
+    auto* new_node = new Node<T>;
     new_node->data = data;
     new_node->next = nullptr;
     if (get_size() == 0){
@@ -54,7 +54,7 @@ void SingleLinkedList<T>::insert(int index, T data){
         push_back(data);
         return;
     }
-    Node<T>* new_node = new Node<T>;
+    auto* new_node = new Node<T>;
     new_node->data = data;
     Node<T>* current = head->next;
     for (int i = 0; i < index-1; i++){
