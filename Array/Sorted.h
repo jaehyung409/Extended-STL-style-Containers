@@ -52,7 +52,7 @@ void Array<T, N>::sort_remove(const T element){
     for(int i = index; i < N-1; i++){
         data[i] = data[i+1];
     }
-    data[N-1] = 0;
+    data[N-1] = DefaultValue<T>::value;
 }//시간복잡도 O(N) 공간복잡도 O(1)
 
 
