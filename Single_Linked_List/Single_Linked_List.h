@@ -27,8 +27,8 @@ struct SingleLinkedList{
     SingleLinkedList(){
         head = new Node<T>;
         head->data = DefaultValue<T>::value;
-        head->next = tail;
         tail = nullptr;
+        head->next = tail;
         size = 0;
     }
     int get_size(){
