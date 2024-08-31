@@ -31,11 +31,7 @@ void SingleLinkedList<T>::push_back(T data){
         head->next = tail;
         return;
     } else {
-        Node<T>* current = head->next;
-        while (current->next != nullptr){
-            current = current->next;
-        }
-        current->next = new_node;
+        tail->next = new_node;
     }
     tail = new_node;
     size++;
