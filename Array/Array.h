@@ -17,8 +17,10 @@ struct DefaultValue {
 
 template <typename T, size_t N>
 struct Array {
+private:
     T data[N];
 
+public:
     T& operator[](const int index) {
         if (index >= N){
             throw std::out_of_range("index out out_of_range");

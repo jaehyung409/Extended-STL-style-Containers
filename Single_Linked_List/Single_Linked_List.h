@@ -20,10 +20,12 @@ struct Node{
 
 template <typename T>
 struct SingleLinkedList{
+private:
     Node<T>* head;
     Node<T>* tail;
     int size;
 
+public:
     SingleLinkedList(){
         head = new Node<T>;
         head->data = DefaultValue<T>::value;
