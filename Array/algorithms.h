@@ -12,13 +12,13 @@
 
 template <typename T, size_t N>
 void Array<T, N>::get_leader() {
-    if(size() == 0) return;
-    T leader[size()];
+    if(this->size() == 0) return;
+    T leader[this->size()];
     int idx = 0;
-    leader[idx] = data[size()-1];
-    for(int i = size()-2; i >= 0; i--){
-        if(data[i] > leader[idx]){
-            leader[++idx] = data[i];
+    leader[idx] = this->data[size()-1];
+    for(int i = this->size()-2; i >= 0; i--){
+        if(this->data[i] > leader[idx]){
+            leader[++idx] = this->data[i];
         }
     }
     for(; idx >= 0;){
@@ -29,11 +29,11 @@ void Array<T, N>::get_leader() {
 
 template <typename T, size_t N>
 bool Array<T, N>::pair_sum_unsorted(T sum) {
-    if(size() == 0) return false;
+    if(this->size() == 0) return false;
     for (int i = 0; i < size(); i++) {
         for (int j = i + 1; j < size(); j++) {
-            if (data[i] + data[j] == sum) {
-                std::cout << data[i] << ' ' << data[j] << '\n';
+            if (this->data[i] + this->data[j] == sum) {
+                std::cout << this->data[i] << ' ' << this->data[j] << '\n';
                 return true;
             }
         }
@@ -49,9 +49,9 @@ bool Array<T, N>::pair_sum_unsorted_using_remainders(T sum) {
     for (i = 0; i < sum; i++){
         remainders[i] = 0;
     }
-    for (i = 0; i < size(); i++) {
-        if (data[i] < sum)
-            remainders[data[i] % sum]++;
+    for (i = 0; i < this->size(); i++) {
+        if (this->data[i] < sum)
+            remainders[this->data[i] % sum]++;
     }
     for (i = 1; i < sum /2; i++) {
         if (remainders[i] && remainders[sum - i]) {
@@ -60,11 +60,11 @@ bool Array<T, N>::pair_sum_unsorted_using_remainders(T sum) {
         }
     }
     if (i >= sum/2){
-        if(size() % 2 == 0 && remainders[sum/2] >= 2){
+        if(this->size() % 2 == 0 && remainders[sum/2] >= 2){
             std::cout << sum/2 << ' ' << sum/2 << '\n';
             return true;
         }
-        else if(size() % 2 == 1 && remainders[sum/2] && remainders[sum - sum/2]){
+        else if(this->size() % 2 == 1 && remainders[sum/2] && remainders[sum - sum/2]){
             std::cout << sum/2 << ' ' << sum - sum/2 << '\n';
             return true;
         }
@@ -74,14 +74,14 @@ bool Array<T, N>::pair_sum_unsorted_using_remainders(T sum) {
 
 template <typename T, size_t N>
 bool Array<T, N>::pair_sum_sorted_two_point(T sum) {
-    if (size() == 0) return false;
+    if (this->size() == 0) return false;
     int left = 0;
-    int right = size() - 1;
+    int right = this->size() - 1;
     while (left < right) {
-        if (data[left] + data[right] == sum) {
-            std::cout << data[left] << ' ' << data[right] << '\n';
+        if (this->data[left] + this->data[right] == sum) {
+            std::cout << this->data[left] << ' ' << this->data[right] << '\n';
             return true;
-        } else if (data[left] + data[right] < sum) {
+        } else if (this->data[left] + this->data[right] < sum) {
             left++;
         } else {
             right--;
@@ -92,11 +92,11 @@ bool Array<T, N>::pair_sum_sorted_two_point(T sum) {
 
 template <typename T, size_t N>
 bool Array<T, N>::pair_sum_sorted_binary_search(T sum) {
-    if (size() == 0) return false;
-    for(int i = 0; i < size(); i++){
-        int index = sort_find_binary(sum - data[i], i + 1, size() - 1);
+    if (this->size() == 0) return false;
+    for(int i = 0; i < this->size(); i++){
+        int index = sort_find_binary(sum - this->data[i], i + 1, this->size() - 1);
         if(index != -1){
-            std::cout << data[i] << ' ' << data[index] << '\n';
+            std::cout << this->data[i] << ' ' << this->data[index] << '\n';
             return true;
         }
     }
@@ -105,14 +105,14 @@ bool Array<T, N>::pair_sum_sorted_binary_search(T sum) {
 
 template <typename T, size_t N>
 bool Array<T, N>::pair_sum_sorted_hashing(T sum) {
-    if (size() == 0) return false;
+    if (this->size() == 0) return false;
     std::unordered_set<T> s;
-    for(int i = 0; i < size(); i++){
-        if(s.find(sum - data[i]) != s.end()){
-            std::cout << data[i] << ' ' << sum - data[i] << '\n';
+    for(int i = 0; i < this->size(); i++){
+        if(s.find(sum - this->data[i]) != s.end()){
+            std::cout << this->data[i] << ' ' << sum - this->data[i] << '\n';
             return true;
         }
-        s.insert(data[i]);
+        s.insert(this->data[i]);
     }
     return false;
 }//시간복잡도 O(N) 공간복잡도 O(N)

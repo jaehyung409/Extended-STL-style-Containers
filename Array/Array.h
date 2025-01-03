@@ -37,21 +37,21 @@ public:
         return N;
     }
     int size(){
-        for(const auto& element : data) {
+        for(const auto& element : this->data) {
             if (element == DefaultValue<T>::value)
-                return &element - data;
+                return &element - this->data;
         }
         return capacity();
     }
     void print(){
-        for(const auto& element : data) {
+        for(const auto& element : this->data) {
             if(element != DefaultValue<T>::value)
                 std::cout << element << ' ';
         }
         std::cout << '\n';
     }
     void sorting(int index){
-        std::sort(data, data+index);
+        std::sort(this->data, this->data+index);
     }
     int find(T element);
     void insert(T element, int index);

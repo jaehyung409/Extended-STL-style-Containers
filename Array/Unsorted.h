@@ -11,7 +11,7 @@ template <typename T, size_t N>
 int Array<T, N>::find(const T element){
     int i;
     for(i = 0; i < N; i++){
-        if (data[i] == element)
+        if (this->data[i] == element)
             break;
     }
     return i != N ? i : -1;
@@ -23,9 +23,9 @@ void Array<T, N>::insert(const T element, const int index){
         throw std::out_of_range("index out_of_range");
     }
     for(int i = N-2; i >= index; i--){
-        data[i+1] = data[i];
+        this->data[i+1] = this->data[i];
     }
-    data[index] = element;
+    this->data[index] = element;
 }// 시간복잡도 O(N) 공간복잡도 O(1)
 
 template <typename T, size_t N>
@@ -33,9 +33,9 @@ void Array<T, N>::remove(const T element){
     const int index = find(element);
     if(index == -1) return;
     for(int i = index; i < N-1; i++){
-        data[i] = data[i+1];
+        this->data[i] = this->data[i+1];
     }
-    data[N-1] = DefaultValue<T>::value;
+    this->data[N-1] = DefaultValue<T>::value;
 }//시간복잡도 O(N) 공간복잡도 O(1)
 
 

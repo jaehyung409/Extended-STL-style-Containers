@@ -34,7 +34,7 @@ public:
         size = 0;
     }
     int get_size(){
-        return size;
+        return this->size;
     }
     void print(){
         Node<T>* current = head->next;
