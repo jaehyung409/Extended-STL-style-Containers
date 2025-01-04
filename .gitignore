@@ -2,4 +2,4 @@ cmake-build-debug/
 .vscode/
 .idea/
 *.cmake
-main.cc
+*_main.cc
