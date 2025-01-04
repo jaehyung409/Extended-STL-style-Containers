@@ -21,8 +21,8 @@ struct Node{
 template <typename T>
 struct SingleLinkedList{
 private:
-    Node<T>* head;
-    Node<T>* tail;
+    Node<T>* head; // head->next is the first node
+    Node<T>* tail; // tail is the last node
     int size;
 
 public:
@@ -36,6 +36,12 @@ public:
     int get_size(){
         return this->size;
     }
+    Node<T>* get_head(){
+        return this->head;
+    }
+    Node<T>* get_tail(){
+        return this->tail;
+    }
     void print(){
         Node<T>* current = head->next;
         while(current != nullptr){
@@ -46,7 +52,13 @@ public:
     }
     void push_front(T data);
     void push_back(T data);
+    void pop_front();
+    void pop_back();
+    T front();
+    T back();
     void insert(int index, T data);
+    void erase(int index);
+
     bool search_iterative(T data);
     bool search_recursive(Node<T>* node, T data);
     int get_size_iterative();
