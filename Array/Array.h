@@ -6,15 +6,10 @@
 #define ARRAY_ARRAY_H
 
 #include <stdexcept>
-#include <type_traits>
 #include <iostream>
 #include <unordered_set>
 #include <algorithm>
-
-template <typename T>
-struct DefaultValue {
-    static constexpr T value = std::conditional_t<std::is_arithmetic<T>::value, std::integral_constant<T, 0>, std::integral_constant<T*, nullptr>>::value;
-};
+#include "../Default_Value.h"
 
 template <typename T, size_t N>
 struct Array {
