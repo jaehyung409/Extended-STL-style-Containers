@@ -2,6 +2,4 @@ cmake-build-debug/
 .vscode/
 .idea/
 *.cmake
-Array/main.cc
-Single_Linked_List/main.cc
-Stack/main.cc
+main.cc
