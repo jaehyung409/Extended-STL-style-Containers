@@ -6,7 +6,6 @@
 #define ARRAY_ARRAY_H
 
 #include <stdexcept>
-#include <algorithm>
 #include <type_traits>
 #include <iostream>
 
@@ -52,9 +51,6 @@ public:
                 std::cout << element << ' ';
         }
         std::cout << '\n';
-    }
-    void sorting(int index){
-        std::sort(this->data, this->data+index);
     }
     int find(T element){
         int i;
@@ -104,6 +100,7 @@ public:
         return this->data[this->size()-1];
     }
 
+    void sorting();
     int sort_find_binary(T element, int low, int high);
     int sort_find_ternary(T element, int low, int high);
     void sort_insert(T element);

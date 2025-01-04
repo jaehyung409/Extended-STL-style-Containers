@@ -8,6 +8,11 @@
 #include "Array.h"
 
 template <typename T, size_t N>
+void Array<T, N>::sorting() {
+    std::sort(this->data, this->data+this->size());
+}
+
+template <typename T, size_t N>
 int Array<T, N>::sort_find_binary(const T element, int low, int high){
     if (high < low)
         return -1;
