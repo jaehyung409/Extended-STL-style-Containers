@@ -91,32 +91,12 @@ int SingleLinkedList<T>::get_size_tail_recursive(Node<T>* node, int get_size) {
 
 template <typename T>
 void SingleLinkedList<T>::push_front(T data){
-    auto* new_node = new Node<T>;
-    new_node->data = data;
-    if (get_size() == 0){
-        tail = new_node;
-        new_node->next = nullptr;
-    } else {
-        new_node->next = head->next;
-    }
-    head->next = new_node;
-    size++;
+    this->insert(0, data);
 }//시간복잡도 O(1) 공간복잡도 O(1)
 
 template <typename T>
 void SingleLinkedList<T>::push_back(T data){
-    auto* new_node = new Node<T>;
-    new_node->data = data;
-    new_node->next = nullptr;
-    if (get_size() == 0){
-        tail = new_node;
-        head->next = tail;
-        return;
-    } else {
-        tail->next = new_node;
-    }
-    tail = new_node;
-    size++;
+    this->insert(this->get_size(), data);
 }//시간복잡도 O(N) 공간복잡도 O(1)
 
 template <typename T>
@@ -124,28 +104,21 @@ void SingleLinkedList<T>::insert(int index, T data){
     if (index < 0 || index > get_size()){
         throw std::out_of_range("index out_of_range");
     }
-    if (index == 0){
-        push_front(data);
-        return;
-    }
-    if (index == get_size()){
-        push_back(data);
-        return;
-    }
     auto* new_node = new Node<T>;
     new_node->data = data;
-    Node<T>* current = head->next;
-    for (int i = 0; i < index-1; i++){
+    Node<T>* current = this->get_head();
+    for (int i = 0; i < index; i++){
         current = current->next;
     }
+    if (current == this->get_tail() || this->get_size() == 0) this->tail = new_node;
     new_node->next = current->next;
     current->next = new_node;
-    size++;
+    this->size++;
 }//시간복잡도 O(N) 공간복잡도 O(1)
 
 template <typename T>
 bool SingleLinkedList<T>::search_iterative(T data) {
-    Node<T>* temp = head;
+    Node<T>* temp = this->get_head();
     while (temp->next){
         temp = temp->next;
         if (data == temp->data)
@@ -160,5 +133,42 @@ bool SingleLinkedList<T>::search_recursive(Node<T>* node, T data) {
     if (node->data == data) return true;
     return search_recursive(node->next, data);
 }//시간복잡도 O(N), 공간복잡도 O(N)
+
+template <typename T>
+void SingleLinkedList<T>::erase(int index) {
+    if (get_size() == 0) throw std::out_of_range("erase() called on empty list");
+    if (index >= get_size() || index < 0) throw std::out_of_range("erase() called on out of range index");
+    Node<T>* temp = this->get_head();
+    for (int i = 0; i < index; i++) temp = temp->next;
+    if (temp->next == this->get_tail()) this->tail = temp;
+    Node<T>* node_to_delete = temp->next;
+    temp->next = node_to_delete->next;
+    delete node_to_delete;
+    this->size--;
+}// time complexity O(N), space complexity O(1)
+
+template <typename T>
+void SingleLinkedList<T>::pop_front() {
+    if (get_size() == 0) throw std::out_of_range("pop_front() called on empty list");
+    this->erase(0);
+}//time complexity O(1), space complexity O(1)
+
+template <typename T>
+void SingleLinkedList<T>::pop_back() {
+    if (get_size() == 0) throw std::out_of_range("pop_back() called on empty list");
+    this->erase(this->get_size()-1);
+}// time complexity O(N), space complexity O(1)
+
+template <typename T>
+T SingleLinkedList<T>::front() {
+    if (get_size() == 0) throw std::out_of_range("front() called on empty list");
+    return this->get_head()->next->data;
+}//time complexity O(1), space complexity O(1)
+
+template <typename T>
+T SingleLinkedList<T>::back() {
+    if (get_size() == 0) throw std::out_of_range("back() called on empty list");
+    return this->get_tail()->data;
+}//time complexity O(1), space complexity O(1)
 
 #endif //SINGLE_LINKED_LIST_SINGLE_LINKED_LIST_H
