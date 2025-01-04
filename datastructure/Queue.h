@@ -43,4 +43,4 @@ public:
 
 };
 
-#endif //QUEUE_H
+#endif // QUEUE_H
