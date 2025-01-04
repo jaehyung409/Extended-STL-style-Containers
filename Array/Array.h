@@ -7,8 +7,8 @@
 
 #include <stdexcept>
 #include <algorithm>
-
 #include <type_traits>
+#include <iostream>
 
 template <typename T>
 struct DefaultValue {
@@ -56,9 +56,31 @@ public:
     void sorting(int index){
         std::sort(this->data, this->data+index);
     }
-    int find(T element);
-    void insert(T element, int index);
-    void remove(T element);
+    int find(T element){
+        int i;
+        for(i = 0; i < N; i++){
+            if (this->data[i] == element)
+                break;
+        }
+        return i != N ? i : -1;
+    }// time complexity O(N) space complexity O(1)
+    void insert(T element, int index){
+        if(index >= N) {
+            throw std::out_of_range("index out_of_range");
+        }
+        for(int i = N-2; i >= index; i--){
+            this->data[i+1] = this->data[i];
+        }
+        this->data[index] = element;
+    }// time complexity O(N) space complexity O(1)
+    void remove(T element){
+        const int index = this->find(element);
+        if(index == -1) return;
+        for(int i = index; i < N-1; i++){
+            this->data[i] = this->data[i+1];
+        }
+        this->data[N-1] = DefaultValue<T>::value;
+    }// time complexity O(N) space complexity O(1)
     void push_back(T element){
         this->insert(element,this->size());
     }
