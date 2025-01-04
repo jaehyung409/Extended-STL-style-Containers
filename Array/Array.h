@@ -17,7 +17,7 @@ struct DefaultValue {
 
 template <typename T, size_t N>
 struct Array {
-private:
+public:
     T data[N];
 
 public:
@@ -33,15 +33,18 @@ public:
         }
         return data[index];
     }
-    int capacity(){
+    size_t max_size(){
         return N;
     }
-    int size(){
+    size_t size(){
         for(const auto& element : this->data) {
             if (element == DefaultValue<T>::value)
                 return &element - this->data;
         }
-        return capacity();
+        return max_size();
+    }
+    bool empty(){
+        return this->size() == 0;
     }
     void print(){
         for(const auto& element : this->data) {
@@ -56,6 +59,29 @@ public:
     int find(T element);
     void insert(T element, int index);
     void remove(T element);
+    void push_back(T element){
+        this->insert(element,this->size());
+    }
+    void push_front(T element){
+        this->insert(element, 0);
+    }
+    void pop_back(){
+        if (this->empty()) throw std::out_of_range("pop_back() called on empty array");
+        this->data[this->size()-1] = DefaultValue<T>::value;
+    }
+    void pop_front(){
+        if (this->empty()) throw std::out_of_range("pop_front() called on empty array");
+        this->remove(data[0]);
+    }
+    T front(){
+        if (this->empty()) throw std::out_of_range("front() called on empty array");
+        return this->data[0];
+    }
+    T back(){
+        if (this->empty()) throw std::out_of_range("back() called on empty array");
+        return this->data[this->size()-1];
+    }
+
     int sort_find_binary(T element, int low, int high);
     int sort_find_ternary(T element, int low, int high);
     void sort_insert(T element);

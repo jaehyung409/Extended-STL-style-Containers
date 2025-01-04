@@ -30,7 +30,7 @@ void Array<T, N>::insert(const T element, const int index){
 
 template <typename T, size_t N>
 void Array<T, N>::remove(const T element){
-    const int index = find(element);
+    const int index = this->find(element);
     if(index == -1) return;
     for(int i = index; i < N-1; i++){
         this->data[i] = this->data[i+1];
