@@ -2,8 +2,8 @@
 // Created by jaehy on 25. 1. 4.
 //
 
-#ifndef DATASTRUCTURE_QUEUE_H
-#define DATASTRUCTURE_QUEUE_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
 #include <deque>
 #include <stdexcept>
@@ -43,4 +43,4 @@ public:
 
 };
 
-#endif //DATASTRUCTURE_QUEUE_H
+#endif //QUEUE_H
