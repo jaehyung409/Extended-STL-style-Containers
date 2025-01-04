@@ -6,6 +6,7 @@
 #define SINGLE_LINKED_LIST_SINGLE_LINKED_LIST_H
 
 #include "Default_Value.h"
+#include <limits>
 
 template <typename T>
 struct Node{
@@ -28,9 +29,10 @@ public:
         head->next = tail;
         length = 0;
     }
-    int size(){
+    size_t size(){
         return this->length;
     }
+    size_t max_size() const noexcept { return std::numeric_limits<size_t>::max() / sizeof(Node<T>); }
     Node<T>* get_head(){
         return this->head;
     }

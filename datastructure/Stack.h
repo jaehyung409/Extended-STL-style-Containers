@@ -16,10 +16,10 @@ protected:
 public:
     explicit Stack(const Container& cont = Container()) : container(cont) {}
 
-    size_t get_size(){
+    size_t size(){
         return this->container.size();
     }
-    size_t get_max_size(){
+    size_t max_size(){
         return this->container.max_size();
     }
     bool empty(){
