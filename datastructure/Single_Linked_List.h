@@ -2,8 +2,8 @@
 // Created by jaehy on 2024-06-14.
 //
 
-#ifndef SINGLE_LINKED_LIST_SINGLE_LINKED_LIST_H
-#define SINGLE_LINKED_LIST_SINGLE_LINKED_LIST_H
+#ifndef SINGLE_LINKED_LIST_H
+#define SINGLE_LINKED_LIST_H
 
 #include "Default_Value.h"
 #include <limits>
@@ -171,4 +171,4 @@ T SingleLinkedList<T>::back() {
     return this->get_tail()->data;
 }//time complexity O(1), space complexity O(1)
 
-#endif //SINGLE_LINKED_LIST_SINGLE_LINKED_LIST_H
+#endif // SINGLE_LINKED_LIST_H

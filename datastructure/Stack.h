@@ -2,8 +2,8 @@
 // Created by jaehy on 2024-08-31.
 //
 
-#ifndef STACK_STACK_H
-#define STACK_STACK_H
+#ifndef STACK_H
+#define STACK_H
 
 #include <deque>
 #include <stdexcept>
@@ -39,4 +39,4 @@ public:
 
 };
 
-#endif //STACK_STACK_H
+#endif // STACK_H

@@ -2,8 +2,8 @@
 // Created by user on 24. 5. 29.
 //
 
-#ifndef ARRAY_ARRAY_H
-#define ARRAY_ARRAY_H
+#ifndef ARRAY_H
+#define ARRAY_H
 
 #include <stdexcept>
 #include <iostream>
@@ -318,5 +318,5 @@ void Array<T, N>::reverse_array_stack() {
     }
 }//시간복잡도 O(N) 공간복잡도 O(N)
 
-#endif //ARRAY_ARRAY_H
+#endif // ARRAY_H
 
