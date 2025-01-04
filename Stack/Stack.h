@@ -27,7 +27,7 @@ public:
     }
     T top(){
         if (this->container.empty()) throw std::out_of_range("top() called on empty stack");
-        return this->container.top();
+        return this->container.front();
     }
     void pop(){
         if (this->container.empty()) throw std::out_of_range("pop() called on empty stack");
