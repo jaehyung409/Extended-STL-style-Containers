@@ -34,7 +34,7 @@ public:
         this->container.pop_back();
     }
     void push(T value){
-        this->container.push_back(value);
+        this->container.push_front(value);
     }
 
 };
