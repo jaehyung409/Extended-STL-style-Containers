@@ -251,7 +251,7 @@ int Array<T, N>::sort_find_ternary(const T element, int low, int high){
     int mid2 = high - (high - low) / 3;
     if (element == this->data[mid1]) return mid1;
     if (element == this->data[mid2]) return mid2;
-    if (element < this. data[mid1])
+    if (element < this->data[mid1])
         return sort_find_ternary(element, low, mid1 - 1);
     if (element > this->data[mid2])
         return sort_find_ternary(element, mid2 + 1, high);
