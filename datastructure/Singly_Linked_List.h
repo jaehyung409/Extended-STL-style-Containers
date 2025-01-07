@@ -140,8 +140,13 @@ void SinglyLinkedList<T>::push_front(T data){
 
 template <typename T>
 void SinglyLinkedList<T>::push_back(T data){
-    this->insert(this->size(), data);
-}//시간복잡도 O(N) 공간복잡도 O(1)
+    auto* new_node = new SinglyLinkedListSpace::Node<T>;
+    new_node->data = data;
+    new_node->next = nullptr;
+    this->tail->next = new_node;
+    this->tail = new_node;
+    this->length++;
+}//시간복잡도 O(1) 공간복잡도 O(1)
 
 template <typename T>
 void SinglyLinkedList<T>::insert(int index, T data){
