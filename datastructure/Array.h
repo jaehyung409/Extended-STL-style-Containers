@@ -74,9 +74,8 @@ public:
         return this->size() == 0;
     }
     void print(){
-        for(const auto& element : this->data) {
-            if(element != DefaultValue<T>::value)
-                std::cout << element << ' ';
+        for (auto a = this->begin(); a != this->end(); a++) {
+            std::cout << *a << ' ';
         }
         std::cout << '\n';
     }
