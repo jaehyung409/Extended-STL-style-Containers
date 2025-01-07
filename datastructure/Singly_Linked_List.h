@@ -6,6 +6,7 @@
 #define SINGLY_LINKED_LIST_H
 
 #include "Default_Value.h"
+#include <iostream>
 #include <limits>
 
 namespace SinglyLinkedListSpace {
