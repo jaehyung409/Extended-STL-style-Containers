@@ -29,6 +29,37 @@ public:
         }
         return data[index];
     }
+    struct Iterator{
+    private:
+        T* ptr;
+    public:
+        Iterator(T* ptr) : ptr(ptr) {}
+
+        T& operator*() {
+            return *ptr;
+        }
+        Iterator& operator++(){
+            ++ptr;
+            return *this;
+        }
+        Iterator operator++(int){
+            Iterator temp = *this;
+            ++ptr;
+            return temp;
+        }
+        bool operator==(const Iterator& other) const{
+            return ptr == other.ptr;
+        }
+        bool operator!=(const Iterator& other) const{
+            return ptr != other.ptr;
+        }
+    };
+    Iterator begin() {
+        return Iterator(data);
+    }
+    Iterator end() {
+        return Iterator(data + size());
+    }
     size_t max_size(){
         return N;
     }
