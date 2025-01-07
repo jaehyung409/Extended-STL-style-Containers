@@ -8,22 +8,24 @@
 #include "Default_Value.h"
 #include <limits>
 
-template <typename T>
-struct Node{
-    T data;
-    Node* next;
-};
+namespace SinglyLinkedListSpace {
+    template<typename T>
+    struct Node {
+        T data;
+        Node *next;
+    };
+}
 
 template <typename T>
 struct SinglyLinkedList{
 private:
-    Node<T>* head; // head->next is the first node
-    Node<T>* tail; // tail is the last node
+    SinglyLinkedListSpace::Node<T>* head; // head->next is the first node
+    SinglyLinkedListSpace::Node<T>* tail; // tail is the last node
     int length;
 
 public:
     SinglyLinkedList(){
-        head = new Node<T>;
+        head = new SinglyLinkedListSpace::Node<T>;
         head->data = DefaultValue<T>::value;
         tail = nullptr;
         head->next = tail;
@@ -32,15 +34,15 @@ public:
     size_t size(){
         return this->length;
     }
-    size_t max_size() const noexcept { return std::numeric_limits<size_t>::max() / sizeof(Node<T>); }
-    Node<T>* get_head(){
+    size_t max_size() const noexcept { return std::numeric_limits<size_t>::max() / sizeof(SinglyLinkedListSpace::Node<T>); }
+    SinglyLinkedListSpace::Node<T>* get_head(){
         return this->head;
     }
-    Node<T>* get_tail(){
+    SinglyLinkedListSpace::Node<T>* get_tail(){
         return this->tail;
     }
     void print(){
-        Node<T>* current = head->next;
+        SinglyLinkedListSpace::Node<T>* current = head->next;
         while(current != nullptr){
             std::cout << current->data << ' ';
             current = current->next;
@@ -60,15 +62,15 @@ public:
     }
 
     bool search_iterative(T data);
-    bool search_recursive(Node<T>* node, T data);
+    bool search_recursive(SinglyLinkedListSpace::Node<T>* node, T data);
     int get_size_iterative();
-    int get_size_recursive(Node<T>* node);
-    int get_size_tail_recursive(Node<T>* node, int get_size = 0);
+    int get_size_recursive(SinglyLinkedListSpace::Node<T>* node);
+    int get_size_tail_recursive(SinglyLinkedListSpace::Node<T>* node, int get_size = 0);
 };
 
 template <typename T>
 int SinglyLinkedList<T>::get_size_iterative() {
-    Node<T>* temp = head;
+    SinglyLinkedListSpace::Node<T>* temp = head;
     int get_size = 0;
     while(temp->next){
         temp = temp->next;
@@ -78,13 +80,13 @@ int SinglyLinkedList<T>::get_size_iterative() {
 }//시간복잡도 O(N), 공간복잡도 O(1)
 
 template <typename T>
-int SinglyLinkedList<T>::get_size_recursive(Node<T>* node) {
+int SinglyLinkedList<T>::get_size_recursive(SinglyLinkedListSpace::Node<T>* node) {
     if (node == nullptr) return -1; //head 부터 세므로 -1
     return get_size_recursive(node->next) + 1;
 }//시간복잡도 O(N), 공간복잡도 O(N)
 
 template <typename T>
-int SinglyLinkedList<T>::get_size_tail_recursive(Node<T>* node, int get_size) {
+int SinglyLinkedList<T>::get_size_tail_recursive(SinglyLinkedListSpace::Node<T>* node, int get_size) {
     if (node == nullptr) return get_size - 1; //head 부터 세므로 -1
     return get_size_tail_recursive(node->next, get_size + 1);
 }//시간복잡도 O(N), 공간복잡도 O(1) when tail call optimization (if not O(N))
@@ -104,9 +106,9 @@ void SinglyLinkedList<T>::insert(int index, T data){
     if (index < 0 || index > this->size()){
         throw std::out_of_range("index out_of_range");
     }
-    auto* new_node = new Node<T>;
+    auto* new_node = new SinglyLinkedListSpace::Node<T>;
     new_node->data = data;
-    Node<T>* current = this->get_head();
+    SinglyLinkedListSpace::Node<T>* current = this->get_head();
     for (int i = 0; i < index; i++){
         current = current->next;
     }
@@ -118,7 +120,7 @@ void SinglyLinkedList<T>::insert(int index, T data){
 
 template <typename T>
 bool SinglyLinkedList<T>::search_iterative(T data) {
-    Node<T>* temp = this->get_head();
+    SinglyLinkedListSpace::Node<T>* temp = this->get_head();
     while (temp->next){
         temp = temp->next;
         if (data == temp->data)
@@ -128,7 +130,7 @@ bool SinglyLinkedList<T>::search_iterative(T data) {
 }//시간복잡도 O(N), 공간복잡도 O(1)
 
 template <typename T>
-bool SinglyLinkedList<T>::search_recursive(Node<T>* node, T data) {
+bool SinglyLinkedList<T>::search_recursive(SinglyLinkedListSpace::Node<T>* node, T data) {
     if (node == nullptr) return false;
     if (node->data == data) return true;
     return search_recursive(node->next, data);
@@ -138,10 +140,10 @@ template <typename T>
 void SinglyLinkedList<T>::erase(int index) {
     if (this->size() == 0) throw std::out_of_range("erase() called on empty list");
     if (index >= this->size() || index < 0) throw std::out_of_range("erase() called on out of range index");
-    Node<T>* temp = this->get_head();
+    SinglyLinkedListSpace::Node<T>* temp = this->get_head();
     for (int i = 0; i < index; i++) temp = temp->next;
     if (temp->next == this->get_tail()) this->tail = temp;
-    Node<T>* node_to_delete = temp->next;
+    SinglyLinkedListSpace::Node<T>* node_to_delete = temp->next;
     temp->next = node_to_delete->next;
     delete node_to_delete;
     this->length--;
