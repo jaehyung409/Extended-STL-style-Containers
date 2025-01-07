@@ -195,7 +195,7 @@ void SinglyLinkedList<T>::erase(int index) {
 template <typename T>
 void SinglyLinkedList<T>::clear() {
     while (!this->empty()){
-        this->erase(0);
+        this->pop_front();
     }
 }
 
