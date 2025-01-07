@@ -32,6 +32,41 @@ public:
         head->next = tail;
         length = 0;
     }
+    ~SinglyLinkedList(){
+        clear();
+        delete head;
+    }
+    struct Iterator{
+    private:
+        SinglyLinkedListSpace::Node<T>* ptr;
+    public:
+        Iterator(SinglyLinkedListSpace::Node<T>* ptr) : ptr(ptr) {}
+
+        T& operator*(){
+            return ptr->data;
+        }
+        Iterator& operator++(){
+            if (ptr) ptr = ptr->next;
+            return *this;
+        }
+        Iterator operator++(int){
+            Iterator temp = *this;
+            ++(*this);
+            return temp;
+        }
+        bool operator==(const Iterator& other) const{
+            return ptr == other.ptr;
+        }
+        bool operator!=(const Iterator& other) const{
+            return ptr != other.ptr;
+        }
+    };
+    Iterator begin() {
+        return Iterator(head->next);
+    }
+    Iterator end() {
+        return Iterator(nullptr);
+    }
     size_t size(){
         return this->length;
     }
@@ -43,10 +78,8 @@ public:
         return this->tail;
     }
     void print(){
-        SinglyLinkedListSpace::Node<T>* current = head->next;
-        while(current != nullptr){
-            std::cout << current->data << ' ';
-            current = current->next;
+        for (auto it = begin(); it != end(); it++){
+            std::cout << *it << ' ';
         }
         std::cout << '\n';
     }
@@ -61,6 +94,7 @@ public:
     bool empty(){
         return this->size() == 0;
     }
+    void clear();
 
     bool search_iterative(T data);
     bool search_recursive(SinglyLinkedListSpace::Node<T>* node, T data);
@@ -149,6 +183,13 @@ void SinglyLinkedList<T>::erase(int index) {
     delete node_to_delete;
     this->length--;
 }// time complexity O(N), space complexity O(1)
+
+template <typename T>
+void SinglyLinkedList<T>::clear() {
+    while (!this->empty()){
+        this->erase(0);
+    }
+}
 
 template <typename T>
 void SinglyLinkedList<T>::pop_front() {
