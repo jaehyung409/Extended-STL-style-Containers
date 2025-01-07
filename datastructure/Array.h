@@ -35,7 +35,7 @@ public:
     public:
         Iterator(T* ptr) : ptr(ptr) {}
 
-        T& operator*() {
+        virtual T& operator*() {
             return *ptr;
         }
         Iterator& operator++(){
@@ -46,6 +46,10 @@ public:
             Iterator temp = *this;
             ++ptr;
             return temp;
+        }
+        Iterator& operator--(){
+            --ptr;
+            return *this;
         }
         bool operator==(const Iterator& other) const{
             return ptr == other.ptr;
@@ -59,6 +63,31 @@ public:
     }
     Iterator end() {
         return Iterator(data + size());
+    }
+    struct Reverse_Iterator : public Iterator{
+        using Iterator::Iterator;
+        Reverse_Iterator(Iterator i) : Iterator(i) {}
+
+        T& operator*() {
+            Iterator temp = *this;
+            --temp;
+            return *temp;
+        }
+        Reverse_Iterator operator++(){
+            Iterator::operator--();
+            return *this;
+        }
+        Reverse_Iterator operator++(int){
+            Reverse_Iterator temp = *this;
+            Iterator::operator--();
+            return temp;
+        }
+    };
+    Reverse_Iterator rbegin(){
+        return Reverse_Iterator(end());
+    }
+    Reverse_Iterator rend(){
+        return Reverse_Iterator(begin());
     }
     size_t max_size(){
         return N;
@@ -74,9 +103,13 @@ public:
         return this->size() == 0;
     }
     void print(){
-        for (auto a = this->begin(); a != this->end(); a++) {
+        for (auto a = this->begin(); a != this->end(); a++)
             std::cout << *a << ' ';
-        }
+        std::cout << '\n';
+    }
+    void print_reverse(){
+        for (auto a = this->rbegin(); a != this->rend(); a++)
+            std::cout << *a << ' ';
         std::cout << '\n';
     }
     int find(T element){
