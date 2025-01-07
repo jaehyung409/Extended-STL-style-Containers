@@ -6,7 +6,6 @@
 #define SINGLY_LINKED_LIST_H
 
 #include "Default_Value.h"
-#include "Array.h"
 #include <iostream>
 #include <limits>
 
@@ -34,9 +33,9 @@ public:
         length = 0;
     }
 
-    template <size_t N>
-    SinglyLinkedList(Array<T, N> arr) : SinglyLinkedList() {
-        for (auto it = arr.begin(); it != arr.end(); it++){
+    template <typename Container>
+    SinglyLinkedList(Container& cont) : SinglyLinkedList() {
+        for (auto it = cont.begin(); it != cont.end(); it++){
             push_back(*it);
         }
     }
