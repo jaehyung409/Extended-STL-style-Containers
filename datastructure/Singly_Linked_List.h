@@ -6,6 +6,7 @@
 #define SINGLY_LINKED_LIST_H
 
 #include "Default_Value.h"
+#include "Array.h"
 #include <iostream>
 #include <limits>
 
@@ -22,7 +23,7 @@ struct SinglyLinkedList{
 private:
     SinglyLinkedListSpace::Node<T>* head; // head->next is the first node
     SinglyLinkedListSpace::Node<T>* tail; // tail is the last node
-    int length;
+    int length{};
 
 public:
     SinglyLinkedList(){
@@ -31,6 +32,13 @@ public:
         tail = nullptr;
         head->next = tail;
         length = 0;
+    }
+
+    template <size_t N>
+    SinglyLinkedList(Array<T, N> arr) : SinglyLinkedList() {
+        for (auto it = arr.begin(); it != arr.end(); it++){
+            push_back(*it);
+        }
     }
     ~SinglyLinkedList(){
         clear();
