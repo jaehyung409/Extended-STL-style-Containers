@@ -185,7 +185,7 @@ bool SinglyLinkedList<T>::search_recursive(SinglyLinkedListSpace::Node<T>* node,
 
 template <typename T>
 void SinglyLinkedList<T>::erase(int index) {
-    if (this->size() == 0) throw std::out_of_range("erase() called on empty list");
+    if (this->empty()) throw std::out_of_range("erase() called on empty list");
     if (index >= this->size() || index < 0) throw std::out_of_range("erase() called on out of range index");
     SinglyLinkedListSpace::Node<T>* temp = this->get_head();
     for (int i = 0; i < index; i++) temp = temp->next;
@@ -205,25 +205,25 @@ void SinglyLinkedList<T>::clear() {
 
 template <typename T>
 void SinglyLinkedList<T>::pop_front() {
-    if (this->size() == 0) throw std::out_of_range("pop_front() called on empty list");
+    if (this->empty()) throw std::out_of_range("pop_front() called on empty list");
     this->erase(0);
 }//time complexity O(1), space complexity O(1)
 
 template <typename T>
 void SinglyLinkedList<T>::pop_back() {
-    if (this->size() == 0) throw std::out_of_range("pop_back() called on empty list");
+    if (this->empty()) throw std::out_of_range("pop_back() called on empty list");
     this->erase(this->size() - 1);
 }// time complexity O(N), space complexity O(1)
 
 template <typename T>
 T SinglyLinkedList<T>::front() {
-    if (this->size() == 0) throw std::out_of_range("front() called on empty list");
+    if (this->empty()) throw std::out_of_range("front() called on empty list");
     return this->get_head()->next->data;
 }//time complexity O(1), space complexity O(1)
 
 template <typename T>
 T SinglyLinkedList<T>::back() {
-    if (this->size() == 0) throw std::out_of_range("back() called on empty list");
+    if (this->empty()) throw std::out_of_range("back() called on empty list");
     return this->get_tail()->data;
 }//time complexity O(1), space complexity O(1)
 
