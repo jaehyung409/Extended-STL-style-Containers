@@ -5,6 +5,7 @@
  */
 
 module;
+#include <optional>
 #include <type_traits>
 
 export module default_value;
@@ -12,10 +13,13 @@ export module default_value;
 namespace j
 {
     export template <typename T>
-    struct DefaultValue {
-        static constexpr T value =
-                std::conditional_t<std::is_arithmetic<T>::value,
-                                   std::integral_constant<T, 0>,
-                                   std::integral_constant<T*, nullptr>>::value;
+    class Default_value {
+        static std::optional<T> value() {
+            if constexpr (std::is_default_constructible_v<T>) {
+                return T();
+            } else {
+                return std::nullopt;
+            }
+        }
     };
 }
