@@ -9,6 +9,7 @@
 #include <iostream>
 #include <unordered_set>
 #include <algorithm>
+#include <iterator>
 #include "Default_Value.h"
 
 template <typename T, size_t N>
@@ -28,66 +29,6 @@ public:
             throw std::out_of_range("index out out_of_range");
         }
         return data[index];
-    }
-    struct Iterator{
-    private:
-        T* ptr;
-    public:
-        Iterator(T* ptr) : ptr(ptr) {}
-
-        virtual T& operator*() {
-            return *ptr;
-        }
-        Iterator& operator++(){
-            ++ptr;
-            return *this;
-        }
-        Iterator operator++(int){
-            Iterator temp = *this;
-            ++ptr;
-            return temp;
-        }
-        Iterator& operator--(){
-            --ptr;
-            return *this;
-        }
-        bool operator==(const Iterator& other) const{
-            return ptr == other.ptr;
-        }
-        bool operator!=(const Iterator& other) const{
-            return ptr != other.ptr;
-        }
-    };
-    Iterator begin() {
-        return Iterator(data);
-    }
-    Iterator end() {
-        return Iterator(data + size());
-    }
-    struct Reverse_Iterator : public Iterator{
-        using Iterator::Iterator;
-        Reverse_Iterator(Iterator i) : Iterator(i) {}
-
-        T& operator*() {
-            Iterator temp = *this;
-            --temp;
-            return *temp;
-        }
-        Reverse_Iterator operator++(){
-            Iterator::operator--();
-            return *this;
-        }
-        Reverse_Iterator operator++(int){
-            Reverse_Iterator temp = *this;
-            Iterator::operator--();
-            return temp;
-        }
-    };
-    Reverse_Iterator rbegin(){
-        return Reverse_Iterator(end());
-    }
-    Reverse_Iterator rend(){
-        return Reverse_Iterator(begin());
     }
     size_t max_size(){
         return N;

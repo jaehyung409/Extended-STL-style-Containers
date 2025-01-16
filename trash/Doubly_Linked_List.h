@@ -23,7 +23,7 @@ struct DoublyLinkedList {
 private:
     DoublyLinkedListSpace::Node<T> *head; // head->next is the first node
     DoublyLinkedListSpace::Node<T> *tail; // tail is the last node
-    int length;
+    int length{};
 
 public:
     DoublyLinkedList() {
@@ -37,8 +37,9 @@ public:
 
     template<typename Container>
     DoublyLinkedList(Container &cont) : DoublyLinkedList() {
-        for (auto it = cont.begin(); it != cont.end(); it++) {
-            push_back(*it);
+        for (auto data : cont) {
+            push_back(data);
+            length++;
         }
     }
 

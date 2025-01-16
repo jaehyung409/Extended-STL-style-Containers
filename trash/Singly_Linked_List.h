@@ -35,8 +35,9 @@ public:
 
     template <typename Container>
     SinglyLinkedList(Container& cont) : SinglyLinkedList() {
-        for (auto it = cont.begin(); it != cont.end(); it++){
-            push_back(*it);
+        for (auto data : cont){
+            push_back(data);
+            length++;
         }
     }
     ~SinglyLinkedList(){
