@@ -13,22 +13,13 @@ export module forward_iterator;
 import default_value;
 
 namespace j {
-    export template<typename T>
+    export template<class Node>
     class Forward_iterator {
     public:
-        class Node {
-        public:
-            T value;
-            Node* next;
-            Node() : value(Default_value<T>().get().value_or(T())), next(nullptr) {}
-            explicit Node(const T& value) : value(value), next(nullptr) {}
-            explicit Node(T&& value) : value(std::move(value)), next(nullptr) {}
-        };
-
-        using value_type = T;
+        using value_type = typename Node::value_type;
         using pointer = Node*;
         using const_pointer = const Node*;
-        using reference = T&;
+        using reference = value_type&;
         using difference_type = std::ptrdiff_t;
         using iterator_category = std::forward_iterator_tag;
 

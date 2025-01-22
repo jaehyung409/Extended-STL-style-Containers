@@ -18,15 +18,27 @@ import forward_iterator;
 
 
 namespace j {
+    template <class T>
+    class Forward_list_node {
+    public:
+        using value_type = T;
+
+        T value;
+        Forward_list_node* next;
+        Forward_list_node() : value(Default_value<T>().get().value_or(T())), next(nullptr) {}
+        explicit Forward_list_node(const T& value) : value(value), next(nullptr) {}
+        explicit Forward_list_node(T&& value) : value(std::move(value)), next(nullptr) {}
+    };
+
     export template <class T, class Allocator = std::allocator<T>>
     class Forward_list {
     public:
         using value_type = T;
         using allocator_type = std::allocator<T>;
         using size_type = size_t;
-        using iterator = Forward_iterator<T>;
+        using Node = Forward_list_node<T>;
+        using iterator = Forward_iterator<Node>;
         using const_iterator = const iterator;
-        using Node = typename iterator::Node;
 
     private:
         using node_allocator = typename std::allocator_traits<Allocator>::template rebind_alloc<Node>;
