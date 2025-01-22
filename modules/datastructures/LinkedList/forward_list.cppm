@@ -32,7 +32,6 @@ namespace j {
         using node_allocator = typename std::allocator_traits<Allocator>::template rebind_alloc<Node>;
         Node* before_head; // node for before_begin();
         Node* head;
-        Node* tail;        // node for end();
         node_allocator node_alloc;
         // size_type size; didn't use for faster performance
 
@@ -45,9 +44,7 @@ namespace j {
         Forward_list() : head(nullptr), node_alloc(Allocator()) {
             before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
             std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-            tail = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-            std::allocator_traits<node_allocator>::construct(node_alloc, tail, Node());
-            head = tail;
+            head = nullptr;
             before_head->next = head;
         }
         explicit Forward_list(const Allocator& alloc);
@@ -156,9 +153,7 @@ namespace j {
     Forward_list<T, Allocator>::Forward_list(const Allocator& alloc): head(nullptr), node_alloc(alloc) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        tail = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-        std::allocator_traits<node_allocator>::construct(node_alloc, tail, Node());
-        head = tail;
+        head = nullptr;
         before_head->next = head;
 
     }
@@ -167,10 +162,8 @@ namespace j {
     Forward_list<T, Allocator>::Forward_list(const size_type n, const Allocator& alloc) : head(nullptr), node_alloc(alloc) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        tail = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-        std::allocator_traits<node_allocator>::construct(node_alloc, tail, Node());
         if (n == 0) {
-            head = tail;
+            head = nullptr;
             before_head->next = head;
         } else {
             head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
@@ -183,7 +176,6 @@ namespace j {
                 prev->next = ptr;
                 prev = ptr;
             }
-            prev->next = tail;
         }
     }
 
@@ -191,10 +183,8 @@ namespace j {
     Forward_list<T, Allocator>::Forward_list(const size_type n, const T& value, const Allocator& alloc) : head(nullptr), node_alloc(alloc) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        tail = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-        std::allocator_traits<node_allocator>::construct(node_alloc, tail, Node());
         if (n == 0) {
-            head = tail;
+            head = nullptr;
             before_head->next = head;
         } else {
             head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
@@ -207,7 +197,6 @@ namespace j {
                 prev->next = ptr;
                 prev = ptr;
             }
-            prev->next = tail;
         }
     }
 
@@ -215,9 +204,7 @@ namespace j {
     Forward_list<T, Allocator>::Forward_list(const Forward_list& x) : head(nullptr), node_alloc(x.node_alloc) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        tail = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-        std::allocator_traits<node_allocator>::construct(node_alloc, tail, Node());
-        head = tail;
+        head = nullptr;
         before_head->next = head;
 
         auto xit = x.begin();
@@ -228,12 +215,10 @@ namespace j {
 
     template <class T, class Allocator>
     Forward_list<T, Allocator>::Forward_list(Forward_list&& x)  noexcept
-        : before_head(x.before_head), head(x.head), node_alloc(std::move(x.node_alloc)), tail(x.tail) {
+        : before_head(x.before_head), head(x.head), node_alloc(std::move(x.node_alloc)) {
         x.before_head = std::allocator_traits<node_allocator>::allocate(x.node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(x.node_alloc, x.before_head, Node());
-        x.tail = std::allocator_traits<node_allocator>::allocate(x.node_alloc, 1);
-        std::allocator_traits<node_allocator>::construct(x.node_alloc, x.tail, Node());
-        x.head = x.tail;
+        x.head = nullptr;
         x.before_head->next = x.head;
     }
 
@@ -243,9 +228,6 @@ namespace j {
         std::allocator_traits<node_allocator>::destroy(node_alloc, before_head);
         std::allocator_traits<node_allocator>::deallocate(node_alloc, before_head, 1);
         before_head = nullptr;
-        std::allocator_traits<node_allocator>::destroy(node_alloc, tail);
-        std::allocator_traits<node_allocator>::deallocate(node_alloc, tail, 1);
-        tail = nullptr;
     }
 
     template <class T, class Allocator>
@@ -267,19 +249,13 @@ namespace j {
             std::allocator_traits<node_allocator>::destroy(node_alloc, before_head);
             std::allocator_traits<node_allocator>::deallocate(node_alloc, before_head, 1);
             before_head = nullptr;
-            std::allocator_traits<node_allocator>::destroy(node_alloc, tail);
-            std::allocator_traits<node_allocator>::deallocate(node_alloc, tail, 1);
-            tail = nullptr;
             head = x.head;
             before_head = x.before_head;
-            tail = x.tail;
             node_alloc = std::move(std::allocator<T>());
             x.node_alloc = Allocator();
             x.before_head = std::allocator_traits<node_allocator>::allocate(x.node_alloc, 1);
             std::allocator_traits<node_allocator>::construct(x.node_alloc, x.before_head, Node());
-            x.tail = std::allocator_traits<node_allocator>::allocate(x.node_alloc, 1);
-            std::allocator_traits<node_allocator>::construct(x.node_alloc, x.tail, Node());
-            x.head = x.tail;
+            x.head = nullptr;
             x.before_head->next = x.head;
         }
         return *this;
@@ -319,12 +295,12 @@ namespace j {
 
     template <class T, class Allocator>
     typename Forward_list<T, Allocator>::iterator Forward_list<T, Allocator>::end() noexcept {
-        return iterator(tail);
+        return iterator();
     }
 
     template <class T, class Allocator>
     typename Forward_list<T, Allocator>::const_iterator Forward_list<T, Allocator>::end() const noexcept {
-        return iterator(tail);
+        return iterator();
     }
 
     template <class T, class Allocator>
@@ -339,12 +315,12 @@ namespace j {
 
     template <class T, class Allocator>
     typename Forward_list<T, Allocator>::const_iterator Forward_list<T, Allocator>::cend() const noexcept {
-        return iterator(tail);
+        return iterator();
     }
 
     template <class T, class Allocator>
     bool Forward_list<T, Allocator>::empty() const noexcept {
-        return head == tail;
+        return head == nullptr;
     }
 
     template <class T, class Allocator>
@@ -447,7 +423,7 @@ namespace j {
     T& Forward_list<T, Allocator>::emplace_front(Args&&... args) {
         Node* new_node = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, new_node, Node(T(std::forward<Args>(args)...)));
-        if (empty()) new_node->next = tail;
+        if (empty()) new_node->next = nullptr;
         else new_node->next = head;
         head = new_node;
         before_head->next = head;
@@ -724,10 +700,10 @@ namespace j {
     template <class T, class Allocator>
     void Forward_list<T, Allocator>::reverse() noexcept {
         if (empty()) return;
-        Node* prev = tail;
+        Node* prev = nullptr;
         Node* current = head;
         Node* next = nullptr;
-        while (current != tail){
+        while (current != nullptr) {
             next = current->next;
             current->next = prev;
             prev = current;
@@ -742,7 +718,6 @@ namespace j {
         using std::swap;
         swap(x.before_head, y.before_head);
         swap(x.head, y.head);
-        swap(x.tail, y.tail);
         swap(x.node_alloc, y.node_alloc);
     }
 

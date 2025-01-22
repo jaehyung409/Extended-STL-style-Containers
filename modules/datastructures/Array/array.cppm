@@ -121,7 +121,7 @@ namespace j {
     }
 
     template <typename T, std::size_t N>
-    constexpr void Array<T, N>::fill(T value){
+    constexpr void Array<T, N>::fill(T& value){
         for (std::size_t i = 0; i < N; i++){
             data[i] = value;
         }

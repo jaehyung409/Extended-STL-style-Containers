@@ -14,12 +14,20 @@ namespace j
 {
     export template <typename T>
     class Default_value {
-        static std::optional<T> value() {
+    public:
+        Default_value() {
             if constexpr (std::is_default_constructible_v<T>) {
-                return T();
+                value_ = T();
             } else {
-                return std::nullopt;
+                value_ = std::nullopt;
             }
         }
+
+        std::optional<T> get() const {
+            return value_;
+        }
+
+    private:
+        std::optional<T> value_;
     };
 }
