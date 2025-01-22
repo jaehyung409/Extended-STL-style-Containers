@@ -47,6 +47,19 @@ namespace j {
         node_allocator node_alloc;
         // size_type size; didn't use for faster performance
 
+        // helper function (getter and setter)
+        Node* get_before_head() const noexcept {
+            return before_head;
+        }
+        Node* get_head() const noexcept {
+            return head;
+        }
+        void set_before_head(Node* new_before_head) noexcept {
+            before_head = new_before_head;
+        }
+        void set_head(Node* new_head) noexcept {
+            head = new_head;
+        }
 
         template <class Compare>
         void merge_sort(Forward_list& x, Compare comp);
@@ -144,11 +157,19 @@ namespace j {
         void sort(Compare comp);
 
         void reverse() noexcept;
+        void swap(Forward_list& x) noexcept(noexcept(std::allocator_traits<node_allocator>::is_always_equal::value)) {
+            using std::swap;
+            swap(before_head, x.before_head);
+            swap(head, x.head);
+            swap(node_alloc, x.node_alloc);
+        }
     };
 
     export template<class T, class Allocator>
     void swap(Forward_list<T, Allocator>& x,
-              Forward_list<T, Allocator>& y) noexcept(noexcept(x.swap(y)));
+              Forward_list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
+        x.swap(y);
+    }
 
     // erasure
     export template<class T, class Allocator, class U = T>
@@ -174,20 +195,9 @@ namespace j {
     Forward_list<T, Allocator>::Forward_list(const size_type n, const Allocator& alloc) : head(nullptr), node_alloc(alloc) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        if (n == 0) {
-            head = nullptr;
-            before_head->next = head;
-        } else {
-            head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-            std::allocator_traits<node_allocator>::construct(node_alloc, head, Node());
-            before_head->next = head;
-            Node* prev = head;
-            for (int i = 1; i < n; i++) {
-                Node* ptr = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-                std::allocator_traits<node_allocator>::construct(node_alloc, ptr, Node());
-                prev->next = ptr;
-                prev = ptr;
-            }
+        before_head->next = head;
+        for (size_type i = 0; i < n; ++i) {
+            emplace_front(Default_value<T>().get().value_or(T()));
         }
     }
 
@@ -195,43 +205,31 @@ namespace j {
     Forward_list<T, Allocator>::Forward_list(const size_type n, const T& value, const Allocator& alloc) : head(nullptr), node_alloc(alloc) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        if (n == 0) {
-            head = nullptr;
-            before_head->next = head;
-        } else {
-            head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-            std::allocator_traits<node_allocator>::construct(node_alloc, head, Node(value));
-
-            Node* prev = head;
-            for (int i = 1; i < n; i++) {
-                Node* ptr = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
-                std::allocator_traits<node_allocator>::construct(node_alloc, ptr, Node(value));
-                prev->next = ptr;
-                prev = ptr;
-            }
+        before_head->next = head;
+        for (size_type i = 0; i < n; ++i) {
+            emplace_front(value);
         }
     }
 
     template <class T, class Allocator>
-    Forward_list<T, Allocator>::Forward_list(const Forward_list& x) : head(nullptr), node_alloc(x.node_alloc) {
+    Forward_list<T, Allocator>::Forward_list(const Forward_list& x) : head(nullptr), node_alloc(x.get_allocator()) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        head = nullptr;
         before_head->next = head;
 
         auto xit = x.begin();
         for (auto it = before_begin(); xit != x.end(); ++xit) {
-            it = insert_after(it, *xit);
+            it = emplace_after(it, *xit);
         }
     }
 
     template <class T, class Allocator>
     Forward_list<T, Allocator>::Forward_list(Forward_list&& x)  noexcept
-        : before_head(x.before_head), head(x.head), node_alloc(std::move(x.node_alloc)) {
-        x.before_head = std::allocator_traits<node_allocator>::allocate(x.node_alloc, 1);
-        std::allocator_traits<node_allocator>::construct(x.node_alloc, x.before_head, Node());
-        x.head = nullptr;
-        x.before_head->next = x.head;
+        : before_head(x.get_before_head()), head(x.get_head()), node_alloc(std::move(x.get_allocator())) {
+        auto new_before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
+        std::allocator_traits<node_allocator>::construct(node_alloc, new_before_head, Node());
+        x.set_before_head(new_before_head);
+        x.set_head(nullptr);
     }
 
     template <class T, class Allocator>
@@ -248,7 +246,7 @@ namespace j {
             clear();
             auto xit = x.begin();
             for (auto it = before_begin(); xit != x.end(); ++xit) {
-                it = insert_after(it, *xit);
+                it = emplace_after(it, *xit);
             }
         }
         return *this;
@@ -261,14 +259,16 @@ namespace j {
             std::allocator_traits<node_allocator>::destroy(node_alloc, before_head);
             std::allocator_traits<node_allocator>::deallocate(node_alloc, before_head, 1);
             before_head = nullptr;
-            head = x.head;
-            before_head = x.before_head;
-            node_alloc = std::move(std::allocator<T>());
-            x.node_alloc = Allocator();
-            x.before_head = std::allocator_traits<node_allocator>::allocate(x.node_alloc, 1);
-            std::allocator_traits<node_allocator>::construct(x.node_alloc, x.before_head, Node());
-            x.head = nullptr;
-            x.before_head->next = x.head;
+
+            head = x.get_head();
+            before_head = x.get_before_head();
+            node_alloc = std::move(x.get_allocator());
+
+            auto new_before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
+            std::allocator_traits<node_allocator>::construct(node_alloc, new_before_head, Node());
+
+            x.set_head(nullptr);
+            x.set_before_head(new_before_head);
         }
         return *this;
     }
@@ -277,7 +277,7 @@ namespace j {
     void Forward_list<T, Allocator>::assign(Forward_list::size_type count, const T &value) {
         clear();
         for (int i = 0; i < count; i++)
-            push_front(value);
+            emplace_front(value);
     }
 
     template<class T, class Allocator>
@@ -337,7 +337,7 @@ namespace j {
 
     template <class T, class Allocator>
     typename Forward_list<T, Allocator>::size_type Forward_list<T, Allocator>::max_size() const noexcept {
-        return std::numeric_limits<size_t>::max() / sizeof(Node) - 2;
+        return std::numeric_limits<size_t>::max() / sizeof(Node);
     }
 
     template <class T, class Allocator>
@@ -483,7 +483,7 @@ namespace j {
         }
         else {
             for(; size < nsz; size++){
-                insert_after(prev, Default_value<T>().get().value_or(T()));
+                emplace_after(prev, Default_value<T>().get().value_or(T()));
             }
         }
     }
@@ -500,7 +500,7 @@ namespace j {
         }
         else {
             for(; size < nsz; size++){
-                insert_after(prev, value);
+                emplace_after(prev, value);
             }
         }
     }
@@ -558,7 +558,7 @@ namespace j {
         auto next_xit = x.begin();
         while (next_xit != x.end()){
             if (next_it == end() || std::less<>{}(*next_xit, *next_it)) {
-                it = insert_after(it, *next_xit);
+                it = emplace_after(it, *next_xit);
                 next_it = std::next(it);
                 x.erase_after(xit);
                 next_xit = std::next(xit);
@@ -577,7 +577,7 @@ namespace j {
         auto next_xit = x.begin();
         while (next_xit != x.end()){
             if (next_it == end() || std::less<>{}(*next_xit, *next_it)) {
-                it = insert_after(it, std::move(*next_xit));
+                it = emplace_after(it, std::move(*next_xit));
                 next_it = std::next(it);
                 x.erase_after(xit);
                 next_xit = std::next(xit);
@@ -597,7 +597,7 @@ namespace j {
         auto next_xit = x.begin();
         while (next_xit != x.end()){
             if (next_it == end() || comp(*next_xit, *next_it)) {
-                it = insert_after(it, *next_xit);
+                it = emplace_after(it, *next_xit);
                 next_it = std::next(it);
                 x.erase_after(xit);
                 next_xit = std::next(xit);
@@ -617,7 +617,7 @@ namespace j {
         auto next_xit = x.begin();
         while (next_xit != x.end()){
             if (next_it == end() || comp(*next_xit, *next_it)) {
-                it = insert_after(it, std::move(*next_xit));
+                it = emplace_after(it, std::move(*next_xit));
                 next_it = std::next(it);
                 x.erase_after(xit);
                 next_xit = std::next(xit);
@@ -632,7 +632,7 @@ namespace j {
     void Forward_list<T, Allocator>::splice_after(Forward_list::const_iterator pos, Forward_list &other) {
         auto non_const_pos = const_cast<Forward_list::const_iterator&>(pos);
         while (!other.empty()) {
-            non_const_pos = insert_after(non_const_pos, other.front());
+            non_const_pos = emplace_after(non_const_pos, other.front());
             other.pop_front();
         }
     }
@@ -641,7 +641,7 @@ namespace j {
     void Forward_list<T, Allocator>::splice_after(Forward_list::const_iterator pos, Forward_list &&other) {
         auto non_const_pos = const_cast<Forward_list::const_iterator&>(pos);
         while (!other.empty()) {
-            non_const_pos = insert_after(non_const_pos, std::move(other.front()));
+            non_const_pos = emplace_after(non_const_pos, std::move(other.front()));
             other.pop_front();
         }
     }
@@ -655,7 +655,7 @@ namespace j {
             auto next = const_cast<Forward_list::const_iterator&>(first);
             std::advance(next, 1);
             while (next != last) {
-                non_const_pos = insert_after(non_const_pos, *next);
+                non_const_pos = emplace_after(non_const_pos, *next);
                 std::advance(next, 1);
                 other.erase_after(first);
             }
@@ -671,7 +671,7 @@ namespace j {
             auto next = const_cast<Forward_list::const_iterator&>(first);
             std::advance(next, 1);
             while (next != last) {
-                non_const_pos = insert_after(non_const_pos, std::move(*next));
+                non_const_pos = emplace_after(non_const_pos, std::move(*next));
                 std::advance(next, 1);
                 other.erase_after(first);
             }
@@ -723,14 +723,6 @@ namespace j {
         }
         head = prev;
         before_head->next = head;
-    }
-
-    template <class T, class Allocator>
-    void swap(Forward_list<T, Allocator>& x, Forward_list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
-        using std::swap;
-        swap(x.before_head, y.before_head);
-        swap(x.head, y.head);
-        swap(x.node_alloc, y.node_alloc);
     }
 
     template <class T, class Allocator, class U>
