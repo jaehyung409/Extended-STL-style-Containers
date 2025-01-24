@@ -1,5 +1,5 @@
 /*
- * @ Created by jaehyung409 on 25. 1. 16.
+ * @ Created by jaehyung409 on 25. 1. 23.
  * @ Copyright (c) 2025 jaehyung409 All rights reserved.
  * This software is licensed under the MIT License. 
  */
@@ -26,9 +26,11 @@ namespace j {
     public:
         using value_type = U;
 
+    private:
         U value;
         mutable Forward_list_node* next;
 
+    public:
         Forward_list_node() : value(Default_value<U>().get().value_or(U())), next(nullptr) {}
         explicit Forward_list_node(const U& value) : value(value), next(nullptr) {}
         explicit Forward_list_node(U&& value) : value(std::move(value)), next(nullptr) {}
@@ -94,10 +96,10 @@ namespace j {
         // size_type size; didn't use for faster performance
 
         // helper function (getter and setter)
-        Node* get_before_head() const noexcept {
+        Node* get_before_head() noexcept {
             return before_head;
         }
-        Node* get_head() const noexcept {
+        Node* get_head() noexcept {
             return head;
         }
         void set_before_head(Node* new_before_head) noexcept {
@@ -312,8 +314,9 @@ namespace j {
     template<class T, class Allocator>
     void Forward_list<T, Allocator>::assign(Forward_list::size_type count, const T &value) {
         clear();
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < count; i++) {
             emplace_front(value);
+        }
     }
 
     template<class T, class Allocator>
@@ -435,8 +438,9 @@ namespace j {
             throw std::out_of_range("Forward_list::insert_after() : position is end()");
         }
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < count; i++) {
             position = insert_after(position, value);
+        }
         return Forward_list::iterator(position);
     }
 
@@ -696,21 +700,25 @@ namespace j {
         if (position == end()) {
             throw std::out_of_range("Forward_list::splice_after() : position is end()");
         }
-        while (!other.empty()) {
-            position = emplace_after(position, other.front());
-            other.pop_front();
+        if (!other.empty()) {
+            auto last = other.before_begin();
+            while (std::next(last) != other.end()) {
+                ++last;
+            }
+            last->next = position->next;
+            if (position == before_begin()) {
+                head = other.get_head();
+                before_head->next = head;
+            } else {
+                position->next = other.get_head();
+            }
+            other.set_head(nullptr);
         }
     }
 
     template<class T, class Allocator>
     void Forward_list<T, Allocator>::splice_after(Forward_list::const_iterator position, Forward_list &&other) {
-        if (position == end()) {
-            throw std::out_of_range("Forward_list::splice_after() : position is end()");
-        }
-        while (!other.empty()) {
-            position = emplace_after(position, std::move(other.front()));
-            other.pop_front();
-        }
+        splice_after(position, other);
     }
 
     template<class T, class Allocator>
@@ -720,15 +728,26 @@ namespace j {
         if (position == end()) {
             throw std::out_of_range("Forward_list::splice_after() : position is end()");
         }
-        if (first != last) {
-            auto next = first;
-            auto pos = position;
-            std::advance(next, 1);
-            while (next != last) {
-                pos = emplace_after(pos, *next);
-                std::advance(next, 1);
-                other.erase_after(first);
-            }
+        if (first == last) {
+            return;
+        }
+        auto before_last = first;
+        while (std::next(before_last) != last) {
+            ++before_last;
+        }
+        auto move_first = first->next;
+        if (first == other.before_begin()) {
+            other.set_head(before_last->next);
+            other.get_before_head()->next = other.get_head();
+        } else {
+            first->next = before_last->next;
+        }
+        before_last->next = position->next;
+        if (position == before_begin()) {
+            head = move_first;
+            before_head->next = head;
+        } else {
+            position->next = move_first;
         }
     }
 
@@ -736,19 +755,7 @@ namespace j {
     void Forward_list<T, Allocator>::splice_after(Forward_list::const_iterator position, Forward_list &&other,
                                                   Forward_list::const_iterator first,
                                                   Forward_list::const_iterator last) {
-        if (position == end()) {
-            throw std::out_of_range("Forward_list::splice_after() : position is end()");
-        }
-        if (first != last) {
-            auto next = first;
-            auto pos = position;
-            std::advance(next, 1);
-            while (next != last) {
-                pos = emplace_after(pos, std::move(*next));
-                std::advance(next, 1);
-                other.erase_after(first);
-            }
-        }
+        splice_after(position, other, first, last);
     }
 
 
