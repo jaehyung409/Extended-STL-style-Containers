@@ -34,6 +34,9 @@ namespace j {
         Forward_list_node() : value(Default_value<U>().get().value_or(U())), next(nullptr) {}
         explicit Forward_list_node(const U& value) : value(value), next(nullptr) {}
         explicit Forward_list_node(U&& value) : value(std::move(value)), next(nullptr) {}
+        template <class... Args, class = std::enable_if_t<std::is_constructible_v<U, Args&&...>>>
+        explicit Forward_list_node(Args&&... args) : value(std::forward<Args>(args)...), next(nullptr) {}
+        ~Forward_list_node() = default;
     };
 
     export template <class Node>
@@ -46,7 +49,6 @@ namespace j {
     public:
         using value_type = typename Node::value_type;
         using pointer = Node*;
-        using const_pointer = const Node*;
         using reference = value_type&;
         using difference_type = std::ptrdiff_t;
         using iterator_category = std::forward_iterator_tag;
@@ -109,6 +111,7 @@ namespace j {
             head = new_head;
         }
 
+        // helper function (sort)
         template <class Compare>
         void merge_sort(Forward_list& x, Compare comp);
 
@@ -117,7 +120,6 @@ namespace j {
         Forward_list() : head(nullptr), node_alloc(Allocator()) {
             before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
             std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-            head = nullptr;
             before_head->next = head;
         }
         explicit Forward_list(const Allocator& alloc);
@@ -184,7 +186,7 @@ namespace j {
         //template <class Predicate>
         //size_type remove_if(Predicate pred);
         size_type unique();
-
+        // merge -> need to implement newly (using splice_after line 197~8)
         void merge(Forward_list& x);
         void merge(Forward_list&& x);
         template <class Compare>
@@ -234,7 +236,6 @@ namespace j {
     Forward_list<T, Allocator>::Forward_list(const Allocator& alloc): node_alloc(alloc) {
         before_head = std::allocator_traits<node_allocator>::allocate(node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(node_alloc, before_head, Node());
-        head = nullptr;
         before_head->next = head;
 
     }
@@ -275,7 +276,6 @@ namespace j {
         clear();
         std::allocator_traits<node_allocator>::destroy(node_alloc, before_head);
         std::allocator_traits<node_allocator>::deallocate(node_alloc, before_head, 1);
-        before_head = nullptr;
     }
 
     template <class T, class Allocator>
@@ -296,7 +296,6 @@ namespace j {
             clear();
             std::allocator_traits<node_allocator>::destroy(node_alloc, before_head);
             std::allocator_traits<node_allocator>::deallocate(node_alloc, before_head, 1);
-            before_head = nullptr;
 
             head = x.get_head();
             before_head = x.get_before_head();
@@ -480,7 +479,6 @@ namespace j {
         position->next = node_to_delete->next;
         std::allocator_traits<node_allocator>::destroy(node_alloc, node_to_delete);
         std::allocator_traits<node_allocator>::deallocate(node_alloc, node_to_delete, 1);
-        node_to_delete = nullptr;
         return position->next;
     }
 
@@ -527,7 +525,6 @@ namespace j {
         before_head->next = head;
         std::allocator_traits<node_allocator>::destroy(node_alloc, del_node);
         std::allocator_traits<node_allocator>::deallocate(node_alloc, del_node, 1);
-        del_node = nullptr;
     }
 
     template <class T, class Allocator>
@@ -697,10 +694,11 @@ namespace j {
 
     template<class T, class Allocator>
     void Forward_list<T, Allocator>::splice_after(Forward_list::const_iterator position, Forward_list &other) {
-        if (position == end()) {
+        if (get_allocator() != other.get_allocator()) {
+            throw std::invalid_argument("Forward_list::splice_after() : allocator is different");
+        } else if (position == end()) {
             throw std::out_of_range("Forward_list::splice_after() : position is end()");
-        }
-        if (!other.empty()) {
+        } else if (!other.empty()) {
             auto last = other.before_begin();
             while (std::next(last) != other.end()) {
                 ++last;
@@ -725,10 +723,11 @@ namespace j {
     void Forward_list<T, Allocator>::splice_after(Forward_list::const_iterator position, Forward_list &other,
                                                   Forward_list::const_iterator first,
                                                   Forward_list::const_iterator last) {
-        if (position == end()) {
+        if (get_allocator() != other.get_allocator()) {
+            throw std::invalid_argument("Forward_list::splice_after() : allocator is different");
+        } else if (position == end()) {
             throw std::out_of_range("Forward_list::splice_after() : position is end()");
-        }
-        if (first == last) {
+        } else if (first == last) {
             return;
         }
         auto before_last = first;
