@@ -18,7 +18,7 @@ namespace j {
         using size_type = std::size_t;
 
         // Aggregate Type (no explicit construct/copy/destroy)
-        T data[N];
+        T _data[N];
 
         // Accessor
         constexpr T& operator[](size_type index);
@@ -71,12 +71,12 @@ namespace j {
 namespace j {
     template <typename T, std::size_t N>
     constexpr T& Array<T, N>::operator[](const size_type index) {
-        return data[index];
+        return _data[index];
     }
 
     template <typename T, std::size_t N>
     constexpr const T& Array<T, N>::operator[](const size_type index) const {
-        return data[index];
+        return _data[index];
     }
 
     template <typename T, std::size_t N>
@@ -84,7 +84,7 @@ namespace j {
         if (pos >= N){
             throw std::out_of_range("index out of range");
         }
-        return data[pos];
+        return _data[pos];
     }
 
     template <typename T, std::size_t N>
@@ -92,17 +92,17 @@ namespace j {
         if (pos >= N){
             throw std::out_of_range("index out of range");
         }
-        return data[pos];
+        return _data[pos];
     }
 
     template <typename T, std::size_t N>
     constexpr T Array<T, N>::front() const{
-        return data[0];
+        return _data[0];
     }
 
     template <typename T, std::size_t N>
     constexpr T Array<T, N>::back() const{
-        return data[N-1];
+        return _data[N-1];
     }
 
     template <typename T, std::size_t N>
@@ -123,7 +123,7 @@ namespace j {
     template <typename T, std::size_t N>
     constexpr void Array<T, N>::fill(T& value){
         for (std::size_t i = 0; i < N; i++){
-            data[i] = value;
+            _data[i] = value;
         }
     }
 
@@ -131,7 +131,7 @@ namespace j {
     constexpr void swap(Array<T, N>&a, Array<T, N>& b) noexcept
     {
         for (std::size_t i = 0; i < N; i++){
-            std::swap(a.data[i], b.data[i]);
+            std::swap(a._data[i], b._data[i]);
         }
     }
 }
