@@ -270,7 +270,7 @@ namespace j {
 
 namespace j {
     template <class T, class Allocator>
-    Forward_list<T, Allocator>::Forward_list(const Allocator& alloc) : _node_alloc(alloc) {
+    Forward_list<T, Allocator>::Forward_list(const Allocator& alloc) : _node_alloc(alloc), _head(nullptr) {
         _before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(_node_alloc, _before_head, Node());
         _before_head->_next = _head;
@@ -299,8 +299,9 @@ namespace j {
         : _before_head(x.get_before_head()), _head(x.get_head()), _node_alloc(std::move(x.get_allocator())) {
         auto new_before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
         std::allocator_traits<node_allocator>::construct(_node_alloc, new_before_head, Node());
-        x.set_before_head(new_before_head);
         x.set_head(nullptr);
+        x.set_before_head(new_before_head);
+        x._before_head->_next = x._head;
     }
 
     template <class T, class Allocator>
@@ -338,6 +339,7 @@ namespace j {
 
             x.set_head(nullptr);
             x.set_before_head(new_before_head);
+            x._before_head->_next = x._head;
         }
         return *this;
     }
@@ -415,7 +417,7 @@ namespace j {
         if (empty()) {
             throw std::out_of_range("Forward_list::front() : forward_list is empty");
         }
-        return _head->value;
+        return _head->_value;
     }
 
     template <class T, class Allocator>
@@ -423,7 +425,7 @@ namespace j {
         if (empty()) {
             throw std::out_of_range("Forward_list::front() : forward_list is empty");
         }
-        return _head->value;
+        return _head->_value;
     }
 
     template<class T, class Allocator>
@@ -526,7 +528,7 @@ namespace j {
         }
         _head = new_node;
         _before_head->_next = _head;
-        return _head->value;
+        return _head->_value;
     }
 
     template <class T, class Allocator>

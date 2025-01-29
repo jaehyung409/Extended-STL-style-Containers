@@ -66,16 +66,10 @@ namespace j {
                 return;
             }
             _map[box_index] = std::allocator_traits<box_allocator>::allocate(_box_alloc, _box_size);
-            for (size_type i = 0; i < _box_size; ++i) {
-                std::allocator_traits<box_allocator>::construct(_box_alloc, _map[box_index] + i);
-            }
         }
         void _destroy_box(size_type box_index) {
             if (_map[box_index] == nullptr) {
                 return;
-            }
-            for (size_type i = 0; i < _box_size; ++i) {
-                std::allocator_traits<box_allocator>::destroy(_box_alloc, _map[box_index] + i);
             }
             std::allocator_traits<box_allocator>::deallocate(_box_alloc, _map[box_index], _box_size);
             _map[box_index] = nullptr;
@@ -83,9 +77,6 @@ namespace j {
         void _reallocate_map(size_type n) {
             if (n == _map_capacity) {
                 return;
-            }
-            if (_map_size() > n) {
-                throw std::length_error("Deque::_reallocate_map : n is smaller than the current map size");
             }
             map new_map = _create_map(n);
             if (_map_capacity < n) {
@@ -100,7 +91,7 @@ namespace j {
                     _map[(_begin_map_index + i) % _map_capacity] = nullptr;
                 }
                 _begin_map_index = 0;
-                _end_map_index = used;
+                _end_map_index = used - 1;
             }
             _destroy_map();
             _map = new_map;
@@ -439,20 +430,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(Deque &&other)
-        : _map(other._get_map()), _size(std::move(other.size())), _map_capacity(std::move(other._get_map_capacity())),
-          _begin_map_index(std::move(other._get_begin_map_index())), _begin_box_index(std::move(other._get_begin_box_index())),
-          _end_map_index(std::move(other._get_end_map_index())), _end_box_index(std::move(other._get_end_box_index())),
-          _map_alloc(std::move(other.get_allocator())), _box_alloc(std::move(other.get_allocator())) {
-
-        other._map = _create_map(default_map_size);
-        other._set_map_capacity(default_map_size);
-        other._set_size(0);
-        other._set_begin_map_index(0);
-        other._set_begin_box_index(0);
-        other._set_end_map_index(0);
-        other._set_end_box_index(0);
-    }
+    Deque<T, Allocator>::Deque(Deque &&other) : Deque(std::move(other), other.get_allocator()) {}
 
     template<class T, class Allocator>
     Deque<T, Allocator>::Deque(const Deque &other, const std::type_identity_t <Allocator> &alloc) : Deque(alloc) {
@@ -463,10 +441,15 @@ namespace j {
 
     template<class T, class Allocator>
     Deque<T, Allocator>::Deque(Deque &&other, const std::type_identity_t <Allocator> &alloc)
-        : _map(other._get_map()), _size(std::move(other.size())), _map_capacity(std::move(other._get_map_capacity())),
-          _begin_map_index(std::move(other._get_begin_map_index())), _begin_box_index(std::move(other._get_begin_box_index())),
-          _end_map_index(std::move(other._get_end_map_index())), _end_box_index(std::move(other._get_end_box_index())),
-          _map_alloc(alloc), _box_alloc(alloc) {
+        : Deque(alloc) {
+        _destroy_map();
+        _map = other._get_map();
+        _map_capacity = other._get_map_capacity();
+        _size = other.size();
+        _begin_map_index = other._get_begin_map_index();
+        _begin_box_index = other._get_begin_box_index();
+        _end_map_index = other._get_end_map_index();
+        _end_box_index = other._get_end_box_index();
 
         other._map = _create_map(default_map_size);
         other._set_map_capacity(default_map_size);
@@ -507,17 +490,15 @@ namespace j {
             noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
         if (this != &other) {
             clear();
-            _reallocate_map(other._get_map_capacity());
-            _set_size(std::move(other.size()));
-            _set_begin_map_index(std::move(other._get_begin_map_index()));
-            _set_begin_box_index(std::move(other._get_begin_box_index()));
-            _set_end_map_index(std::move(other._get_end_map_index()));
-            _set_end_box_index(std::move(other._get_end_box_index()));
-            for (size_type i = 0; i < _map_size(); ++i) {
-                _map[(_begin_map_index + i) % _map_capacity] = other._get_map()[(_begin_map_index + i) % _map_capacity];
-                other._map[(_begin_map_index + i) % _map_capacity] = nullptr;
-            }
-            other._destroy_map();
+            _destroy_map();
+            _map = other._get_map();
+            _map_capacity = other._get_map_capacity();
+            _size = other.size();
+            _begin_map_index = other._get_begin_map_index();
+            _begin_box_index = other._get_begin_box_index();
+            _end_map_index = other._get_end_map_index();
+            _end_box_index = other._get_end_box_index();
+
             other._map = _create_map(default_map_size);
             other._set_map_capacity(default_map_size);
             other._set_size(0);
@@ -793,7 +774,8 @@ namespace j {
     template <class... Args>
     typename Deque<T, Allocator>::reference Deque<T, Allocator>::emplace_front(Args &&... args) {
         _for_front();
-        _map[_get_begin_map_index()][_get_begin_box_index()] = value_type(std::forward<Args>(args)...);
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index(), std::forward<Args>(args)...);
         return _map[_get_begin_map_index()][_get_begin_box_index()];
     }
 
@@ -803,7 +785,8 @@ namespace j {
         if (_get_map()[_get_end_map_index()] == nullptr) {
                 _create_box(_get_end_map_index());
         }
-        _map[_get_end_map_index()][_get_end_box_index()] = value_type(std::forward<Args>(args)...);
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index(), std::forward<Args>(args)...);
         _for_back();
         return _map[_get_end_map_index()][_get_end_box_index()];
     }
@@ -842,13 +825,15 @@ namespace j {
     template<class T, class Allocator>
     void Deque<T, Allocator>::push_front(const T &value) {
         _for_front();
-        _map[_get_begin_map_index()][_get_begin_box_index()] = value;
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index(), value);
     }
 
     template<class T, class Allocator>
     void Deque<T, Allocator>::push_front(T &&value) {
         _for_front();
-        _map[_get_begin_map_index()][_get_begin_box_index()] = std::move(value);
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index(), std::move(value));
     }
 
     template<class T, class Allocator>
@@ -856,7 +841,8 @@ namespace j {
         if (_get_map()[_get_end_map_index()] == nullptr) {
             _create_box(_get_end_map_index());
         }
-        _map[_get_end_map_index()][_get_end_box_index()] = value_type(value);
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index(), value);
         _for_back();
     }
 
@@ -865,7 +851,8 @@ namespace j {
         if (_get_map()[_get_end_map_index()] == nullptr) {
             _create_box(_get_end_map_index());
         }
-        _map[_get_end_map_index()][_get_end_box_index()] = std::move(value);
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index(), std::move(value));
         _for_back();
     }
 
@@ -1106,7 +1093,6 @@ namespace j {
         if (empty()) {
             throw std::out_of_range("Deque::pop_front() : deque is empty");
         }
-
         if (_get_begin_box_index() == _box_size - 1) {
             _set_begin_map_index((_get_begin_map_index() + 1) % _map_capacity);
             _set_begin_box_index(0);
@@ -1118,6 +1104,8 @@ namespace j {
             _set_begin_box_index(_get_begin_box_index() + 1);
             _set_size(size() - 1);
         }
+        std::allocator_traits<box_allocator>::destroy
+            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index());
     }
 
     template<class T, class Allocator>
@@ -1133,9 +1121,11 @@ namespace j {
                 shrink_to_fit();
             }
         } else {
-            _set_end_box_index(_get_end_box_index() - 1);
             _set_size(size() - 1);
+            _set_end_box_index(_get_end_box_index() - 1);
         }
+        std::allocator_traits<box_allocator>::destroy
+            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index());
     }
 
     template<class T, class Allocator>
@@ -1207,14 +1197,12 @@ namespace j {
     }
     template<class T, class Allocator>
     void Deque<T, Allocator>::clear() noexcept {
+        const size_type target_size = size();
+        for (size_type i = 0; i < target_size; ++i) {
+            pop_back();
+        }
         for (size_type i = 0; i < _map_capacity; ++i) {
             _destroy_box(i);
         }
-        _set_size(0);
-        _set_begin_map_index(0);
-        _set_begin_box_index(0);
-        _set_end_map_index(0);
-        _set_end_box_index(0);
-        _reallocate_map(default_map_size);
     }
 }

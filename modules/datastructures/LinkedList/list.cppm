@@ -365,8 +365,12 @@ namespace j {
     template <class T, class Allocator>
     List<T, Allocator>::List(List&& x, const std::type_identity_t<Allocator>& alloc)
         : _head(x.get_head()), _tail(x.get_tail()), _node_alloc(alloc), _size(std::move(x.size())) {
-        x.set_head(nullptr);
-        x.set_tail(nullptr);
+        auto new_tail = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        std::allocator_traits<node_allocator>::construct(_node_alloc, new_tail, Node());
+        x.set_tail(new_tail);
+        x._tail->_next = x._tail;
+        x._tail->_prev = x._tail;
+        x.set_head(x.get_tail());
         x.set_size(0);
     }
 
@@ -400,14 +404,21 @@ namespace j {
             noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
         if (this != &x){
             clear();
+            std::allocator_traits<node_allocator>::destroy(_node_alloc, _tail);
+            std::allocator_traits<node_allocator>::deallocate(_node_alloc, _tail, 1);
             _head = x.get_head();
             _tail = x.get_tail();
             _node_alloc = std::move(x.get_allocator());
             _size = std::move(x.size());
-            x.set_head(nullptr);
-            x.set_tail(nullptr);
+            auto new_tail = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+            std::allocator_traits<node_allocator>::construct(_node_alloc, new_tail, Node());
+            x.set_tail(new_tail);
+            x._tail->_next = x._tail;
+            x._tail->_prev = x._tail;
+            x.set_head(x.get_tail());
             x.set_size(0);
         }
+        return *this;
     }
 
     template <class T, class Allocator>
@@ -416,6 +427,7 @@ namespace j {
         for (const T& t : il) {
             emplace_back(t);
         }
+        return *this;
     }
 
 
