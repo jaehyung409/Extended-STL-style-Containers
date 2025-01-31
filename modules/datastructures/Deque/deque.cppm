@@ -15,10 +15,10 @@ export module deque;
 
 namespace j {
     export template<class T, class Allocator = std::allocator<T>>
-    class Deque {
+    class deque {
     public:
-        class _Deque_iterator;
-        class _const_Deque_iterator;
+        class _deque_iterator;
+        class _const_deque_iterator;
 
         using value_type = T;
         using allocator_type = Allocator;
@@ -28,8 +28,8 @@ namespace j {
         using const_reference = const value_type&;
         using pointer = value_type*;
         using const_pointer = const value_type*;
-        using iterator = _Deque_iterator;
-        using const_iterator = _const_Deque_iterator;
+        using iterator = _deque_iterator;
+        using const_iterator = _const_deque_iterator;
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -122,30 +122,27 @@ namespace j {
         void _set_end_box_index(size_type n) noexcept { _end_box_index = n % _box_size; }
         void _set_size(size_type n) noexcept { _size = n; }
 
-        // helper function for common logic
-        void _for_front();
-        void _for_back();
     public:
-        Deque() : Deque(Allocator()) {}
-        explicit Deque(const Allocator &alloc);
-        explicit Deque(size_type n, const Allocator &alloc = Allocator());
-        Deque(size_type n, const T &value, const Allocator &alloc = Allocator());
+        deque() : deque(Allocator()) {}
+        explicit deque(const Allocator &alloc);
+        explicit deque(size_type n, const Allocator &alloc = Allocator());
+        deque(size_type n, const T &value, const Allocator &alloc = Allocator());
         template<class InputIter>
         requires (!std::is_integral_v<InputIter>)
-        Deque(InputIter first, InputIter last, const Allocator &alloc = Allocator());
+        deque(InputIter first, InputIter last, const Allocator &alloc = Allocator());
         //template<ranges::input_range R>
-        //Deque(from_range_t, R&& range, const Allocator& alloc = Allocator());
-        Deque(const Deque &other);
-        Deque(Deque &&other);
-        Deque(const Deque &other, const std::type_identity_t<Allocator> &alloc);
-        Deque(Deque &&other, const std::type_identity_t<Allocator> &alloc);
-        Deque(std::initializer_list<T> il, const Allocator &alloc = Allocator());
-        ~Deque();
+        //deque(from_range_t, R&& range, const Allocator& alloc = Allocator());
+        deque(const deque &other);
+        deque(deque &&other);
+        deque(const deque &other, const std::type_identity_t<Allocator> &alloc);
+        deque(deque &&other, const std::type_identity_t<Allocator> &alloc);
+        deque(std::initializer_list<T> il, const Allocator &alloc = Allocator());
+        ~deque();
 
-        Deque &operator=(const Deque &other);
-        Deque &operator=(Deque &&other) noexcept(
+        deque &operator=(const deque &other);
+        deque &operator=(deque &&other) noexcept(
         std::allocator_traits<Allocator>::is_always_equal::value);
-        Deque &operator=(std::initializer_list<T> il);
+        deque &operator=(std::initializer_list<T> il);
         template<class InputIter>
         requires (!std::is_integral_v<InputIter>)
         void assign(InputIter first, InputIter last);
@@ -220,21 +217,21 @@ namespace j {
         iterator erase(const_iterator position);
         iterator erase(const_iterator first, const_iterator last);
 
-        void swap(Deque &other) noexcept(
+        void swap(deque &other) noexcept(
         std::allocator_traits<Allocator>::is_always_equal::value);
         void clear() noexcept;
     };
 
     template<class InputIter, class Allocator = std::allocator<typename std::iterator_traits<InputIter>::value_type>>
-    Deque(InputIter, InputIter, Allocator = Allocator())
-    -> Deque<typename std::iterator_traits<InputIter>::value_type, Allocator>;
+    deque(InputIter, InputIter, Allocator = Allocator())
+        -> deque<typename std::iterator_traits<InputIter>::value_type, Allocator>;
 
     // template <ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
-    // Deque(from_range_t, R&&, Allocator = Allocator())
-    //     -> Deque<std::ranges::range_value_t<R>, Allocator>;
+    // deque(from_range_t, R&&, Allocator = Allocator())
+    //     -> deque<std::ranges::range_value_t<R>, Allocator>;
 
     template<class T, class Allocator>
-    class Deque<T, Allocator>::_Deque_iterator {
+    class deque<T, Allocator>::_deque_iterator {
     public:
         using iterator_category = std::random_access_iterator_tag;
         using value_type = T;
@@ -243,77 +240,108 @@ namespace j {
         using reference = T&;
 
     private:
+        deque *_deque;
         pointer _ptr;
+        size_type _map_index;
+        size_type _box_index;
 
     public:
-        _Deque_iterator(pointer ptr = nullptr) : _ptr(ptr) {}
-        _Deque_iterator(const _const_Deque_iterator &other)
-            : _ptr(other._ptr) {}
+        _deque_iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
+            : _ptr(ptr), _deque(deque), _map_index(map_index), _box_index(box_index) {}
+        _deque_iterator(const _const_deque_iterator &other)
+            : _ptr(other._ptr), _map_index(other._map_index), _box_index(other._box_index) {}
 
         reference operator*() { return *_ptr; }
         pointer operator->() { return &(*_ptr); }
 
-        _Deque_iterator &operator++() {
-            ++_ptr;
+        _deque_iterator &operator++() {
+            if (++_box_index == _deque->_box_size) {
+                _box_index = 0;
+                if (++_map_index == _deque->_map_capacity) {
+                    _map_index = 0;
+                }
+                _ptr = _deque->_map[_map_index] + _box_index;
+            } else {
+                ++_ptr;
+            }
             return *this;
         }
 
-        _Deque_iterator operator++(int) {
-            _Deque_iterator temp = *this;
+        _deque_iterator operator++(int) {
+            _deque_iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        _Deque_iterator &operator--() {
-            --_ptr;
+        _deque_iterator &operator--() {
+            if (_box_index-- == 0) {
+                if (_map_index-- == 0) {
+                    _map_index = _deque->_map_capacity - 1;
+                }
+                _box_index = _deque->_box_size - 1;
+                _ptr = _deque->_map[_map_index] + _box_index;
+            } else {
+                --_ptr;
+            }
             return *this;
         }
 
-        _Deque_iterator operator--(int) {
-            _Deque_iterator temp = *this;
+        _deque_iterator operator--(int) {
+            _deque_iterator temp = *this;
             --(*this);
             return temp;
         }
 
-        _Deque_iterator &operator+=(difference_type n) {
-            _ptr += n;
+        _deque_iterator &operator+=(difference_type n) {
+            difference_type offset = n + _box_index;
+            if (offset >= 0 && offset < _deque->_box_size) {
+                _ptr += n;
+            } else {
+                _map_index += offset > 0 ? offset / _deque->_box_size : -((-offset - 1) / _deque->_box_size) - 1;
+                _map_index = (_map_index + _deque->_map_capacity) % _deque->_map_capacity;
+                _box_index = ((offset % _deque->_box_size) + _deque->_box_size) % _deque->_box_size;
+                _ptr = _deque->_map[_map_index] + _box_index;
+            }
             return *this;
         }
 
-        _Deque_iterator operator+(difference_type n) const {
-            _Deque_iterator temp = *this;
+        _deque_iterator operator+(difference_type n) const {
+            _deque_iterator temp = *this;
             return temp += n;
         }
 
-        _Deque_iterator &operator-=(difference_type n) {
-            _ptr -= n;
-            return *this;
+        friend _deque_iterator operator+(difference_type n, const _deque_iterator &it) {
+            return it + n;
         }
 
-        _Deque_iterator operator-(difference_type n) const {
-            _Deque_iterator temp = *this;
+        _deque_iterator &operator-=(difference_type n) {
+            return *this += -n;
+        }
+
+        _deque_iterator operator-(difference_type n) const {
+            _deque_iterator temp = *this;
             return temp -= n;
         }
 
-        difference_type operator-(const _Deque_iterator &other) const {
+        difference_type operator-(const _deque_iterator &other) const {
             return _ptr - other._ptr;
         }
 
-        reference operator[](difference_type n) const {
+        reference operator[](difference_type n) {
             return *(*this + n);
         }
 
-        bool operator==(const _Deque_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const _Deque_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const _Deque_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const _Deque_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const _Deque_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const _Deque_iterator &other) const { return _ptr >= other._ptr; }
-        operator _const_Deque_iterator() const { return _const_Deque_iterator(_ptr); }
+        bool operator==(const _deque_iterator &other) const { return _ptr == other._ptr; }
+        bool operator!=(const _deque_iterator &other) const { return _ptr != other._ptr; }
+        bool operator<(const _deque_iterator &other) const { return _ptr < other._ptr; }
+        bool operator>(const _deque_iterator &other) const { return _ptr > other._ptr; }
+        bool operator<=(const _deque_iterator &other) const { return _ptr <= other._ptr; }
+        bool operator>=(const _deque_iterator &other) const { return _ptr >= other._ptr; }
+        operator _const_deque_iterator() const { return _const_deque_iterator(_ptr); }
     };
 
     template<class T, class Allocator>
-    class Deque<T, Allocator>::_const_Deque_iterator {
+    class deque<T, Allocator>::_const_deque_iterator {
     public:
         using iterator_category = std::random_access_iterator_tag;
         using value_type = const T;
@@ -324,57 +352,84 @@ namespace j {
         using const_reference = const T&;
 
     private:
+        deque *_deque;
         pointer _ptr;
+        size_type _map_index;
+        size_type _box_index;
 
     public:
-        _const_Deque_iterator(pointer ptr = nullptr) : _ptr(ptr) {}
+        _const_deque_iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
+            : _ptr(ptr), _deque(deque), _map_index(map_index), _box_index(box_index) {}
 
         const_reference operator*() const { return *_ptr; }
         const_pointer operator->() const { return &(*_ptr); }
 
-        _const_Deque_iterator &operator++() {
-            ++_ptr;
+        _const_deque_iterator &operator++() {
+            if (++_box_index == _deque->_box_size) {
+                _box_index = 0;
+                if (++_map_index == _deque->_map_capacity) {
+                    _map_index = 0;
+                }
+                _ptr = _deque->_map[_map_index] + _box_index;
+            } else {
+                ++_ptr;
+            }
             return *this;
         }
 
-        _const_Deque_iterator operator++(int) {
-            _const_Deque_iterator temp = *this;
+        _const_deque_iterator operator++(int) {
+            _const_deque_iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        _const_Deque_iterator &operator--() {
-            --_ptr;
+        _const_deque_iterator &operator--() {
+            if (_box_index-- == 0) {
+                if (_map_index-- == 0) {
+                    _map_index = _deque->_map_capacity - 1;
+                }
+                _box_index = _deque->_box_size - 1;
+                _ptr = _deque->_map[_map_index] + _box_index;
+            } else {
+                --_ptr;
+            }
             return *this;
         }
 
-        _const_Deque_iterator operator--(int) {
-            _const_Deque_iterator temp = *this;
+        _const_deque_iterator operator--(int) {
+            _const_deque_iterator temp = *this;
             --(*this);
             return temp;
         }
 
-        _const_Deque_iterator &operator+=(difference_type n) {
-            _ptr += n;
+        _const_deque_iterator &operator+=(difference_type n) {
+            difference_type offset = n + _box_index;
+            if (offset >= 0 && offset < _deque->_box_size) {
+                _ptr += n;
+            } else {
+                _map_index += offset > 0 ? offset / _deque->_box_size : -((-offset - 1) / _deque->_box_size) - 1;
+                _map_index = (_map_index + _deque->_map_capacity) % _deque->_map_capacity;
+                _box_index = ((offset % _deque->_box_size) + _deque->_box_size) % _deque->_box_size;
+                _ptr = _deque->_map[_map_index] + _box_index;
+            }
             return *this;
         }
 
-        _const_Deque_iterator operator+(difference_type n) const {
-            _const_Deque_iterator temp = *this;
+        _const_deque_iterator operator+(difference_type n) const {
+            _const_deque_iterator temp = *this;
             return temp += n;
         }
 
-        _const_Deque_iterator &operator-=(difference_type n) {
-            _ptr -= n;
-            return *this;
+        _const_deque_iterator &operator-=(difference_type n) {
+            return *this += -n;
         }
 
-        _const_Deque_iterator operator-(difference_type n) const {
-            _const_Deque_iterator temp = *this;
+        _const_deque_iterator operator-(difference_type n) const {
+            _const_deque_iterator temp = *this;
             return temp -= n;
         }
 
-        difference_type operator-(const _const_Deque_iterator &other) const {
+        difference_type operator-(const _const_deque_iterator &other) const {
             return _ptr - other._ptr;
         }
 
@@ -382,18 +437,18 @@ namespace j {
             return *(*this + n);
         }
 
-        bool operator==(const _const_Deque_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const _const_Deque_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const _const_Deque_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const _const_Deque_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const _const_Deque_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const _const_Deque_iterator &other) const { return _ptr >= other._ptr; }
+        bool operator==(const _const_deque_iterator &other) const { return _ptr == other._ptr; }
+        bool operator!=(const _const_deque_iterator &other) const { return _ptr != other._ptr; }
+        bool operator<(const _const_deque_iterator &other) const { return _ptr < other._ptr; }
+        bool operator>(const _const_deque_iterator &other) const { return _ptr > other._ptr; }
+        bool operator<=(const _const_deque_iterator &other) const { return _ptr <= other._ptr; }
+        bool operator>=(const _const_deque_iterator &other) const { return _ptr >= other._ptr; }
     };
 }
 
 namespace j {
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(const Allocator &alloc) : _size(0), _map_alloc(alloc), _box_alloc(alloc) {
+    deque<T, Allocator>::deque(const Allocator &alloc) : _size(0), _map_alloc(alloc), _box_alloc(alloc) {
         _map = _create_map(default_map_size);
         _map_capacity = default_map_size;
         _begin_map_index = 0;
@@ -403,10 +458,10 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(Deque::size_type n, const Allocator &alloc) : Deque(n, T(), alloc) {}
+    deque<T, Allocator>::deque(deque::size_type n, const Allocator &alloc) : deque(n, T(), alloc) {}
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(Deque::size_type n, const T &value, const Allocator &alloc) : Deque(alloc) {
+    deque<T, Allocator>::deque(deque::size_type n, const T &value, const Allocator &alloc) : deque(alloc) {
         for (size_type i = 0; i < n; ++i) {
             emplace_back(value);
         }
@@ -415,33 +470,33 @@ namespace j {
     template<class T, class Allocator>
     template<class InputIter>
     requires (!std::is_integral_v<InputIter>)
-    Deque<T, Allocator>::Deque(InputIter first, InputIter last, const Allocator &alloc) : Deque(alloc) {
+    deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &alloc) : deque(alloc) {
         for (auto it = first; it != last; ++it) {
             emplace_back(*it);
         }
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(const Deque &other)
-        : Deque(std::allocator_traits<Allocator>::select_on_container_copy_construction(other.get_allocator())) {
+    deque<T, Allocator>::deque(const deque &other)
+        : deque(std::allocator_traits<Allocator>::select_on_container_copy_construction(other.get_allocator())) {
         for (const T &t : other) {
             emplace_back(t);
         }
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(Deque &&other) : Deque(std::move(other), other.get_allocator()) {}
+    deque<T, Allocator>::deque(deque &&other) : deque(std::move(other), other.get_allocator()) {}
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(const Deque &other, const std::type_identity_t <Allocator> &alloc) : Deque(alloc) {
+    deque<T, Allocator>::deque(const deque &other, const std::type_identity_t <Allocator> &alloc) : deque(alloc) {
         for (const T &t : other) {
             emplace_back(t);
         }
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(Deque &&other, const std::type_identity_t <Allocator> &alloc)
-        : Deque(alloc) {
+    deque<T, Allocator>::deque(deque &&other, const std::type_identity_t <Allocator> &alloc)
+        : deque(alloc) {
         _destroy_map();
         _map = other._get_map();
         _map_capacity = other._get_map_capacity();
@@ -461,20 +516,20 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::Deque(std::initializer_list<T> il, const Allocator &alloc) : Deque(alloc) {
+    deque<T, Allocator>::deque(std::initializer_list<T> il, const Allocator &alloc) : deque(alloc) {
         for (const T &t : il) {
             emplace_back(t);
         }
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>::~Deque() {
+    deque<T, Allocator>::~deque() {
         clear();
         _destroy_map();
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>& Deque<T, Allocator>::operator=(const Deque &other) {
+    deque<T, Allocator>& deque<T, Allocator>::operator=(const deque &other) {
         if (this != &other) {
             clear();
             _reallocate_map(other._get_map_capacity());
@@ -486,7 +541,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>& Deque<T, Allocator>::operator=(Deque &&other)
+    deque<T, Allocator>& deque<T, Allocator>::operator=(deque &&other)
             noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
         if (this != &other) {
             clear();
@@ -511,7 +566,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    Deque<T, Allocator>& Deque<T, Allocator>::operator=(std::initializer_list<T> il) {
+    deque<T, Allocator>& deque<T, Allocator>::operator=(std::initializer_list<T> il) {
         clear();
         for (const T &t : il) {
             emplace_back(t);
@@ -522,7 +577,7 @@ namespace j {
     template<class T, class Allocator>
     template<class InputIter>
     requires (!std::is_integral_v<InputIter>)
-    void Deque<T, Allocator>::assign(InputIter first, InputIter last) {
+    void deque<T, Allocator>::assign(InputIter first, InputIter last) {
         clear();
         for (auto it = first; it != last; ++it) {
             emplace_back(*it);
@@ -530,7 +585,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::assign(Deque::size_type n, const T &value) {
+    void deque<T, Allocator>::assign(deque::size_type n, const T &value) {
         clear();
         for (size_type i = 0; i < n; ++i) {
             emplace_back(value);
@@ -538,7 +593,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::assign(std::initializer_list<T> il) {
+    void deque<T, Allocator>::assign(std::initializer_list<T> il) {
         clear();
         for (const T &t : il) {
             emplace_back(t);
@@ -546,92 +601,92 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::allocator_type Deque<T, Allocator>::get_allocator() const noexcept {
+    typename deque<T, Allocator>::allocator_type deque<T, Allocator>::get_allocator() const noexcept {
         return _box_alloc;
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::begin() noexcept {
-        return iterator(_map[_begin_map_index] + _begin_box_index);
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::begin() noexcept {
+        return iterator(_map[_begin_map_index] + _begin_box_index, this, _begin_map_index, _begin_box_index);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_iterator Deque<T, Allocator>::begin() const noexcept {
+    typename deque<T, Allocator>::const_iterator deque<T, Allocator>::begin() const noexcept {
         return const_iterator(_map[_begin_map_index] + _begin_box_index);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::end() noexcept {
-        return iterator(_map[_end_map_index] + _end_box_index);
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::end() noexcept {
+        return iterator(_map[_end_map_index] + _end_box_index, this, _end_map_index, _end_box_index);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_iterator Deque<T, Allocator>::end() const noexcept {
+    typename deque<T, Allocator>::const_iterator deque<T, Allocator>::end() const noexcept {
         return const_iterator(_map[_end_map_index] + _end_box_index);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::reverse_iterator Deque<T, Allocator>::rbegin() noexcept {
+    typename deque<T, Allocator>::reverse_iterator deque<T, Allocator>::rbegin() noexcept {
         return reverse_iterator(end());
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reverse_iterator Deque<T, Allocator>::rbegin() const noexcept {
+    typename deque<T, Allocator>::const_reverse_iterator deque<T, Allocator>::rbegin() const noexcept {
         return const_reverse_iterator(end());
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::reverse_iterator Deque<T, Allocator>::rend() noexcept {
+    typename deque<T, Allocator>::reverse_iterator deque<T, Allocator>::rend() noexcept {
         return reverse_iterator(begin());
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reverse_iterator Deque<T, Allocator>::rend() const noexcept {
+    typename deque<T, Allocator>::const_reverse_iterator deque<T, Allocator>::rend() const noexcept {
         return const_reverse_iterator(begin());
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_iterator Deque<T, Allocator>::cbegin() const noexcept {
+    typename deque<T, Allocator>::const_iterator deque<T, Allocator>::cbegin() const noexcept {
         return const_iterator(_map[_begin_map_index] + _begin_box_index);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_iterator Deque<T, Allocator>::cend() const noexcept {
+    typename deque<T, Allocator>::const_iterator deque<T, Allocator>::cend() const noexcept {
         return const_iterator(_map[_end_map_index] + _end_box_index);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reverse_iterator Deque<T, Allocator>::crbegin() const noexcept {
+    typename deque<T, Allocator>::const_reverse_iterator deque<T, Allocator>::crbegin() const noexcept {
         return const_reverse_iterator(cend());
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reverse_iterator Deque<T, Allocator>::crend() const noexcept {
+    typename deque<T, Allocator>::const_reverse_iterator deque<T, Allocator>::crend() const noexcept {
         return const_reverse_iterator(cbegin());
     }
 
     template<class T, class Allocator>
-    bool Deque<T, Allocator>::empty() const noexcept {
+    bool deque<T, Allocator>::empty() const noexcept {
         return size() == 0;
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::size_type Deque<T, Allocator>::size() const noexcept {
+    typename deque<T, Allocator>::size_type deque<T, Allocator>::size() const noexcept {
         return _size;
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::size_type Deque<T, Allocator>::max_size() const noexcept {
+    typename deque<T, Allocator>::size_type deque<T, Allocator>::max_size() const noexcept {
         return std::allocator_traits<Allocator>::max_size(_box_alloc) * _box_size;
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::resize(Deque::size_type sz) {
+    void deque<T, Allocator>::resize(deque::size_type sz) {
         resize(sz, T());
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::resize(Deque::size_type sz, const T &value) {
+    void deque<T, Allocator>::resize(deque::size_type sz, const T &value) {
         if (sz < size()) {
             const size_type target_size = size() - sz;
             for (size_type i = 0; i < target_size; ++i) {
@@ -646,7 +701,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::shrink_to_fit() {
+    void deque<T, Allocator>::shrink_to_fit() {
         const size_type old_map_capacity = _get_map_capacity();
         if (_get_begin_map_index() <= _get_end_map_index()) {
             for (size_type i = 0; i < old_map_capacity; ++i) {
@@ -671,67 +726,56 @@ namespace j {
     }   // free unused memory, and reallocate map (2 * size <= 4, 8, 16, ...)
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::reference Deque<T, Allocator>::operator[](Deque::size_type n) {
+    typename deque<T, Allocator>::reference deque<T, Allocator>::operator[](deque::size_type n) {
         return _map[(_begin_map_index + (_begin_box_index + n) / _box_size)  % _map_capacity]
                    [(_begin_box_index + n) % _box_size];
     } // circular
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reference Deque<T, Allocator>::operator[](Deque::size_type n) const {
+    typename deque<T, Allocator>::const_reference deque<T, Allocator>::operator[](deque::size_type n) const {
         return _get_map()[(_begin_map_index + (_begin_box_index + n) / _box_size)  % _map_capacity]
                          [(_begin_box_index + n) % _box_size];
     } // circular
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::reference Deque<T, Allocator>::at(Deque::size_type n) {
+    typename deque<T, Allocator>::reference deque<T, Allocator>::at(deque::size_type n) {
         if (n >= size()) {
-            throw std::out_of_range("Deque::at() : index is out of range");
+            throw std::out_of_range("deque::at() : index is out of range");
         }
         return this->operator[](n);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reference Deque<T, Allocator>::at(Deque::size_type n) const {
+    typename deque<T, Allocator>::const_reference deque<T, Allocator>::at(deque::size_type n) const {
         if (n >= size()) {
-            throw std::out_of_range("Deque::at() : index is out of range");
+            throw std::out_of_range("deque::at() : index is out of range");
         }
         return this->operator[](n);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::reference Deque<T, Allocator>::front() {
-        if (empty()) {
-            throw std::out_of_range("Deque::front() : deque is empty");
-        }
+    typename deque<T, Allocator>::reference deque<T, Allocator>::front() {
         return _map[_begin_map_index][_begin_box_index];
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reference Deque<T, Allocator>::front() const {
-        if (empty()) {
-            throw std::out_of_range("Deque::front() : deque is empty");
-        }
+    typename deque<T, Allocator>::const_reference deque<T, Allocator>::front() const {
         return _get_map()[_begin_map_index][_begin_box_index];
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::reference Deque<T, Allocator>::back() {
-        if (empty()) {
-            throw std::out_of_range("Deque::back() : deque is empty");
-        }
+    typename deque<T, Allocator>::reference deque<T, Allocator>::back() {
         return this->operator[](size() - 1);
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::const_reference Deque<T, Allocator>::back() const {
-        if (empty()) {
-            throw std::out_of_range("Deque::back() : deque is empty");
-        }
+    typename deque<T, Allocator>::const_reference deque<T, Allocator>::back() const {
         return this->operator[](size() - 1);
     }
 
     template <class T, class Allocator>
-    void Deque<T, Allocator>::_for_front() {
+    template <class... Args>
+    typename deque<T, Allocator>::reference deque<T, Allocator>::emplace_front(Args &&... args) {
         if (_get_begin_box_index() == 0) {
             if (_map_size() == _get_map_capacity()) {
                 _reallocate_map(2 * _get_map_capacity());
@@ -748,10 +792,19 @@ namespace j {
         }
         _set_begin_box_index(_get_begin_box_index() - 1);
         _set_size(size() + 1);
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index(), std::forward<Args>(args)...);
+        return _map[_get_begin_map_index()][_get_begin_box_index()];
     }
 
-    template <class T, class Allocator>
-    void Deque<T, Allocator>::_for_back() {
+    template<class T, class Allocator>
+    template<class... Args>
+    typename deque<T, Allocator>::reference deque<T, Allocator>::emplace_back(Args &&... args) {
+        if (_get_map()[_get_end_map_index()] == nullptr) {
+                _create_box(_get_end_map_index());
+        }
+        std::allocator_traits<box_allocator>::construct
+            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index(), std::forward<Args>(args)...);
         if (_get_end_box_index() == _box_size - 1) {
             if (_map_size() == _get_map_capacity()) {
                 _reallocate_map(2 * _get_map_capacity());
@@ -768,36 +821,13 @@ namespace j {
         }
         _set_end_box_index(_get_end_box_index() + 1);
         _set_size(size() + 1);
-    }
-
-    template <class T, class Allocator>
-    template <class... Args>
-    typename Deque<T, Allocator>::reference Deque<T, Allocator>::emplace_front(Args &&... args) {
-        _for_front();
-        std::allocator_traits<box_allocator>::construct
-            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index(), std::forward<Args>(args)...);
-        return _map[_get_begin_map_index()][_get_begin_box_index()];
-    }
-
-    template<class T, class Allocator>
-    template<class... Args>
-    typename Deque<T, Allocator>::reference Deque<T, Allocator>::emplace_back(Args &&... args) {
-        if (_get_map()[_get_end_map_index()] == nullptr) {
-                _create_box(_get_end_map_index());
-        }
-        std::allocator_traits<box_allocator>::construct
-            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index(), std::forward<Args>(args)...);
-        _for_back();
         return _map[_get_end_map_index()][_get_end_box_index()];
     }
 
     template<class T, class Allocator>
     template<class... Args>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::emplace(Deque::const_iterator position, Args &&... args) {
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::emplace(deque::const_iterator position, Args &&... args) {
         const difference_type distance_from_begin = std::distance(cbegin(), position);
-        if (distance_from_begin > size() || distance_from_begin < 0) {
-            throw std::out_of_range("Deque::emplace() : index is out of range");
-        }
         if (distance_from_begin == 0) {
             emplace_front(std::forward<Args>(args)...);
             return begin();
@@ -823,108 +853,41 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::push_front(const T &value) {
-        _for_front();
-        std::allocator_traits<box_allocator>::construct
-            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index(), value);
+    void deque<T, Allocator>::push_front(const T &value) {
+        emplace_front(value);
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::push_front(T &&value) {
-        _for_front();
-        std::allocator_traits<box_allocator>::construct
-            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index(), std::move(value));
+    void deque<T, Allocator>::push_front(T &&value) {
+        emplace_front(std::move(value));
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::push_back(const T &value) {
-        if (_get_map()[_get_end_map_index()] == nullptr) {
-            _create_box(_get_end_map_index());
-        }
-        std::allocator_traits<box_allocator>::construct
-            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index(), value);
-        _for_back();
+    void deque<T, Allocator>::push_back(const T &value) {
+        emplace_back(value);
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::push_back(T &&value) {
-        if (_get_map()[_get_end_map_index()] == nullptr) {
-            _create_box(_get_end_map_index());
-        }
-        std::allocator_traits<box_allocator>::construct
-            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index(), std::move(value));
-        _for_back();
+    void deque<T, Allocator>::push_back(T &&value) {
+        emplace_back(std::move(value));
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::insert
-            (Deque::const_iterator position, const T &value) {
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::insert
+            (deque::const_iterator position, const T &value) {
+        return emplace(position, value);
+    }
+
+    template<class T, class Allocator>
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::insert
+            (deque::const_iterator position, T &&value) {
+        return emplace(position, std::move(value));
+    }
+
+    template<class T, class Allocator>
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::insert
+            (deque::const_iterator position, deque::size_type count, const T &value) {
         const difference_type distance_from_begin = std::distance(cbegin(), position);
-        if (distance_from_begin > size() || distance_from_begin < 0) {
-            throw std::out_of_range("Deque::insert() : index is out of range");
-        }
-        if (distance_from_begin == 0) {
-            emplace_front(value);
-            return begin();
-        } else if (distance_from_begin == size()) {
-            emplace_back(value);
-            return end() - 1;
-        } else if (distance_from_begin < size() / 2) {
-            reference v = std::move(this->operator[](0));
-            for (difference_type i = 0; i < distance_from_begin; ++i) {
-                this->operator[](i) = std::move(this->operator[](i + 1));
-            }
-            this->operator[](distance_from_begin) = value;
-            emplace_front(v);
-        } else {
-            reference v = std::move(this->operator[](size() - 1));
-            for (difference_type i = size() - 1; i > distance_from_begin; --i) {
-                this->operator[](i) = std::move(this->operator[](i - 1));
-            }
-            this->operator[](distance_from_begin) = value;
-            emplace_back(v);
-        }
-        return begin() + distance_from_begin;
-    }
-
-    template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::insert
-            (Deque::const_iterator position, T &&value) {
-        const difference_type distance_from_begin = std::distance(cbegin(), position);
-        if (distance_from_begin > size() || distance_from_begin < 0) {
-            throw std::out_of_range("Deque::insert() : index is out of range");
-        }
-        if (distance_from_begin == 0) {
-            emplace_front(std::move(value));
-            return begin();
-        } else if (distance_from_begin == size()) {
-            emplace_back(std::move(value));
-            return end() - 1;
-        } else if (distance_from_begin < size() / 2) {
-            reference v = this->operator[](0);
-            for (difference_type i = 0; i < distance_from_begin; ++i) {
-                this->operator[](i) = std::move(this->operator[](i + 1));
-            }
-            this->operator[](distance_from_begin) = std::move(value);
-            emplace_front(v);
-        } else {
-            reference v = this->operator[](size() - 1);
-            for (difference_type i = size() - 1; i > distance_from_begin; --i) {
-                this->operator[](i) = std::move(this->operator[](i - 1));
-            }
-            this->operator[](distance_from_begin) = std::move(value);
-            emplace_back(std::move(v));
-        }
-        return begin() + distance_from_begin;
-    }
-
-    template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::insert
-            (Deque::const_iterator position, Deque::size_type count, const T &value) {
-        const difference_type distance_from_begin = std::distance(cbegin(), position);
-        if (distance_from_begin > size() || distance_from_begin < 0) {
-            throw std::out_of_range("Deque::insert() : index is out of range");
-        }
         if (distance_from_begin == 0) {
             for (size_type i = 0; i < count; ++i) {
                 emplace_front(value);
@@ -1004,13 +967,10 @@ namespace j {
     template<class T, class Allocator>
     template<class InputIter>
     requires (!std::is_integral_v<InputIter>)
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::insert
-            (Deque::const_iterator position, InputIter first, InputIter last) {
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::insert
+            (deque::const_iterator position, InputIter first, InputIter last) {
         difference_type count = std::distance(first, last);
         const difference_type distance_from_begin = std::distance(cbegin(), position);
-        if (distance_from_begin > size() || distance_from_begin < 0) {
-            throw std::out_of_range("Deque::insert() : index is out of range");
-        }
         if (distance_from_begin == size()) {
             for (; first != last; ++first) {
                 emplace_back(*first);
@@ -1083,16 +1043,13 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::insert
-            (Deque::const_iterator position, std::initializer_list<T> il) {
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::insert
+            (deque::const_iterator position, std::initializer_list<T> il) {
         return insert(position, il.begin(), il.end());
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::pop_front() {
-        if (empty()) {
-            throw std::out_of_range("Deque::pop_front() : deque is empty");
-        }
+    void deque<T, Allocator>::pop_front() {
         if (_get_begin_box_index() == _box_size - 1) {
             _set_begin_map_index((_get_begin_map_index() + 1) % _map_capacity);
             _set_begin_box_index(0);
@@ -1109,10 +1066,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::pop_back() {
-        if (empty()) {
-            throw std::out_of_range("Deque::pop_back() : deque is empty");
-        }
+    void deque<T, Allocator>::pop_back() {
         if (_get_end_box_index() == 0) {
             _set_end_map_index((_get_end_map_index() - 1) % _map_capacity);
             _set_end_box_index(_box_size - 1);
@@ -1129,14 +1083,8 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::erase(Deque::const_iterator position) {
-        if (empty()) {
-            throw std::out_of_range("Deque::erase() : deque is empty");
-        }
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::erase(deque::const_iterator position) {
         const difference_type distance_from_begin = std::distance(cbegin(), position);
-        if (distance_from_begin >= size() || distance_from_begin < 0) {
-            throw std::out_of_range("Deque::erase() : index is out of range");
-        }
         if (distance_from_begin < size() / 2) {
             for (difference_type i = distance_from_begin; i > 0; --i) {
                 this->operator[](i) = std::move(this->operator[](i - 1));
@@ -1152,13 +1100,8 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    typename Deque<T, Allocator>::iterator Deque<T, Allocator>::erase
-            (Deque::const_iterator first, Deque::const_iterator last) {
-        if (empty()) {
-            throw std::out_of_range("Deque::erase() : deque is empty");
-        } else if (first < begin() || last > end()) {
-            throw std::out_of_range("Deque::erase() : index is out of range");
-        }
+    typename deque<T, Allocator>::iterator deque<T, Allocator>::erase
+            (deque::const_iterator first, deque::const_iterator last) {
         const difference_type count = std::distance(first, last);
         const difference_type distance_from_begin = std::distance(cbegin(), first);
         if (distance_from_begin < size() / 2) {
@@ -1182,7 +1125,7 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    void Deque<T, Allocator>::swap(Deque &other)
+    void deque<T, Allocator>::swap(deque &other)
     noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
         using std::swap;
         swap(_map, other._map);
@@ -1196,11 +1139,8 @@ namespace j {
         swap(_box_alloc, other._box_alloc);
     }
     template<class T, class Allocator>
-    void Deque<T, Allocator>::clear() noexcept {
-        const size_type target_size = size();
-        for (size_type i = 0; i < target_size; ++i) {
-            pop_back();
-        }
+    void deque<T, Allocator>::clear() noexcept {
+        std::destroy(begin(), end());
         for (size_type i = 0; i < _map_capacity; ++i) {
             _destroy_box(i);
         }
