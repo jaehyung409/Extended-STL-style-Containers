@@ -14,4 +14,5 @@ namespace j
 {
     export template <class T, class Alloc>
     struct Uses_allocator : std::false_type {};
+
 }

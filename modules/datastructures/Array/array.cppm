@@ -12,7 +12,7 @@ export module array;
 // need to make create func, operators,iterator, accessor.., tuple ..?
 namespace j {
     export template <class T, std::size_t N>
-    class Array {
+    class array {
     public:
         using value_type = T;
         using size_type = std::size_t;
@@ -60,27 +60,27 @@ namespace j {
     };
 
     template<class T, class... U>
-    Array(T, U...) -> Array<T, 1 + sizeof...(U)>;
+    array(T, U...) -> array<T, 1 + sizeof...(U)>;
 
     export template <typename T, std::size_t N>
-    constexpr void swap(Array<T, N>&a, Array<T, N>& b) noexcept;
+    constexpr void swap(array<T, N>&a, array<T, N>& b) noexcept;
 }
 
 // implementation
 
 namespace j {
     template <typename T, std::size_t N>
-    constexpr T& Array<T, N>::operator[](const size_type index) {
+    constexpr T& array<T, N>::operator[](const size_type index) {
         return _data[index];
     }
 
     template <typename T, std::size_t N>
-    constexpr const T& Array<T, N>::operator[](const size_type index) const {
+    constexpr const T& array<T, N>::operator[](const size_type index) const {
         return _data[index];
     }
 
     template <typename T, std::size_t N>
-    constexpr T& Array<T, N>::at(std::size_t pos) {
+    constexpr T& array<T, N>::at(std::size_t pos) {
         if (pos >= N){
             throw std::out_of_range("index out of range");
         }
@@ -88,7 +88,7 @@ namespace j {
     }
 
     template <typename T, std::size_t N>
-    constexpr const T& Array<T, N>::at(size_type pos) const {
+    constexpr const T& array<T, N>::at(size_type pos) const {
         if (pos >= N){
             throw std::out_of_range("index out of range");
         }
@@ -96,39 +96,39 @@ namespace j {
     }
 
     template <typename T, std::size_t N>
-    constexpr T Array<T, N>::front() const{
+    constexpr T array<T, N>::front() const{
         return _data[0];
     }
 
     template <typename T, std::size_t N>
-    constexpr T Array<T, N>::back() const{
+    constexpr T array<T, N>::back() const{
         return _data[N-1];
     }
 
     template <typename T, std::size_t N>
-    constexpr std::size_t Array<T, N>::max_size() const noexcept{
+    constexpr std::size_t array<T, N>::max_size() const noexcept{
         return N;
     }
 
     template <typename T, std::size_t N>
-    constexpr std::size_t Array<T, N>::size() const noexcept{
+    constexpr std::size_t array<T, N>::size() const noexcept{
         return N;
     }
 
     template <typename T, std::size_t N>
-    constexpr bool Array<T, N>::empty() const noexcept{
+    constexpr bool array<T, N>::empty() const noexcept{
         return size() == 0;
     }
 
     template <typename T, std::size_t N>
-    constexpr void Array<T, N>::fill(T& value){
+    constexpr void array<T, N>::fill(T& value){
         for (std::size_t i = 0; i < N; i++){
             _data[i] = value;
         }
     }
 
     template <typename T, std::size_t N>
-    constexpr void swap(Array<T, N>&a, Array<T, N>& b) noexcept
+    constexpr void swap(array<T, N>&a, array<T, N>& b) noexcept
     {
         for (std::size_t i = 0; i < N; i++){
             std::swap(a._data[i], b._data[i]);
