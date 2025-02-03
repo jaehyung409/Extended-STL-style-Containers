@@ -1061,8 +1061,7 @@ namespace j {
             _set_begin_box_index(_get_begin_box_index() + 1);
             _set_size(size() - 1);
         }
-        std::allocator_traits<box_allocator>::destroy
-            (_box_alloc, _map[_get_begin_map_index()] + _get_begin_box_index());
+        std::allocator_traits<box_allocator>::destroy_at(_map[_get_begin_map_index()] + _get_begin_box_index());
     }
 
     template<class T, class Allocator>
@@ -1078,8 +1077,7 @@ namespace j {
             _set_size(size() - 1);
             _set_end_box_index(_get_end_box_index() - 1);
         }
-        std::allocator_traits<box_allocator>::destroy
-            (_box_alloc, _map[_get_end_map_index()] + _get_end_box_index());
+        std::allocator_traits<box_allocator>::destroy_at(_map[_get_end_map_index()] + _get_end_box_index());
     }
 
     template<class T, class Allocator>

@@ -75,15 +75,13 @@ namespace j {
         fenwick_tree(fenwick_tree&& other) noexcept(
                 std::allocator_traits<Allocator>::is_always_equal::value);
         ~fenwick_tree();
+        allocator_type get_allocator() const noexcept;
 
-        template <class Container>
-        requires (std::ranges::sized_range<Container> &&
-                  std::convertible_to<std::ranges::range_value_t<Container>, T>)
-        void assign(const Container& container);
-        template <class Container>
-        requires (std::ranges::sized_range<Container> &&
-                  std::convertible_to<std::ranges::range_value_t<Container>, T>)
-        void assign(Container&& container);
+        template<class InputIter>
+        requires (!std::is_integral_v<InputIter>)
+        void assign(InputIter first, InputIter last);
+        //template<container-compatible-range<T> R>
+        //void assign_range(R&& rg);
         void assign(std::initializer_list<T> il);
 
         size_type size() const;
@@ -198,31 +196,16 @@ namespace j {
     }
 
     template<class T, std::size_t Extent, class Allocator>
-    template<class Container>
-    requires (std::ranges::sized_range<Container> &&
-              std::convertible_to<std::ranges::range_value_t<Container>, T>)
-    void fenwick_tree<T, Extent, Allocator>::assign(const Container &container) {
-        if (std::ranges::size(container) != _dynamic_size) {
-            throw std::invalid_argument("fenwick_tree::assign: size mismatch");
-        }
-        if (_tree == nullptr) {
-            _tree = std::allocator_traits<Allocator>::allocate(_alloc, _dynamic_size + 1);
-            for (size_type i = 1; i <= _dynamic_size; ++i) {
-                std::construct_at(std::addressof(_tree[i]), _identity);
-            }
-        } else {
-            clear();
-        }
-        std::copy(std::ranges::begin(container), std::ranges::end(container), _tree + 1);
-        _init_update();
+    typename fenwick_tree<T, Extent, Allocator>::allocator_type
+    fenwick_tree<T, Extent, Allocator>::get_allocator() const noexcept {
+        return _alloc;
     }
 
     template<class T, std::size_t Extent, class Allocator>
-    template<class Container>
-    requires (std::ranges::sized_range<Container> &&
-              std::convertible_to<std::ranges::range_value_t<Container>, T>)
-    void fenwick_tree<T, Extent, Allocator>::assign(Container &&container) {
-        if (std::ranges::size(container) != _dynamic_size) {
+    template<class InputIter>
+    requires (!std::is_integral_v<InputIter>)
+    void fenwick_tree<T, Extent, Allocator>::assign(InputIter first, InputIter last) {
+        if (std::distance(first, last) != _dynamic_size) {
             throw std::invalid_argument("fenwick_tree::assign: size mismatch");
         }
         if (_tree == nullptr) {
@@ -233,13 +216,13 @@ namespace j {
         } else {
             clear();
         }
-        std::move(std::ranges::begin(container), std::ranges::end(container), _tree + 1);
+        std::copy(first, last, _tree + 1);
         _init_update();
     }
 
     template<class T, std::size_t Extent, class Allocator>
     void fenwick_tree<T, Extent, Allocator>::assign(std::initializer_list<T> il) {
-        assign(vector(il));
+        assign(il.begin(), il.end());
     }
 
     template<class T, std::size_t Extent, class Allocator>

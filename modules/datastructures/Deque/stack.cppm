@@ -102,7 +102,7 @@ namespace j {
     //    -> stack<std::ranges::range_value_t<R>, deque<std::ranges::range_value_t<R>, Allocator>>;
 
     template <class T, class Container, class Alloc>
-    struct Uses_allocator<stack<T, Container>, Alloc> : Uses_allocator<Container, Alloc>::type {};
+    struct uses_allocator<stack<T, Container>, Alloc> : uses_allocator<Container, Alloc>::type {};
 }
 
 namespace j {

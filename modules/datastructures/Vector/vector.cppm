@@ -345,7 +345,7 @@ namespace j {
     constexpr vector<T, Allocator>::vector(InputIter first, InputIter last, const Allocator &alloc)
         : vector(alloc) {
             this->reserve(std::distance(first, last));
-            this->insert(this->begin(), first, last);
+            std::copy(first, last, std::back_inserter(*this));
     }
 
     template<class T, class Allocator>
@@ -360,7 +360,7 @@ namespace j {
     constexpr vector<T, Allocator>::vector(const vector &x, const std::type_identity_t <Allocator> &alloc)
         : vector(alloc) {
             this->reserve(x.size());
-            this->insert(this->begin(), x.begin(), x.end());
+            std::copy(x.begin(), x.end(), std::back_inserter(*this));
     }
 
     template<class T, class Allocator>
