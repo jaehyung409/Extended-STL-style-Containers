@@ -31,4 +31,18 @@ namespace j
         constexpr T operator()(const T &lhs, const T &rhs) const { return std::max(lhs, rhs); }
         constexpr T identity() const { return std::numeric_limits<T>::min(); }
     };
+
+    export template <class T>
+    struct assign
+    {
+        constexpr T operator()(const T &lhs, const T &rhs) const { return rhs; }
+        constexpr T identity() const { return T(); }
+    };
+
+    export template <class T>
+    struct multiply
+    {
+        constexpr T operator()(const T &lhs, const T &rhs) const { return lhs * rhs; }
+        constexpr T identity() const { return static_cast<T>(1); }
+    };
 }
