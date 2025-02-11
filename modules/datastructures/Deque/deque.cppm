@@ -11,14 +11,14 @@ module;
 #include <iterator>
 #include <iostream> // for debugging
 
-export module deque;
+export module j.deque;
 
 namespace j {
     export template<class T, class Allocator = std::allocator<T>>
     class deque {
     public:
-        class _deque_iterator;
-        class _const_deque_iterator;
+        class iterator;
+        class const_iterator;
 
         using value_type = T;
         using allocator_type = Allocator;
@@ -28,8 +28,6 @@ namespace j {
         using const_reference = const value_type&;
         using pointer = value_type*;
         using const_pointer = const value_type*;
-        using iterator = _deque_iterator;
-        using const_iterator = _const_deque_iterator;
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -231,7 +229,7 @@ namespace j {
     //     -> deque<std::ranges::range_value_t<R>, Allocator>;
 
     template<class T, class Allocator>
-    class deque<T, Allocator>::_deque_iterator {
+    class deque<T, Allocator>::iterator {
     public:
         using iterator_category = std::random_access_iterator_tag;
         using value_type = T;
@@ -246,15 +244,15 @@ namespace j {
         size_type _box_index;
 
     public:
-        _deque_iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
+        iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
             : _ptr(ptr), _deque(deque), _map_index(map_index), _box_index(box_index) {}
-        _deque_iterator(const _const_deque_iterator &other)
+        iterator(const const_iterator &other)
             : _ptr(other._ptr), _map_index(other._map_index), _box_index(other._box_index) {}
 
         reference operator*() { return *_ptr; }
         pointer operator->() { return &(*_ptr); }
 
-        _deque_iterator &operator++() {
+        iterator &operator++() {
             if (++_box_index == _deque->_box_size) {
                 _box_index = 0;
                 if (++_map_index == _deque->_map_capacity) {
@@ -267,13 +265,13 @@ namespace j {
             return *this;
         }
 
-        _deque_iterator operator++(int) {
-            _deque_iterator temp = *this;
+        iterator operator++(int) {
+            iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        _deque_iterator &operator--() {
+        iterator &operator--() {
             if (_box_index-- == 0) {
                 if (_map_index-- == 0) {
                     _map_index = _deque->_map_capacity - 1;
@@ -286,13 +284,13 @@ namespace j {
             return *this;
         }
 
-        _deque_iterator operator--(int) {
-            _deque_iterator temp = *this;
+        iterator operator--(int) {
+            iterator temp = *this;
             --(*this);
             return temp;
         }
 
-        _deque_iterator &operator+=(difference_type n) {
+        iterator &operator+=(difference_type n) {
             difference_type offset = n + _box_index;
             if (offset >= 0 && offset < _deque->_box_size) {
                 _ptr += n;
@@ -305,25 +303,25 @@ namespace j {
             return *this;
         }
 
-        _deque_iterator operator+(difference_type n) const {
-            _deque_iterator temp = *this;
+        iterator operator+(difference_type n) const {
+            iterator temp = *this;
             return temp += n;
         }
 
-        friend _deque_iterator operator+(difference_type n, const _deque_iterator &it) {
+        friend iterator operator+(difference_type n, const iterator &it) {
             return it + n;
         }
 
-        _deque_iterator &operator-=(difference_type n) {
+        iterator &operator-=(difference_type n) {
             return *this += -n;
         }
 
-        _deque_iterator operator-(difference_type n) const {
-            _deque_iterator temp = *this;
+        iterator operator-(difference_type n) const {
+            iterator temp = *this;
             return temp -= n;
         }
 
-        difference_type operator-(const _deque_iterator &other) const {
+        difference_type operator-(const iterator &other) const {
             return _ptr - other._ptr;
         }
 
@@ -331,17 +329,17 @@ namespace j {
             return *(*this + n);
         }
 
-        bool operator==(const _deque_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const _deque_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const _deque_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const _deque_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const _deque_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const _deque_iterator &other) const { return _ptr >= other._ptr; }
-        operator _const_deque_iterator() const { return _const_deque_iterator(_ptr); }
+        bool operator==(const iterator &other) const { return _ptr == other._ptr; }
+        bool operator!=(const iterator &other) const { return _ptr != other._ptr; }
+        bool operator<(const iterator &other) const { return _ptr < other._ptr; }
+        bool operator>(const iterator &other) const { return _ptr > other._ptr; }
+        bool operator<=(const iterator &other) const { return _ptr <= other._ptr; }
+        bool operator>=(const iterator &other) const { return _ptr >= other._ptr; }
+        operator const_iterator() const { return const_iterator(_ptr); }
     };
 
     template<class T, class Allocator>
-    class deque<T, Allocator>::_const_deque_iterator {
+    class deque<T, Allocator>::const_iterator {
     public:
         using iterator_category = std::random_access_iterator_tag;
         using value_type = const T;
@@ -358,13 +356,13 @@ namespace j {
         size_type _box_index;
 
     public:
-        _const_deque_iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
+        const_iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
             : _ptr(ptr), _deque(deque), _map_index(map_index), _box_index(box_index) {}
 
         const_reference operator*() const { return *_ptr; }
         const_pointer operator->() const { return &(*_ptr); }
 
-        _const_deque_iterator &operator++() {
+        const_iterator &operator++() {
             if (++_box_index == _deque->_box_size) {
                 _box_index = 0;
                 if (++_map_index == _deque->_map_capacity) {
@@ -377,13 +375,13 @@ namespace j {
             return *this;
         }
 
-        _const_deque_iterator operator++(int) {
-            _const_deque_iterator temp = *this;
+        const_iterator operator++(int) {
+            const_iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        _const_deque_iterator &operator--() {
+        const_iterator &operator--() {
             if (_box_index-- == 0) {
                 if (_map_index-- == 0) {
                     _map_index = _deque->_map_capacity - 1;
@@ -396,13 +394,13 @@ namespace j {
             return *this;
         }
 
-        _const_deque_iterator operator--(int) {
-            _const_deque_iterator temp = *this;
+        const_iterator operator--(int) {
+            const_iterator temp = *this;
             --(*this);
             return temp;
         }
 
-        _const_deque_iterator &operator+=(difference_type n) {
+        const_iterator &operator+=(difference_type n) {
             difference_type offset = n + _box_index;
             if (offset >= 0 && offset < _deque->_box_size) {
                 _ptr += n;
@@ -415,21 +413,21 @@ namespace j {
             return *this;
         }
 
-        _const_deque_iterator operator+(difference_type n) const {
-            _const_deque_iterator temp = *this;
+        const_iterator operator+(difference_type n) const {
+            const_iterator temp = *this;
             return temp += n;
         }
 
-        _const_deque_iterator &operator-=(difference_type n) {
+        const_iterator &operator-=(difference_type n) {
             return *this += -n;
         }
 
-        _const_deque_iterator operator-(difference_type n) const {
-            _const_deque_iterator temp = *this;
+        const_iterator operator-(difference_type n) const {
+            const_iterator temp = *this;
             return temp -= n;
         }
 
-        difference_type operator-(const _const_deque_iterator &other) const {
+        difference_type operator-(const const_iterator &other) const {
             return _ptr - other._ptr;
         }
 
@@ -437,12 +435,12 @@ namespace j {
             return *(*this + n);
         }
 
-        bool operator==(const _const_deque_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const _const_deque_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const _const_deque_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const _const_deque_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const _const_deque_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const _const_deque_iterator &other) const { return _ptr >= other._ptr; }
+        bool operator==(const const_iterator &other) const { return _ptr == other._ptr; }
+        bool operator!=(const const_iterator &other) const { return _ptr != other._ptr; }
+        bool operator<(const const_iterator &other) const { return _ptr < other._ptr; }
+        bool operator>(const const_iterator &other) const { return _ptr > other._ptr; }
+        bool operator<=(const const_iterator &other) const { return _ptr <= other._ptr; }
+        bool operator>=(const const_iterator &other) const { return _ptr >= other._ptr; }
     };
 }
 

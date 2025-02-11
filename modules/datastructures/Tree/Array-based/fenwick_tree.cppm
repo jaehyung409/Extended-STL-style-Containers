@@ -10,12 +10,13 @@ module;
 #include <span>
 #include <type_traits>
 #include <initializer_list>
+#include <algorithm>
 
-export module fenwick_tree;
+export module j.fenwick_tree;
 
-import array;
-import vector;
-import basics;
+import j.array;
+import j.vector;
+import j.basics;
 
 namespace j {
     export template<class T,

@@ -11,9 +11,9 @@ module;
 #include <initializer_list>
 #include <iostream> // for debug
 
-export module lazy_segment_tree;
+export module j.lazy_segment_tree;
 
-import basics;
+import j.basics;
 
 namespace j {
     export template<class T,

@@ -12,15 +12,15 @@ module;
 #include <initializer_list>
 #include <iostream> // for debugging
 
-export module vector;
+export module j.vector;
 
 namespace j {
     // not-yet specialization for bool ...
     export template<class T, class Allocator = std::allocator<T>>
     class vector {
     public:
-        class _vector_iterator;
-        class _const_vector_iterator;
+        class iterator;
+        class const_iterator;
 
         using value_type = T;
         using allocator_type = Allocator;
@@ -30,8 +30,6 @@ namespace j {
         using const_reference = const value_type&;
         using size_type = std::size_t;
         using difference_type = std::ptrdiff_t;
-        using iterator = _vector_iterator;
-        using const_iterator = _const_vector_iterator;
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -152,7 +150,7 @@ namespace j {
     //    -> vector<std::ranges::range_value_t<R>, Allocator>;
 
     template <class T, class Allocator>
-    class vector<T, Allocator>::_vector_iterator {
+    class vector<T, Allocator>::iterator {
         friend class vector<T, Allocator>;
 
     public:
@@ -166,60 +164,60 @@ namespace j {
         pointer _ptr;
 
     public:
-        _vector_iterator(pointer ptr = nullptr) : _ptr(ptr) {}
-        _vector_iterator(const _const_vector_iterator &other)
+        iterator(pointer ptr = nullptr) : _ptr(ptr) {}
+        iterator(const const_iterator &other)
                 : _ptr(other._ptr) {}
 
         reference operator*() { return *_ptr; }
-        pointer operator->() { return &(*_ptr); }
+        pointer operator->() { return &*_ptr; }
 
-        _vector_iterator &operator++() {
+        iterator &operator++() {
             ++_ptr;
             return *this;
         }
 
-        _vector_iterator operator++(int) {
-            _vector_iterator temp = *this;
+        iterator operator++(int) {
+            iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        _vector_iterator &operator--() {
+        iterator &operator--() {
             --_ptr;
             return *this;
         }
 
-        _vector_iterator operator--(int) {
-            _vector_iterator temp = *this;
+        iterator operator--(int) {
+            iterator temp = *this;
             --(*this);
             return temp;
         }
 
-        _vector_iterator &operator+=(difference_type n) {
+        iterator &operator+=(difference_type n) {
             _ptr += n;
             return *this;
         }
 
-        _vector_iterator operator+(difference_type n) const {
-            _vector_iterator temp = *this;
+        iterator operator+(difference_type n) const {
+            iterator temp = *this;
             return temp += n;
         }
 
-        friend _vector_iterator operator+(difference_type n, const _vector_iterator &it) {
+        friend iterator operator+(difference_type n, const iterator &it) {
             return it + n;
         }
 
-        _vector_iterator &operator-=(difference_type n) {
+        iterator &operator-=(difference_type n) {
             _ptr -= n;
             return *this;
         }
 
-        _vector_iterator operator-(difference_type n) const {
-            _vector_iterator temp = *this;
+        iterator operator-(difference_type n) const {
+            iterator temp = *this;
             return temp -= n;
         }
 
-        difference_type operator-(const _vector_iterator &other) const {
+        difference_type operator-(const iterator &other) const {
             return _ptr - other._ptr;
         }
 
@@ -227,17 +225,17 @@ namespace j {
             return *(*this + n);
         }
 
-        bool operator==(const _vector_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const _vector_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const _vector_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const _vector_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const _vector_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const _vector_iterator &other) const { return _ptr >= other._ptr; }
-        operator _const_vector_iterator() const { return _const_vector_iterator(_ptr); }
+        bool operator==(const iterator &other) const { return _ptr == other._ptr; }
+        bool operator!=(const iterator &other) const { return _ptr != other._ptr; }
+        bool operator<(const iterator &other) const { return _ptr < other._ptr; }
+        bool operator>(const iterator &other) const { return _ptr > other._ptr; }
+        bool operator<=(const iterator &other) const { return _ptr <= other._ptr; }
+        bool operator>=(const iterator &other) const { return _ptr >= other._ptr; }
+        operator const_iterator() const { return const_iterator(_ptr); }
     };
 
     template <class T, class Allocator>
-    class vector<T, Allocator>::_const_vector_iterator {
+    class vector<T, Allocator>::const_iterator {
         friend class vector<T, Allocator>;
 
     public:
@@ -253,54 +251,54 @@ namespace j {
         pointer _ptr;
 
     public:
-        _const_vector_iterator(pointer ptr = nullptr) : _ptr(ptr) {}
+        const_iterator(pointer ptr = nullptr) : _ptr(ptr) {}
 
         const_reference operator*() const { return *_ptr; }
         const_pointer operator->() const { return &(*_ptr); }
 
-        _const_vector_iterator &operator++() {
+        const_iterator &operator++() {
             ++_ptr;
             return *this;
         }
 
-        _const_vector_iterator operator++(int) {
-            _const_vector_iterator temp = *this;
+        const_iterator operator++(int) {
+            const_iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        _const_vector_iterator &operator--() {
+        const_iterator &operator--() {
             --_ptr;
             return *this;
         }
 
-        _const_vector_iterator operator--(int) {
-            _const_vector_iterator temp = *this;
+        const_iterator operator--(int) {
+            const_iterator temp = *this;
             --(*this);
             return temp;
         }
 
-        _const_vector_iterator &operator+=(difference_type n) {
+        const_iterator &operator+=(difference_type n) {
             _ptr += n;
             return *this;
         }
 
-        _const_vector_iterator operator+(difference_type n) const {
-            _const_vector_iterator temp = *this;
+        const_iterator operator+(difference_type n) const {
+            const_iterator temp = *this;
             return temp += n;
         }
 
-        _const_vector_iterator &operator-=(difference_type n) {
+        const_iterator &operator-=(difference_type n) {
             _ptr -= n;
             return *this;
         }
 
-        _const_vector_iterator operator-(difference_type n) const {
-            _const_vector_iterator temp = *this;
+        const_iterator operator-(difference_type n) const {
+            const_iterator temp = *this;
             return temp -= n;
         }
 
-        difference_type operator-(const _const_vector_iterator &other) const {
+        difference_type operator-(const const_iterator &other) const {
             return _ptr - other._ptr;
         }
 
@@ -308,12 +306,12 @@ namespace j {
             return *(*this + n);
         }
 
-        bool operator==(const _const_vector_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const _const_vector_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const _const_vector_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const _const_vector_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const _const_vector_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const _const_vector_iterator &other) const { return _ptr >= other._ptr; }
+        bool operator==(const const_iterator &other) const { return _ptr == other._ptr; }
+        bool operator!=(const const_iterator &other) const { return _ptr != other._ptr; }
+        bool operator<(const const_iterator &other) const { return _ptr < other._ptr; }
+        bool operator>(const const_iterator &other) const { return _ptr > other._ptr; }
+        bool operator<=(const const_iterator &other) const { return _ptr <= other._ptr; }
+        bool operator>=(const const_iterator &other) const { return _ptr >= other._ptr; }
     };
 
 }
@@ -368,8 +366,8 @@ namespace j {
         : vector(alloc) {
         if (alloc == x.get_allocator()) {
             _data = x._data;
-            _size = std::move(x._size);
-            _capacity = std::move(x._capacity);
+            _size = x._size;
+            _capacity = x._capacity;
             x._set_data(nullptr);
             x._set_size(0);
             x._set_capacity(0);
@@ -413,8 +411,8 @@ namespace j {
         clear();
         if (_alloc == get_allocator()) {
             _data = x._data;
-            _size = std::move(x._size);
-            _capacity = std::move(x._capacity);
+            _size = x._size;
+            _capacity = x._capacity;
             x._set_data(nullptr);
             x._set_size(0);
             x._set_capacity(0);
@@ -469,62 +467,62 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::iterator vector<T, Allocator>::begin() noexcept {
+    constexpr typename vector<T, Allocator>::iterator vector<T, Allocator>::begin() noexcept {
         return iterator(_data);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::begin() const noexcept {
+    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::begin() const noexcept {
         return const_iterator(_data);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::iterator vector<T, Allocator>::end() noexcept {
+    constexpr typename vector<T, Allocator>::iterator vector<T, Allocator>::end() noexcept {
         return iterator(_data + _size);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::end() const noexcept {
+    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::end() const noexcept {
         return const_iterator(_data + _size);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rbegin() noexcept {
+    constexpr typename vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rbegin() noexcept {
         return reverse_iterator(end());
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rbegin() const noexcept {
+    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rbegin() const noexcept {
         return const_reverse_iterator(end());
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rend() noexcept {
+    constexpr typename vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rend() noexcept {
         return reverse_iterator(begin());
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rend() const noexcept {
+    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rend() const noexcept {
         return const_reverse_iterator(begin());
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::cbegin() const noexcept {
+    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::cbegin() const noexcept {
         return const_iterator(_data);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::cend() const noexcept {
+    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::cend() const noexcept {
         return const_iterator(_data + _size);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crbegin() const noexcept {
+    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crbegin() const noexcept {
         return const_reverse_iterator(cend());
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crend() const noexcept {
+    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crend() const noexcept {
         return const_reverse_iterator(cbegin());
     }
 
@@ -534,17 +532,17 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::size_type vector<T, Allocator>::size() const noexcept {
+    constexpr typename vector<T, Allocator>::size_type vector<T, Allocator>::size() const noexcept {
         return _size;
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::size_type vector<T, Allocator>::max_size() const noexcept {
+    constexpr typename vector<T, Allocator>::size_type vector<T, Allocator>::max_size() const noexcept {
         return std::numeric_limits<size_type>::max() / sizeof(T);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::size_type vector<T, Allocator>::capacity() const noexcept {
+    constexpr typename vector<T, Allocator>::size_type vector<T, Allocator>::capacity() const noexcept {
         return _capacity;
     }
 
@@ -604,7 +602,8 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reference vector<T, Allocator>::operator[](vector::size_type n) const {
+    constexpr typename vector<T, Allocator>::const_reference
+    vector<T, Allocator>::operator[](vector::size_type n) const {
         return _data[n];
     }
 
@@ -671,7 +670,7 @@ namespace j {
 
     template<class T, class Allocator>
     constexpr void vector<T, Allocator>::push_back(T &&x) {
-        emplace_back(std::move(x));
+        emplace_back(std::forward<T>(x));
     }
 
     template<class T, class Allocator>
@@ -682,7 +681,8 @@ namespace j {
 
     template<class T, class Allocator>
     template<class... Args>
-    constexpr vector<T, Allocator>::iterator vector<T, Allocator>::emplace(vector::const_iterator position, Args &&... args) {
+    constexpr typename vector<T, Allocator>::iterator
+    vector<T, Allocator>::emplace(vector::const_iterator position, Args &&... args) {
         const difference_type offset = position - begin();
         if (_size == _capacity) {
             pointer new_data = std::allocator_traits<Allocator>::allocate(_alloc, _capacity == 0 ? 1 : _capacity * 2);
@@ -702,17 +702,19 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::iterator vector<T, Allocator>::insert(vector::const_iterator position, const T &x) {
+    constexpr typename vector<T, Allocator>::iterator
+    vector<T, Allocator>::insert(vector::const_iterator position, const T &x) {
         return emplace(position, x);
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::iterator vector<T, Allocator>::insert(vector::const_iterator position, T &&x) {
-        return emplace(position, std::move(x));
+    constexpr typename vector<T, Allocator>::iterator
+    vector<T, Allocator>::insert(vector::const_iterator position, T &&x) {
+        return emplace(position, std::forward<T>(x));
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::iterator
+    constexpr typename vector<T, Allocator>::iterator
     vector<T, Allocator>::insert(vector::const_iterator position, vector::size_type n, const T &x) {
         const difference_type offset = position - begin();
         if (_size + n > _capacity) {
@@ -740,7 +742,7 @@ namespace j {
     template<class T, class Allocator>
     template<class InputIter>
     requires (!std::is_integral_v<InputIter>)
-    constexpr vector<T, Allocator>::iterator
+    constexpr typename vector<T, Allocator>::iterator
     vector<T, Allocator>::insert(vector::const_iterator position, InputIter first, InputIter last) {
         const size_type len = std::distance(first, last);
         const difference_type offset = position - begin();
@@ -767,13 +769,14 @@ namespace j {
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::iterator
+    constexpr typename vector<T, Allocator>::iterator
     vector<T, Allocator>::insert(vector::const_iterator position, std::initializer_list<T> il) {
         return insert(position, il.begin(), il.end());
     }
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::iterator vector<T, Allocator>::erase(vector::const_iterator position) {
+    constexpr typename vector<T, Allocator>::iterator
+    vector<T, Allocator>::erase(vector::const_iterator position) {
         const difference_type offset = position - begin();
         std::destroy_at(std::addressof(*position));
         std::move(begin() + offset + 1, end(), begin() + offset);

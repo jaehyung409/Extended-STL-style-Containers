@@ -9,9 +9,9 @@ module;
 #include <functional>
 #include <initializer_list>
 
-export module segment_tree;
+export module j.segment_tree;
 
-import basics;
+import j.basics;
 
 namespace j {
     export template<class T,

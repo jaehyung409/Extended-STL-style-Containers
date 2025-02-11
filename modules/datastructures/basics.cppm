@@ -10,7 +10,7 @@ module;
 #include <limits>
 #include <type_traits>
 
-export module basics;
+export module j.basics;
 
 namespace j
 {

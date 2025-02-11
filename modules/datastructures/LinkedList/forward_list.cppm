@@ -11,20 +11,16 @@ module;
 #include <iterator>
 #include <functional>
 
-export module forward_list;
+export module j.forward_list;
 
-import basics;
+import j.basics;
 
 namespace j {
     export template <class T, class Allocator = std::allocator<T>>
     class forward_list {
-    private:
-        struct _forward_list_node;
-        using Node = _forward_list_node;
-
     public:
-        class _forward_iterator;
-        class _const_forward_iterator;
+        class iterator;
+        class const_iterator;
 
         using value_type = T;
         using allocator_type = std::allocator<T>;
@@ -34,10 +30,11 @@ namespace j {
         using const_reference = const value_type&;
         using pointer = value_type*;
         using const_pointer = const value_type*;
-        using iterator = _forward_iterator;
-        using const_iterator = _const_forward_iterator;
 
     private:
+        struct _forward_list_node;
+        using Node = _forward_list_node;
+
         using node_allocator = typename std::allocator_traits<Allocator>::template rebind_alloc<Node>;
         Node* _before_head; // node for before_begin();
         Node* _head;        // first node, nullptr if empty (sentinel)
@@ -175,8 +172,8 @@ namespace j {
     template <class T, class Allocator>
     class forward_list<T, Allocator>::_forward_list_node {
         friend class forward_list<T, Allocator>;
-        friend class forward_list<T, Allocator>::_forward_iterator;
-        friend class forward_list<T, Allocator>::_const_forward_iterator;
+        friend class forward_list<T, Allocator>::iterator;
+        friend class forward_list<T, Allocator>::const_iterator;
 
     private:
         value_type _value;
@@ -196,7 +193,7 @@ namespace j {
     };
 
     template <class T, class Allocator>
-    class forward_list<T, Allocator>::_forward_iterator {
+    class forward_list<T, Allocator>::iterator {
         friend class forward_list<T, Allocator>;
 
     public:
@@ -211,30 +208,30 @@ namespace j {
         node_pointer _ptr;
 
     public:
-        _forward_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-        _forward_iterator(const _const_forward_iterator& other) : _ptr(other._ptr) {}
+        iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
+        iterator(const const_iterator& other) : _ptr(other._ptr) {}
 
         reference operator*() const { return **_ptr; }
         pointer operator->() const { return &(**_ptr); }
 
-        _forward_iterator& operator++() {
+        iterator& operator++() {
             _ptr = _ptr->_next;
             return *this;
         }
 
-        _forward_iterator operator++(int) {
-            _forward_iterator temp = *this;
+        iterator operator++(int) {
+            iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        bool operator==(const _forward_iterator& other) const { return _ptr == other._ptr; }
-        bool operator!=(const _forward_iterator& other) const { return _ptr != other._ptr; }
-        operator _const_forward_iterator() const { return _const_forward_iterator(_ptr); }
+        bool operator==(const iterator& other) const { return _ptr == other._ptr; }
+        bool operator!=(const iterator& other) const { return _ptr != other._ptr; }
+        operator const_iterator() const { return _constiterator(_ptr); }
     };
 
     template <class T, class Allocator>
-    class forward_list<T, Allocator>::_const_forward_iterator {
+    class forward_list<T, Allocator>::const_iterator {
         friend class forward_list<T, Allocator>;
 
     public:
@@ -251,24 +248,24 @@ namespace j {
         node_pointer _ptr;
 
     public:
-        _const_forward_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
+        const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
 
         const_reference operator*() const { return **_ptr; }
         const_pointer operator->() const { return &(**_ptr); }
 
-        _const_forward_iterator& operator++() {
+        const_iterator& operator++() {
             _ptr = _ptr->_next;
             return *this;
         }
 
-        _const_forward_iterator operator++(int) {
-            _const_forward_iterator temp = *this;
+        const_iterator operator++(int) {
+            const_iterator temp = *this;
             ++(*this);
             return temp;
         }
 
-        bool operator==(const _const_forward_iterator& other) const { return _ptr == other._ptr; }
-        bool operator!=(const _const_forward_iterator& other) const { return _ptr != other._ptr; }
+        bool operator==(const const_iterator& other) const { return _ptr == other._ptr; }
+        bool operator!=(const const_iterator& other) const { return _ptr != other._ptr; }
     };
 }
 

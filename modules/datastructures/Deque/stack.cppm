@@ -6,13 +6,14 @@
 
 module;
 #include <initializer_list>
+#include <memory>
 #include <iterator>
 #include <ranges>
 
-export module stack;
+export module j.stack;
 
-import basics;
-import deque;
+import j.basics;
+import j.deque;
 
 namespace j {
     export template <class T, class Container = deque<T>>

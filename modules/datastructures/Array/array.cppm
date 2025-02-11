@@ -7,8 +7,9 @@
 module;
 #include <cstddef>
 #include <stdexcept>
+#include <algorithm>
 
-export module array;
+export module j.array;
 // need to make create func, operators,iterator, accessor.., tuple ..?
 namespace j {
     export template <class T, std::size_t N>
@@ -128,10 +129,7 @@ namespace j {
     }
 
     template <typename T, std::size_t N>
-    constexpr void swap(array<T, N>&a, array<T, N>& b) noexcept
-    {
-        for (std::size_t i = 0; i < N; i++){
-            std::swap(a._data[i], b._data[i]);
-        }
+    constexpr void swap(array<T, N>&a, array<T, N>& b) noexcept {
+        std::swap_ranges(std::begin(a), std::end(a), std::begin(b));
     }
 }
