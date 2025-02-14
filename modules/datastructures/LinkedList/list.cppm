@@ -220,7 +220,7 @@ namespace j {
 
     template <class T, class Allocator>
     class list<T, Allocator>::iterator {
-        friend class list<T, Allocator>;
+        friend class list;
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
@@ -234,9 +234,13 @@ namespace j {
         node_pointer _ptr;
 
     public:
-        iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-        iterator(const const_iterator& other)
+        explicit iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
+        explicit iterator(const const_iterator& other)
             : _ptr(other._ptr) {}
+        iterator& operator=(const const_iterator& other) {
+            _ptr = other._ptr;
+            return *this;
+        }
 
         reference operator*() { return (**_ptr); }
         pointer operator->() { return &(**_ptr); }
@@ -270,7 +274,7 @@ namespace j {
 
     template <class T, class Allocator>
     class list<T, Allocator>::const_iterator  {
-        friend class list<T, Allocator>;
+        friend class list;
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
@@ -286,7 +290,13 @@ namespace j {
         node_pointer _ptr;
 
     public:
-        const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
+        explicit const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
+        explicit const_iterator(const iterator& other)
+            : _ptr(other._ptr) {}
+        const_iterator& operator=(const const_iterator& other) {
+            _ptr = other._ptr;
+            return *this;
+        }
 
         const_reference operator*() const { return **_ptr; }
         const_pointer operator->() const { return &(**_ptr); }

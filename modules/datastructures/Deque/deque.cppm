@@ -242,12 +242,21 @@ namespace j {
         pointer _ptr;
         size_type _map_index;
         size_type _box_index;
+        iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
+            : _deque(deque), _ptr(ptr), _map_index(map_index), _box_index(box_index) {}
 
     public:
-        iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
-            : _ptr(ptr), _deque(deque), _map_index(map_index), _box_index(box_index) {}
-        iterator(const const_iterator &other)
-            : _ptr(other._ptr), _map_index(other._map_index), _box_index(other._box_index) {}
+        iterator() : _deque(nullptr), _ptr(nullptr), _map_index(0), _box_index(0) {}
+        explicit iterator(const const_iterator &other)
+            : _deque(other._deque), _ptr(other._ptr), _map_index(other._map_index), _box_index(other._box_index) {}
+
+        iterator& operator=(const const_iterator &other) {
+            _deque = other._deque;
+            _ptr = other._ptr;
+            _map_index = other._map_index;
+            _box_index = other._box_index;
+            return *this;
+        }
 
         reference operator*() { return *_ptr; }
         pointer operator->() { return &(*_ptr); }
@@ -355,9 +364,19 @@ namespace j {
         size_type _map_index;
         size_type _box_index;
 
-    public:
         const_iterator(pointer ptr = nullptr, deque *deque = nullptr, size_type map_index = 0, size_type box_index = 0)
-            : _ptr(ptr), _deque(deque), _map_index(map_index), _box_index(box_index) {}
+            : _deque(deque), _ptr(ptr), _map_index(map_index), _box_index(box_index) {}
+    public:
+        const_iterator() : _deque(nullptr), _ptr(nullptr), _map_index(0), _box_index(0) {}
+        explicit const_iterator(const iterator &other)
+            : _deque(other._deque), _ptr(other._ptr), _map_index(other._map_index), _box_index(other._box_index) {}
+        const_iterator &operator=(const iterator &other) {
+            _deque = other._deque;
+            _ptr = other._ptr;
+            _map_index = other._map_index;
+            _box_index = other._box_index;
+            return *this;
+        }
 
         const_reference operator*() const { return *_ptr; }
         const_pointer operator->() const { return &(*_ptr); }

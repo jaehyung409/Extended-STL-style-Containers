@@ -47,7 +47,7 @@ namespace j {
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
         priority_queue(InputIter first, InputIter last, const Compare &comp, Container &&cont);
-        //template <containe-compatible-range<T> R>
+        //template <container-compatible-range<T> R>
         //priority_queue(from_range_t, R&& range, const Compare &comp = Compare());
         template <class Alloc>
         requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
@@ -152,7 +152,6 @@ namespace j {
     //template <class T, class Container, class Compare, class Alloc>
     //struct uses_allocator<priority_queue<T, Container, Compare>, Alloc>
     //    : uses_allocator<Container, Alloc>::false_type {};
-
 }
 
 namespace j {
