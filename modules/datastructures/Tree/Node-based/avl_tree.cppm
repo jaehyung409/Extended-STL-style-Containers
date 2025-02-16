@@ -301,8 +301,11 @@ namespace j {
         size_type _height = 0;
 
     public:
-        Key& operator*() { return _key; }
-        const Key& operator*() const { return _key; }
+        _avl_tree_node() = default;
+        _avl_tree_node(const key_type &key) : _key(key) {}
+        _avl_tree_node(key_type &&key) : _key(std::move(key)) {}
+        key_type& operator*() { return _key; }
+        const key_type& operator*() const { return _key; }
     };
 
     template <class Key, class Compare, class Allocator>
@@ -688,7 +691,7 @@ namespace j {
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(std::addressof(new_node->_key), std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)...);
         if (is_unique == false) {
             if (_comp(node->key, args)) {
                 new_node->_right = node->_right;
@@ -776,7 +779,7 @@ namespace j {
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(std::addressof(new_node->_key), std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)...);
         new_node->_left = _nil;
         new_node->_right = _nil;
         if (is_unique == false) {
@@ -995,7 +998,7 @@ namespace j {
         while (src != source.end() && it != end()) {
             if (_comp(*src, *it)) {
                 Node* new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-                std::construct_at(std::addressof(new_node->_key), *src);
+                std::construct_at(new_node, *src);
                 v.push_back(new_node);
                 ++src;
             } else {
@@ -1005,7 +1008,7 @@ namespace j {
         }
         for (;src != source.end(); ++src) {
             Node* new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-            std::construct_at(std::addressof(new_node->_key), *src);
+            std::construct_at(new_node, *src);
             v.push_back(new_node);
         }
         for (; it != end(); ++it) {
@@ -1053,7 +1056,7 @@ namespace j {
             if (_comp(*src, *it)) {
                 if (last_key != *src) {
                     Node* new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-                    std::construct_at(std::addressof(new_node->_key), *src);
+                    std::construct_at(new_node, *src);
                     v.push_back(new_node);
                     last_key = *src;
                 }
@@ -1069,7 +1072,7 @@ namespace j {
         for (;src != source.end(); ++src) {
             if (last_key != *src) {
                 Node* new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-                std::construct_at(std::addressof(new_node->_key), *src);
+                std::construct_at(new_node, *src);
                 v.push_back(new_node);
                 last_key = *src;
             }
@@ -1305,8 +1308,8 @@ namespace j {
         }
         size_type mid = left + (right - left) / 2;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(std::addressof(new_node->_key), v[mid]);
-        new_node->head = head;
+        std::construct_at(new_node, v[mid]);
+        new_node->_parent = head;
         new_node->left = _build(v, left, mid - 1, new_node);
         new_node->right = _build(v, mid + 1, right, new_node);
         return new_node;

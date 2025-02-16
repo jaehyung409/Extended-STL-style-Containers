@@ -170,7 +170,7 @@ namespace j {
                                                             Predicate pred);
 */
     template <class T, class Allocator>
-    class forward_list<T, Allocator>::_forward_list_node {
+    struct forward_list<T, Allocator>::_forward_list_node {
         friend class forward_list<T, Allocator>;
         friend class forward_list<T, Allocator>::iterator;
         friend class forward_list<T, Allocator>::const_iterator;
@@ -282,7 +282,7 @@ namespace j {
     template <class T, class Allocator>
     forward_list<T, Allocator>::forward_list(const Allocator& alloc) : _node_alloc(alloc), _head(nullptr) {
         _before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(_before_head->_value));
+        std::construct_at(_before_head);
         _before_head->_next = _head;
     }
 
@@ -308,7 +308,7 @@ namespace j {
     forward_list<T, Allocator>::forward_list(forward_list&& x)  noexcept
         : _before_head(x.get_before_head()), _head(x.get_head()), _node_alloc(std::move(x.get_allocator())) {
         auto new_before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_before_head->_value));
+        std::construct_at(new_before_head);
         x.set_head(nullptr);
         x.set_before_head(new_before_head);
         x._before_head->_next = x._head;
@@ -345,7 +345,7 @@ namespace j {
             _node_alloc = std::move(x.get_allocator());
 
             auto new_before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-            std::construct_at(std::addressof(new_before_head->_value));
+            std::construct_at(new_before_head);
 
             x.set_head(nullptr);
             x.set_before_head(new_before_head);
@@ -440,7 +440,7 @@ namespace j {
         }
 
         Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_node->_value), value);
+        std::construct_at(new_node, value);
         new_node->_next = position->_next;
         position->_next = new_node;
 
@@ -456,7 +456,7 @@ namespace j {
         }
 
         Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_node->_value), value);
+        std::construct_at(new_node, value);
 
         new_node->_next = position->_next;
         position->_next = new_node;
@@ -483,7 +483,7 @@ namespace j {
         }
 
         Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_node->_value), std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)...);
 
         new_node->_next = position->_next;
         position->_next = new_node;
@@ -509,7 +509,7 @@ namespace j {
     template <class ... Args>
     T& forward_list<T, Allocator>::emplace_front(Args&&... args) {
         Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_node->_value), std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)...);
         if (empty()) {
             new_node->_next = nullptr;
         } else {

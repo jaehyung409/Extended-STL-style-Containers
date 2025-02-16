@@ -196,9 +196,9 @@ namespace j {
 
     template <class T, class Allocator>
     struct list<T, Allocator>::_list_node {
-        friend class list<T, Allocator>;
-        friend class list<T, Allocator>::iterator;
-        friend class list<T, Allocator>::const_iterator;
+        friend class list;
+        friend class iterator;
+        friend class const_iterator;
 
     private:
         value_type _value;
@@ -332,7 +332,7 @@ namespace j {
     template <class T, class Allocator>
     list<T, Allocator>::list(const Allocator& alloc) : _head(nullptr), _tail(nullptr), _node_alloc(alloc), _size(0) {
         _tail = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(_tail->_value));
+        std::construct_at(_tail);
         _tail->_next = _tail;
         _tail->_prev = _tail;
         _head = _tail;
@@ -377,7 +377,7 @@ namespace j {
     list<T, Allocator>::list(list&& x, const std::type_identity_t<Allocator>& alloc)
         : _head(x.get_head()), _tail(x.get_tail()), _node_alloc(alloc), _size(std::move(x.size())) {
         auto new_tail = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_tail->_value));
+        std::construct_at(new_tail);
         x.set_tail(new_tail);
         x._tail->_next = x._tail;
         x._tail->_prev = x._tail;
@@ -422,7 +422,7 @@ namespace j {
             _node_alloc = std::move(x.get_allocator());
             _size = std::move(x.size());
             auto new_tail = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-            std::construct_at(std::addressof(new_tail->_value));
+            std::construct_at(new_tail);
             x.set_tail(new_tail);
             x._tail->_next = x._tail;
             x._tail->_prev = x._tail;
@@ -572,7 +572,7 @@ namespace j {
     template<class... Args>
     typename list<T, Allocator>::reference list<T, Allocator>::emplace_front(Args&&... args) {
         Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_node->_value), std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)...);
         if (empty()) {
             new_node->_next = _tail;
             _tail->_prev = new_node;
@@ -590,7 +590,7 @@ namespace j {
     template<class... Args>
     typename list<T, Allocator>::reference list<T, Allocator>::emplace_back(Args&&... args) {
         Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_node->_value), std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)...);
         if (empty()) {
             _head = new_node;
             new_node->_prev = new_node;
@@ -653,7 +653,7 @@ namespace j {
             return begin();
         }
         Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(std::addressof(new_node->_value), std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)...);
         new_node->_prev = position._ptr->_prev;
         new_node->_next = position._ptr;
         position._ptr->_prev->_next = new_node;
