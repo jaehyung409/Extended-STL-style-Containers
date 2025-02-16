@@ -158,7 +158,6 @@ namespace j {
     template <class T, class Container, class Compare>
     priority_queue<T, Container, Compare>::priority_queue(const Compare& comp, const Container& cont)
         : _c(cont), _comp(comp) {
-        std::copy(cont.begin(), cont.end(), std::back_inserter(_c));
         make_heap(_c.begin(), _c.end(), _comp);
     }
 
@@ -179,8 +178,7 @@ namespace j {
     template <class InputIter>
     requires (!std::is_integral_v<InputIter>)
     priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare& comp,
-        const Container& cont) : _c(cont), _comp(comp) {
-        std::copy(first, last, std::back_inserter(_c));
+        const Container& cont) : _c(cont(first, last)), _comp(comp) {
         make_heap(_c.begin(), _c.end(), _comp);
     }
 
@@ -189,6 +187,7 @@ namespace j {
     requires (!std::is_integral_v<InputIter>)
     priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare& comp,
         Container&& cont) : _c(std::move(cont)), _comp(comp) {
+        _c.clear();
         std::copy(first, last, std::back_inserter(_c));
         make_heap(_c.begin(), _c.end(), _comp);
     }
@@ -246,8 +245,7 @@ namespace j {
     requires (!std::is_integral_v<InputIter>) && std::is_class_v<Alloc> &&
         requires { typename std::allocator_traits<Alloc>::value_type; }
     priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare& comp,
-        const Container& cont, const Alloc& alloc) : _c(cont, alloc), _comp(comp) {
-        std::copy(first, last, std::back_inserter(_c));
+        const Container& cont, const Alloc& alloc) : _c(cont(first, last), alloc), _comp(comp) {
         make_heap(_c.begin(), _c.end(), _comp);
     }
 
@@ -257,6 +255,7 @@ namespace j {
         requires { typename std::allocator_traits<Alloc>::value_type; }
     priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare& comp,
         Container&& cont, const Alloc& alloc) : _c(std::move(cont), alloc), _comp(comp) {
+        _c.clear();
         std::copy(first, last, std::back_inserter(_c));
         make_heap(_c.begin(), _c.end(), _comp);
     }
