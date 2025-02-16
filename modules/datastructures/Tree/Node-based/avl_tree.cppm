@@ -41,7 +41,6 @@ namespace j {
         using key_type = Key;
         using value_type = Key;
         using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
         using key_compare = Compare;
         struct value_compare;
         using allocator_type = Allocator;
@@ -453,7 +452,7 @@ namespace j {
 namespace j {
     template <class Key, class Compare, class Allocator>
     avl_tree<Key, Compare, Allocator>::avl_tree(const Compare& comp, const Allocator& alloc)
-        : _size(0), _comp(_comp), _alloc(alloc) {
+        : _size(0), _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         _nil->_right = _nil;
         _nil->_parent = _nil;
@@ -593,25 +592,25 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::begin() noexcept {
-        return iterator(_nil->_left);
+        return iterator(_nil->_left, this);
     }
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::begin() const noexcept {
-        return const_iterator(_nil->_left);
+        return const_iterator(_nil->_left, this);
     }
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::end() noexcept {
-        return iterator(_nil);
+        return iterator(_nil, this);
     }
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::end() const noexcept {
-        return const_iterator(_nil);
+        return const_iterator(_nil, this);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -641,13 +640,13 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::cbegin() const noexcept {
-        return const_iterator(_nil->_left);
+        return const_iterator(begin());
     }
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::cend() const noexcept {
-        return const_iterator(_nil);
+        return const_iterator(end());
     }
 
     template <class Key, class Compare, class Allocator>
@@ -693,7 +692,7 @@ namespace j {
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, std::forward<Args>(args)...);
         if (is_unique == false) {
-            if (_comp(node->key, args)) {
+            if (_comp(node->_key, new_node->_key)) {
                 new_node->_right = node->_right;
                 new_node->_parent = node;
                 node->_right = new_node;
@@ -710,7 +709,7 @@ namespace j {
             }
             _rotate_up(new_node);
             ++_size;
-            return iterator(new_node);
+            return iterator(new_node, this);
         }
         return _insert(node_type(new_node), find_pos.first).first;
     }
@@ -783,7 +782,7 @@ namespace j {
         new_node->_left = _nil;
         new_node->_right = _nil;
         if (is_unique == false) {
-            return iterator(node);
+            return iterator(node, this);
         }
         return _insert(node_type(new_node), find_pos.first).first;
     }
@@ -956,7 +955,7 @@ namespace j {
         while (first != last) {
             first = erase(first);
         }
-        return iterator(last._ptr);
+        return iterator(last._ptr, this);
     } // consideration : bulk delete
 
     template <class Key, class Compare, class Allocator>
@@ -1142,7 +1141,7 @@ namespace j {
         Node *finder = _root;
         while (finder != _nil) {
             if (finder->_key == x) {
-                return iterator(finder);
+                return iterator(finder, this);
             }
             if (_comp(finder->_key, x)) {
                 finder = finder->_right;
@@ -1150,7 +1149,7 @@ namespace j {
                 finder = finder->_left;
             }
         }
-        return iterator(_nil);
+        return end();
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1247,7 +1246,7 @@ namespace j {
                 upper = upper->_right;
             }
         }
-        return iterator(result);
+        return iterator(result, this);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1322,7 +1321,7 @@ namespace j {
             return nullptr;
         }
         size_type mid = left + (right - left) / 2;
-        v[mid]->head = head;
+        v[mid]->_parent = head;
         v[mid]->left = _build(v, left, mid - 1, v[mid]);
         v[mid]->right = _build(v, mid + 1, right, v[mid]);
         return v[mid];
@@ -1490,7 +1489,7 @@ namespace j {
             _size = 0;
             return position;
         }
-        const bool is_right = _comp(position->_parent->key, position->key);
+        const bool is_right = _comp(position->_parent->_key, position->_key);
         if (position->_left == nullptr) {
             if (is_right) {
                 position->_parent->_right = (position == _nil->_parent) ? _nil : nullptr;
@@ -1499,7 +1498,7 @@ namespace j {
                 }
             } else {
                 position->_parent->_left = nullptr;
-                if (position == _nil->left) {
+                if (position == _nil->_left) {
                     _nil->_left = position->_parent;
                 }
             }
@@ -1513,7 +1512,7 @@ namespace j {
                     position->_parent->_left = target;
                 }
             } else {
-                if (_comp(target->_parent->key, target->key)) {
+                if (_comp(target->_parent->_key, target->_key)) {
                     target->_parent->_right = (target == _nil->_parent) ? _nil : target->_right;
                     if (target == _nil->_parent) {
                         _nil->_parent = target->_parent;
@@ -1543,13 +1542,12 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     void avl_tree<Key, Compare, Allocator>::_delete(Node* node) {
-        if (node == _nil) {
+        if (node == _nil || node == nullptr) {
             return;
         }
         _delete(node->_left);
         _delete(node->_right);
         std::destroy_at(std::addressof(node->_key));
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, node, 1);
-        node = nullptr;
     }
 }
