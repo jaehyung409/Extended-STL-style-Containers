@@ -949,13 +949,13 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::erase(const key_type& x) {
-        return erase(find(x));
+        return erase(lower_bound(x), upper_bound(x));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class K>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::erase(K&& x) {
-        return erase(find(std::forward<K>(x)));
+        return erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
     }
 
     template <class Key, class Compare, class Allocator>
