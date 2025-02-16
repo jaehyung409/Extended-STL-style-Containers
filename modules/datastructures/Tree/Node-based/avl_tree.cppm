@@ -11,12 +11,22 @@ module;
 export module j.avl_tree;
 
 import j.vector;
+import j.basics;
 
 namespace j {
-    template <class Key>
-    concept IsPair = requires {
-        typename Key::first_type;
-        typename Key::second_type;
+    template <typename Key, bool IsConst, bool IsPairValue>
+    struct reference_selector {
+        using type = const Key&;
+    };
+
+    template <typename Key>
+    struct reference_selector<Key, false, true> {
+        using type = std::pair< const typename Key::first_type, typename Key::second_type>&;
+    };
+
+    template <typename Key>
+    struct reference_selector<Key, true, true> {
+        using type = const Key&;
     };
 
     export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>>
@@ -40,8 +50,8 @@ namespace j {
         using reference = value_type&;
         using const_reference = const value_type&;
         using difference_type = std::ptrdiff_t;
-        class iterator : public _iterator_base<false> {};
-        class const_iterator : public _iterator_base<true> {};
+        using iterator = _iterator_base<false>;
+        using const_iterator = _iterator_base<true>;
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
         class node_type;
@@ -278,6 +288,10 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     class avl_tree<Key, Compare, Allocator>::_avl_tree_node {
+    friend class avl_tree;
+    friend class _iterator_base<false>;
+    friend class _iterator_base<true>;
+
     protected:
         using node = _avl_tree_node;
         key_type _key = key_type();
@@ -303,6 +317,7 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     class avl_tree<Key, Compare, Allocator>::node_type {
+        friend class avl_tree;
     private:
         _avl_tree_node *_ptr;
 
@@ -348,50 +363,48 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     template <bool IsConst>
     class avl_tree<Key, Compare, Allocator>::_iterator_base {
+        friend class avl_tree;
+
     public:
         using iterator_category = std::bidirectional_iterator_tag;
         using value_type = Key;
         using difference_type = std::ptrdiff_t;
         using pointer = _avl_tree_node*;
-        using reference = std::conditional_t<IsPair<Key>,
-                                             std::conditional_t<IsConst,
-                                                                const Key&,
-                                                                std::pair<const typename Key::first_type,
-                                                                          typename Key::second_type>&>,
-                                             const value_type&>;
-    private:
+        using reference = typename reference_selector<Key, IsConst, IsPair<Key>>::type;
+
+    protected:
         pointer _ptr;
         avl_tree *_tree;
         explicit _iterator_base(pointer ptr = nullptr, avl_tree *tree = nullptr) : _ptr(ptr), _tree(tree) {}
 
     public:
         explicit _iterator_base() : _ptr(nullptr), _tree(nullptr) {}
-        template <bool OtherConst, typename = std::enable_if_t<OtherConst && !IsConst>>
-        explicit _iterator_base(const _iterator_base<OtherConst>& other) : _ptr(other._ptr), _tree(other._tree) {}
-        explicit _iterator_base(const _iterator_base& other) : _ptr(other._ptr), _tree(other._tree) {}
+        template <bool OtherConst, typename = std::enable_if_t<!OtherConst && IsConst>>
+        _iterator_base(const _iterator_base<OtherConst>& other) : _ptr(other._ptr), _tree(other._tree) {}
+        _iterator_base(const _iterator_base& other) : _ptr(other._ptr), _tree(other._tree) {}
         _iterator_base& operator=(const _iterator_base& other) {
             _ptr = other._ptr;
             _tree = other._tree;
             return *this;
         }
 
-        reference operator*() const { return *_ptr; }
-        pointer operator->() const { return &*_ptr; }
+        reference operator*() const { return **_ptr; }
+        pointer operator->() const { return &**_ptr; }
 
         _iterator_base &operator++() {
-            if (_ptr->right != nullptr) {
-                _ptr = _ptr->right;
+            if (_ptr->_right != nullptr) {
+                _ptr = _ptr->_right;
                 if (_ptr == _tree->_nil) {
                     return *this;
                 }
-                while (_ptr->left != nullptr) {
-                    _ptr = _ptr->left;
+                while (_ptr->_left != nullptr) {
+                    _ptr = _ptr->_left;
                 }
             } else {
-                pointer parent = _ptr->parent;
-                while (parent != _tree->_nil && _ptr == parent->right) {
+                pointer parent = _ptr->_parent;
+                while (parent != _tree->_nil && _ptr == parent->_right) {
                     _ptr = parent;
-                    parent = parent->parent;
+                    parent = parent->_parent;
                 }
                 _ptr = parent;
             }
@@ -405,16 +418,16 @@ namespace j {
         }
 
         _iterator_base &operator--() {
-            if (_ptr->left != nullptr) {
-                _ptr = _ptr->left;
-                while (_ptr->right != _tree->_nil) {
-                    _ptr = _ptr->right;
+            if (_ptr->_left != nullptr) {
+                _ptr = _ptr->_left;
+                while (_ptr->_right != _tree->_nil) {
+                    _ptr = _ptr->_right;
                 }
             } else {
-                pointer parent = _ptr->parent;
-                while (parent != _tree->_nil && _ptr == parent->left) {
+                pointer parent = _ptr->_parent;
+                while (parent != _tree->_nil && _ptr == parent->_left) {
                     _ptr = parent;
-                    parent = parent->parent;
+                    parent = parent->_parent;
                 }
                 _ptr = parent;
             }
@@ -427,8 +440,10 @@ namespace j {
             return temp;
         }
 
-        bool operator==(const _iterator_base &other) const { return _ptr == other._ptr; }
-        bool operator!=(const _iterator_base &other) const { return _ptr != other._ptr; }
+        template <bool OtherConst>
+        bool operator==(const _iterator_base<OtherConst> &other) const { return _ptr == other._ptr; }
+        template <bool OtherConst>
+        bool operator!=(const _iterator_base<OtherConst> &other) const { return _ptr != other._ptr; }
     };
 }
 
