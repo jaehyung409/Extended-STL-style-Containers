@@ -69,11 +69,11 @@ namespace j {
         Node* _build(vector<Node*> &v, size_type left, size_type right, Node *head);
         Node* _find_begin() const;
         void _set_nil() const;
-        void _left_rotate(const_iterator x);
-        void _right_rotate(const_iterator x);
-        void _rotate_up(const_iterator x);
-        std::pair<iterator, bool> find_insert_position(const_iterator hint, const key_type &x); // helper function
-        insert_return_type _insert(node_type &&node, const_iterator position); // helper function
+        void _left_rotate(Node* x);
+        void _right_rotate(Node* x);
+        void _rotate_up(Node* x);
+        std::pair<const_iterator, bool> find_insert_position(const_iterator hint, const key_type &x); // helper function
+        iterator _insert(Node* node, const_iterator position); // helper function
         Node* find_for_erase(Node *position); // helper function
         Node* _erase(Node *position); // helper function
         void _delete(Node *node); // helper function
@@ -924,7 +924,9 @@ namespace j {
         if (is_unique == false) {
             return std::make_pair(pos, node_type());
         }
-        return _insert(node, pos);
+        Node* new_node = node._ptr;
+        node._ptr = nullptr;
+        return std::make_pair(_insert(new_node, pos), node);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1357,70 +1359,76 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    void avl_tree<Key, Compare, Allocator>::_left_rotate(const_iterator x) {
-        Node *right = x._ptr->_right;
-        right->head = x._ptr->head;
-        if (x._ptr->head == _nil) {
+    void avl_tree<Key, Compare, Allocator>::_left_rotate(Node* x) {
+        Node *right = x->_right;
+        right->_parent = x->_parent;
+        if (x->_parent == _nil) {
             _root = right;
-        } else if (x._ptr == x._ptr->head->left) {
-            x._ptr->head->left = right;
+        } else if (x == x->_parent->_left) {
+            x->_parent->_left = right;
         } else {
-            x._ptr->head->right = right;
+            x->_parent->_right = right;
         }
-        x._ptr->right = right->left;
-        if (right->left != nullptr) {
-            right->left->head = x._ptr;
+        x->_right = right->_left;
+        if (right->_left != nullptr) {
+            right->_left->_parent = x;
         }
-        right->left = x._ptr;
-        x._ptr->head = right;
-        x._ptr->height = std::max(x._ptr->left->height, x._ptr->right->height) + 1;
-        right->height = std::max(right->left->height, right->right->height) + 1;
+        right->_left = x;
+        x->_parent = right;
+        x->_height = std::max(x->_left->_height, x->_right->_height) + 1;
+        right->_height = std::max(right->_left->_height, right->_right->_height) + 1;
     }
 
     template <class Key, class Compare, class Allocator>
-    void avl_tree<Key, Compare, Allocator>::_right_rotate(const_iterator x) {
-        Node *left = x._ptr->left;
-        left->head = x._ptr->head;
-        if (x._ptr->head == _nil) {
+    void avl_tree<Key, Compare, Allocator>::_right_rotate(Node* x) {
+        Node *left = x->_left;
+        left->_parent = x->_parent;
+        if (x->_parent == _nil) {
             _root = left;
-        } else if (x._ptr == x._ptr->head->left) {
-            x._ptr->head->left = left;
+        } else if (x == x->_parent->_left) {
+            x->_parent->_left = left;
         } else {
-            x._ptr->head->right = left;
+            x->_parent->_right = left;
         }
-        x._ptr->left = left->right;
-        if (left->right != _nil) {
-            left->right->head = x._ptr;
+        x->_left = left->_right;
+        if (left->_right != _nil) {
+            left->_right->_parent = x;
         }
-        left->right = x._ptr;
-        x._ptr->head = left;
-        x._ptr->height = std::max(x._ptr->left->height, x._ptr->right->height) + 1;
-        left->height = std::max(left->left->height, left->right->height) + 1;
+        left->_right = x;
+        x->_parent = left;
+        x->_height = std::max(x->_left->_height, x->_right->_height) + 1;
+        left->_height = std::max(left->_left->_height, left->_right->_height) + 1;
     }
 
     template <class Key, class Compare, class Allocator>
-    void avl_tree<Key, Compare, Allocator>::_rotate_up(const_iterator x) {
-        while (x._ptr != _nil) {
-            x._ptr->height = std::max(x._ptr->left->height, x._ptr->right->height) + 1;
-            if (x._ptr->left->height > x._ptr->right->height + 1) {
-                if (x._ptr->left->right->height > x._ptr->left->left->height) {
-                    _left_rotate(x._ptr->left);
+    void avl_tree<Key, Compare, Allocator>::_rotate_up(Node* x) {
+        while (x != _nil) {
+            size_type left_height = (x->_left == nullptr || x->_left == _nil) ? 0 : x->_left->_height;
+            size_type right_height = (x->_right == nullptr || x->_right == _nil) ? 0 : x->_right->_height;
+            x->_height = std::max(left_height, right_height) + 1;
+            if (left_height > right_height + 1) {
+                left_height = (x->_left->_left == nullptr || x->_left->_left == _nil) ? 0 : x->_left->_left->_height;
+                right_height = (x->_left->_right == nullptr || x->_left->_right == _nil) ? 0 : x->_left->_right->_height;
+                if (right_height > left_height) {
+                    _left_rotate(x->_left);
                 }
-                _right_rotate(x._ptr);
-            } else if (x._ptr->right->height > x._ptr->left->height + 1) {
-                if (x._ptr->right->left->height > x._ptr->right->right->height) {
-                    _right_rotate(x._ptr->right);
+                _right_rotate(x);
+            } else if (right_height > left_height + 1) {
+                left_height = (x->_right->_left == nullptr || x->_right->_left == _nil) ? 0 : x->_right->_left->_height;
+                right_height = (x->_right->_right == nullptr || x->_right->_right == _nil) ? 0 : x->_right->_right->_height;
+                if (left_height > right_height) {
+                    _right_rotate(x->_right);
                 }
-                _left_rotate(x._ptr);
+                _left_rotate(x);
             }
-            x = x._ptr->head;
+            x = x->_parent;
         }
     }
 
     template <class Key, class Compare, class Allocator>
-    std::pair<typename avl_tree<Key, Compare, Allocator>::iterator, bool>
+    std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator, bool>
     avl_tree<Key, Compare, Allocator>::find_insert_position(const_iterator hint, const key_type& x) {
-        if (*hint == x) {
+        if (_size != 0 && *hint == x) {
             return std::make_pair(hint, false);
         }
         if ((hint == end() || _comp(x, *hint)) && (hint == begin() || _comp(*std::prev(hint), x))) {
@@ -1431,49 +1439,49 @@ namespace j {
             return std::make_pair(hint, true);
         }
         while (true) {
-            if (finder->key == x) {
-                return std::make_pair(iterator(finder), false);
+            if (finder->_key == x) {
+                return std::make_pair(const_iterator(finder, this), false);
             }
-            if (_comp(finder->key, x)) {
-                if (finder->right == nullptr || finder->right == _nil) {
-                    return std::make_pair(iterator(finder), true);
+            if (_comp(finder->_key, x)) {
+                if (finder->_right == nullptr || finder->_right == _nil) {
+                    return std::make_pair(const_iterator(finder, this), true);
                 }
-                finder = finder->right;
+                finder = finder->_right;
             } else {
-                if (finder->left == nullptr) {
-                    return std::make_pair(iterator(finder), true);
+                if (finder->_left == nullptr) {
+                    return std::make_pair(const_iterator(finder, this), true);
                 }
-                finder = finder->left;
+                finder = finder->_left;
             }
         }
     }
 
     template <class Key, class Compare, class Allocator>
-    typename avl_tree<Key, Compare, Allocator>::insert_return_type
-    avl_tree<Key, Compare, Allocator>::_insert(node_type&& node, const_iterator position) {
+    typename avl_tree<Key, Compare, Allocator>::iterator
+    avl_tree<Key, Compare, Allocator>::_insert(Node* node, const_iterator position) {
         if (position == end()) {
-            _nil->_left = node._ptr;
-            _nil->_parnet = node._ptr;
-            node._ptr->_right = _nil;
-            node._ptr->_parent = _nil;
-            _root = node._ptr;
+            _nil->_left = node;
+            _nil->_parent = node;
+            node->_right = _nil;
+            node->_parent = _nil;
+            _root = node;
         } else {
-            if (_comp(node->key, *position)) {
+            if (_comp(node->_key, *position)) {
                 if (position._ptr == _nil->_left) {
-                    _nil->_left = node._ptr;
+                    _nil->_left = node;
                 }
-                position._ptr->_left = node._ptr;
+                position._ptr->_left = node;
             } else {
                 if (position._ptr == _nil->_parent) {
-                    _nil->_parent = node._ptr;
-                    node._ptr->_right = _nil;
+                    _nil->_parent = node;
+                    node->_right = _nil;
                 }
-                position._ptr->_right = node._ptr;
+                position._ptr->_right = node;
             }
-            _rotate_up(position);
+            _rotate_up(node);
         }
         ++_size;
-        return std::make_pair(iterator(node), node_type());
+        return iterator(node, this);
     } // insert node into position
 
     template <class Key, class Compare, class Allocator>
