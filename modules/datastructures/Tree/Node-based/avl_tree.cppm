@@ -541,6 +541,7 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::~avl_tree() {
         clear();
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, _nil, 1);
+        _nil = nullptr;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -594,7 +595,8 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::allocator_type avl_tree<Key, Compare, Allocator>::get_allocator()
     const noexcept {
-        return typename std::allocator_traits<Allocator>::template rebind_alloc<Key>;
+        using alloc = typename std::allocator_traits<Allocator>::template rebind_alloc<Key>;
+        return alloc();
     }
 
 
