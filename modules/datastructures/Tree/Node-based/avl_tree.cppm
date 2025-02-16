@@ -321,28 +321,37 @@ namespace j {
     class avl_tree<Key, Compare, Allocator>::node_type {
         friend class avl_tree;
     private:
-        _avl_tree_node *_ptr;
+        Node *_ptr;
+        node_allocator_type _alloc;;
+        explicit node_type(node_allocator_type alloc) : _ptr(nullptr), _alloc(alloc) {}
+        explicit node_type(Node *node, node_allocator_type alloc ) : _ptr(node), _alloc(alloc) {}
 
     public:
-        explicit node_type(_avl_tree_node *node = nullptr) : _ptr(node) {}
+        explicit node_type() : _ptr(nullptr), _alloc(Allocator()) {}
         node_type(const node_type&) = delete;
         node_type& operator=(const node_type&) = delete;
-        node_type(node_type &&other) noexcept : _ptr(std::exchange(other._ptr, nullptr)) {}
+        node_type(node_type &&other) noexcept
+            : _ptr(std::exchange(other._ptr, nullptr)), _alloc(other._alloc) {}
         node_type& operator=(node_type &&other) noexcept {
             if (this != &other) {
                 _ptr = std::exchange(other._ptr, nullptr);
+                _alloc = other._alloc;
             }
             return *this;
         }
         ~node_type() {
             if (_ptr) {
                 std::destroy_at(std::addressof(_ptr->_key));
-                std::allocator_traits<node_allocator_type>::deallocate(_ptr->_alloc, _ptr, 1);
+                std::allocator_traits<node_allocator_type>::deallocate(_alloc, _ptr, 1);
+                _ptr = nullptr;
             }
-        }
+        } // destructor only node_type is out of tree
 
         bool empty() const noexcept { return _ptr == nullptr; }
-        allocator_type get_allocator() const noexcept { return allocator_type(); }
+        allocator_type get_allocator() const noexcept {
+            using alloc = typename std::allocator_traits<Allocator>::template rebind_alloc<Key>;
+            return alloc();
+        }
         void swap(node_type &other) noexcept { std::swap(_ptr, other._ptr); }
         const auto& key() const {
             if (empty()) throw std::runtime_error("node_type is empty");
@@ -842,9 +851,9 @@ namespace j {
     typename avl_tree<Key, Compare, Allocator>::node_type
     avl_tree<Key, Compare, Allocator>::extract(const_iterator position) {
         if (position == end()) {
-            return node_type();
+            return node_type(_alloc);
         }
-        return node_type(_erase(position._ptr));
+        return node_type(_erase(position._ptr), _alloc);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -935,7 +944,7 @@ namespace j {
         erase_node = _erase(erase_node);
         std::destroy_at(std::addressof(erase_node->_key));
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, erase_node, 1);
-          return iterator(next_node);
+          return iterator(next_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1211,7 +1220,7 @@ namespace j {
                 lower = lower->_right;
             }
         }
-        return  iterator(result);
+        return  iterator(result, this);
     }
 
     template <class Key, class Compare, class Allocator>
