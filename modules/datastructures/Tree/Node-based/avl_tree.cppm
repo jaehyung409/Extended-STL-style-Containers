@@ -449,7 +449,7 @@ namespace j {
         _iterator_base &operator--() {
             if (_ptr->_left != nullptr) {
                 _ptr = _ptr->_left;
-                while (_ptr->_right != _tree->_nil) {
+                while (_ptr->_right != _tree->_nil || _ptr->_right != nullptr) {
                     _ptr = _ptr->_right;
                 }
             } else {
@@ -809,8 +809,6 @@ namespace j {
         auto is_unique = find_pos.second;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, std::forward<Args>(args)...);
-        new_node->_left = _nil;
-        new_node->_right = _nil;
         if (is_unique == false) {
             return iterator(node, this);
         }
@@ -959,7 +957,7 @@ namespace j {
             return end();
         }
         Node* erase_node = position._ptr;
-        Node* next_node = std::next(erase_node);
+        Node* next_node = std::next(position)._ptr;
         erase_node = _erase(erase_node);
         std::destroy_at(erase_node);
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, erase_node, 1);
@@ -968,13 +966,17 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::erase(const key_type& x) {
-        return erase(lower_bound(x), upper_bound(x));
+        size_type old_size = _size;
+        erase(lower_bound(x), upper_bound(x));
+        return old_size - _size;
     }
 
     template <class Key, class Compare, class Allocator>
     template <class K>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::erase(K&& x) {
-        return erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
+e        size_type old_size = _size;
+        erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
+        return old_size - _size;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1533,53 +1535,60 @@ namespace j {
             _size = 0;
             return position;
         }
-        const bool is_right = _comp(position->_parent->_key, position->_key);
-        if (position->_left == nullptr) {
-            if (is_right) {
-                position->_parent->_right = (position == _nil->_parent) ? _nil : nullptr;
-                if (position == _nil->_parent) {
-                    _nil->_parent = position->_parent;
-                }
-            } else {
-                position->_parent->_left = nullptr;
-                if (position == _nil->_left) {
-                    _nil->_left = position->_parent;
-                }
-            }
-        } else {
-            Node* target = find_for_erase(position);
-            if (target == position) {
-                target = position->_left;
-                if (is_right) {
-                    position->_parent->_right = target;
-                } else {
-                    position->_parent->_left = target;
-                }
-            } else {
-                if (_comp(target->_parent->_key, target->_key)) {
-                    target->_parent->_right = (target == _nil->_parent) ? _nil : target->_right;
-                    if (target == _nil->_parent) {
-                        _nil->_parent = target->_parent;
+        Node *target = find_for_erase(position);
+        Node *rotate_target = (target->_parent == position || target == _root) ? target : target->_parent;
+        if (position == target) {                   // no right child
+            if (position->_left == nullptr) {       // no child -> position is not root (size > 1)
+                if (_comp(position->_key, position->_parent->_key)) {
+                    position->_parent->_left = position->_left;
+                    if (position == _nil->_left) {
+                        _nil->_left = position->_parent;
                     }
                 } else {
-                    target->_parent->_left = nullptr;
+                    position->_parent->_right = position->_left;
+                    position->_left->_parent = position->_parent;
+                    if (position == _nil->_parent) {
+                        _nil->_parent = position->_left;
+                        position->_left->_right = _nil;
+                    }
                 }
-                if (is_right) {
-                    position->_parent->_right = target;
-                    target->_parent = position->_parent;
-                    target->_left = position->_left;
-                    target->_right = position->_right;
+            } else {
+                if (position == _root) {
+                    _root = position->_left;
+                } else if (_comp(position->_key, position->_parent->_key)) {
+                    position->_parent->_left = position->_left;
                 } else {
-                    position->_parent->_left = target;
-                    target->_parent = position->_parent;
-                    target->_left = position->_left;
-                    target->_right = position->_right;
+                    position->_parent->_right = position->_left;
+                    if (position == _nil->_parent) {
+                        _nil->_parent = position->_left;
+                    }
                 }
+                position->_left->_parent = position->_parent;
             }
-            if (_root == position) {
+        } else {
+            if (_comp(target->_key, target->_parent->_key)) {
+                target->_parent->_left = target->_right;
+            } else {
+                target->_parent->_right = target->_right;
+            }
+            if (target->_right) {
+                target->_right->_parent = target->_parent;
+            }
+            if (position == _nil->_left) {
+                _nil->_left = target;
+            }
+            if (position == _root) {
                 _root = target;
+            } else if (_comp(position->_key, position->_parent->_key)) {
+                position->_parent->_left = target;
+            } else {
+                position->_parent->_right = target;
             }
+            target->_parent = position->_parent;
+            target->_left = position->_left;
+            target->_right = position->_right;
         }
+        _rotate_up(rotate_target);
         _size--;
         return position;
     }
