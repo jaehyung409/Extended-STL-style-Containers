@@ -974,7 +974,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     template <class K>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::erase(K&& x) {
-e        size_type old_size = _size;
+        size_type old_size = _size;
         erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
         return old_size - _size;
     }
