@@ -1461,6 +1461,9 @@ e        size_type old_size = _size;
     template <class Key, class Compare, class Allocator>
     std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator, bool>
     avl_tree<Key, Compare, Allocator>::find_insert_position(const_iterator hint, const key_type& x) {
+        if (_size == 0) {
+            return std::make_pair(end(), true);
+        }
         if (_size != 0 && *hint == x) {
             return std::make_pair(hint, false);
         }
@@ -1469,7 +1472,7 @@ e        size_type old_size = _size;
         }
         Node *finder = _root;
         if (finder == _nil) {
-            return std::make_pair(hint, true);
+            return std::make_pair(const_iterator(finder, this), true);
         }
         while (true) {
             if (finder->_key == x) {
@@ -1493,11 +1496,15 @@ e        size_type old_size = _size;
     typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::_insert(Node* node, const_iterator position) {
         if (position == end()) {
-            _nil->_left = node;
-            _nil->_parent = node;
+            node->_parent = _nil->_parent;
             node->_right = _nil;
-            node->_parent = _nil;
-            _root = node;
+            _nil->_parent = node;
+            if (node->_parent == _nil) {
+                _nil->_left = node;
+                _root = node;
+            } else {
+                node->_parent->_right = node;
+            }
         } else {
             if (_comp(node->_key, *position)) {
                 if (position._ptr == _nil->_left) {
@@ -1511,8 +1518,9 @@ e        size_type old_size = _size;
                 }
                 position._ptr->_right = node;
             }
-            _rotate_up(node);
+            node->_parent = position._ptr;
         }
+        _rotate_up(node);
         ++_size;
         return iterator(node, this);
     } // insert node into position
