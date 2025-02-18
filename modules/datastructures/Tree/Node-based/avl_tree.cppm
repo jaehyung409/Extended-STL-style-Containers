@@ -1404,7 +1404,9 @@ e        size_type old_size = _size;
         }
         right->_left = x;
         x->_parent = right;
-        x->_height = std::max(x->_left->_height, x->_right->_height) + 1;
+        size_type left_height = (x->_left) ? x->_left->_height : 0;
+        size_type right_height = (x->_right) ? x->_right->_height : 0;
+        x->_height = std::max(left_height, right_height) + 1;
         right->_height = std::max(right->_left->_height, right->_right->_height) + 1;
     }
 
@@ -1425,26 +1427,28 @@ e        size_type old_size = _size;
         }
         left->_right = x;
         x->_parent = left;
-        x->_height = std::max(x->_left->_height, x->_right->_height) + 1;
+        size_type left_height = (x->_left) ? x->_left->_height : 0;
+        size_type right_height = (x->_right && x->_right != _nil) ? x->_right->_height : 0;
+        x->_height = std::max(left_height, right_height) + 1;
         left->_height = std::max(left->_left->_height, left->_right->_height) + 1;
     }
 
     template <class Key, class Compare, class Allocator>
     void avl_tree<Key, Compare, Allocator>::_rotate_up(Node* x) {
         while (x != _nil) {
-            size_type left_height = (x->_left == nullptr || x->_left == _nil) ? 0 : x->_left->_height;
-            size_type right_height = (x->_right == nullptr || x->_right == _nil) ? 0 : x->_right->_height;
+            size_type left_height = (x->_left) ? x->_left->_height : 0;
+            size_type right_height = (x->_right && x->_right != _nil) ? x->_right->_height : 0;
             x->_height = std::max(left_height, right_height) + 1;
             if (left_height > right_height + 1) {
-                left_height = (x->_left->_left == nullptr || x->_left->_left == _nil) ? 0 : x->_left->_left->_height;
-                right_height = (x->_left->_right == nullptr || x->_left->_right == _nil) ? 0 : x->_left->_right->_height;
+                left_height = (x->_left->_left) ? x->_left->_left->_height : 0;
+                right_height = (x->_left->_right) ? x->_left->_right->_height : 0;
                 if (right_height > left_height) {
                     _left_rotate(x->_left);
                 }
                 _right_rotate(x);
             } else if (right_height > left_height + 1) {
-                left_height = (x->_right->_left == nullptr || x->_right->_left == _nil) ? 0 : x->_right->_left->_height;
-                right_height = (x->_right->_right == nullptr || x->_right->_right == _nil) ? 0 : x->_right->_right->_height;
+                left_height = (x->_right->_left) ? x->_right->_left->_height : 0;
+                right_height = (x->_right->_right && x->_right->_right != _nil) ? x->_right->_right->_height : 0;
                 if (left_height > right_height) {
                     _right_rotate(x->_right);
                 }
