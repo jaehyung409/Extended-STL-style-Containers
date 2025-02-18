@@ -209,38 +209,48 @@ namespace j {
         iterator find(const key_type &x);
         const_iterator find(const key_type &x) const;
         template <class K>
-        iterator find(K &&x);
+        requires std::convertible_to<K, Key>
+        iterator find(const K &x);
         template <class K>
-        const_iterator find(K &&x) const;
+        requires std::convertible_to<K, Key>
+        const_iterator find(const K &x) const;
 
         size_type count(const key_type &x) const;
         template <class K>
-        size_type count(K &&x) const;
+        requires std::convertible_to<K, Key>
+        size_type count(const K &x) const;
 
         bool contains(const key_type &x) const;
         template <class K>
-        bool contains(K &&x) const;
+        requires std::convertible_to<K, Key>
+        bool contains(const K &x) const;
 
         iterator lower_bound(const key_type &x);
         const_iterator lower_bound(const key_type &x) const;
         template <class K>
-        iterator lower_bound(K &&x);
+        requires std::convertible_to<K, Key>
+        iterator lower_bound(const K &x);
         template <class K>
-        const_iterator lower_bound(K &&x) const;
+        requires std::convertible_to<K, Key>
+        const_iterator lower_bound(const K &x) const;
 
         iterator upper_bound(const key_type &x);
         const_iterator upper_bound(const key_type &x) const;
         template <class K>
-        iterator upper_bound(K &&x);
+        requires std::convertible_to<K, Key>
+        iterator upper_bound(const K &x);
         template <class K>
-        const_iterator upper_bound(K &&x) const;
+        requires std::convertible_to<K, Key>
+        const_iterator upper_bound(const K &x) const;
 
         std::pair<iterator, iterator> equal_range(const key_type &x);
         std::pair<const_iterator, const_iterator> equal_range(const key_type &x) const;
         template <class K>
-        std::pair<iterator, iterator> equal_range(K &&x);
+        requires std::convertible_to<K, Key>
+        std::pair<iterator, iterator> equal_range(const K &x);
         template <class K>
-        std::pair<const_iterator, const_iterator> equal_range(K &&x) const;
+        requires std::convertible_to<K, Key>
+        std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
     };
 
     template <class InputIter,
@@ -1177,14 +1187,16 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     template <class K>
-    typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::find(K&& x) {
-        return find(std::forward<K>(x));
+    requires std::convertible_to<K, Key>
+    typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::find(const K& x) {
+        return find(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class K>
-    typename avl_tree<Key, Compare, Allocator>::const_iterator avl_tree<Key, Compare, Allocator>::find(K&& x) const {
-        return const_iterator(find(std::forward<K>(x)));
+    requires std::convertible_to<K, Key>
+    typename avl_tree<Key, Compare, Allocator>::const_iterator avl_tree<Key, Compare, Allocator>::find(const K& x) const {
+        return const_iterator(find(static_cast<const key_type&>(x)));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1200,8 +1212,9 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     template <class K>
-    typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::count(K&& x) const {
-        return count(std::forward<K>(x));
+    requires std::convertible_to<K, Key>
+    typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::count(const K& x) const {
+        return count(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1211,8 +1224,9 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     template <class K>
-    bool avl_tree<Key, Compare, Allocator>::contains(K&& x) const {
-        return contains(std::forward<K>(x));
+    requires std::convertible_to<K, Key>
+    bool avl_tree<Key, Compare, Allocator>::contains(const K& x) const {
+        return contains(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1220,7 +1234,7 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::lower_bound(const key_type& x) {
         Node *lower = _root;
         Node *result = _nil;
-        while (lower != _nil) {
+        while (lower && lower != _nil) {
             if (!_comp(lower->_key, x)) {
                 result = lower;
                 lower = lower->_left;
@@ -1239,15 +1253,17 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     template <class K>
-    typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::lower_bound(K&& x) {
-        return lower_bound(std::forward<K>(x));
+    requires std::convertible_to<K, Key>
+    typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::lower_bound(const K& x) {
+        return lower_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class K>
+    requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
-    avl_tree<Key, Compare, Allocator>::lower_bound(K&& x) const {
-        return const_iterator(lower_bound(std::forward<K>(x)));
+    avl_tree<Key, Compare, Allocator>::lower_bound(const K& x) const {
+        return const_iterator(lower_bound(static_cast<const key_type&>(x)));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1255,7 +1271,7 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::upper_bound(const key_type& x) {
         Node *upper = _root;
         Node *result = _nil;
-        while (upper != _nil) {
+        while (upper && upper != _nil) {
             if (_comp(x, upper->_key)) {
                 result = upper;
                 upper = upper->_left;
@@ -1274,15 +1290,17 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     template <class K>
-    typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::upper_bound(K&& x) {
-        return upper_bound(std::forward<K>(x));
+    requires std::convertible_to<K, Key>
+    typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::upper_bound(const K& x) {
+        return upper_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class K>
+    requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
-    avl_tree<Key, Compare, Allocator>::upper_bound(K&& x) const {
-        return const_iterator(upper_bound(std::forward<K>(x)));
+    avl_tree<Key, Compare, Allocator>::upper_bound(const K& x) const {
+        return const_iterator(upper_bound(static_cast<const key_type&>(x)));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1301,18 +1319,20 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     template <class K>
+    requires std::convertible_to<K, Key>
     std::pair<typename avl_tree<Key, Compare, Allocator>::iterator,
               typename avl_tree<Key, Compare, Allocator>::iterator>
-    avl_tree<Key, Compare, Allocator>::equal_range(K&& x) {
-        return std::make_pair(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
+    avl_tree<Key, Compare, Allocator>::equal_range(const K& x) {
+        return std::make_pair(lower_bound(static_cast<const key_type&>(x)), upper_bound(static_cast<const key_type&>(x)));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class K>
+    requires std::convertible_to<K, Key>
     std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator,
               typename avl_tree<Key, Compare, Allocator>::const_iterator>
-    avl_tree<Key, Compare, Allocator>::equal_range(K&& x) const {
-        return std::make_pair(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
+    avl_tree<Key, Compare, Allocator>::equal_range(const K& x) const {
+        return std::make_pair(lower_bound(static_cast<const key_type&>(x)), upper_bound(static_cast<const key_type&>(x)));
     }
 
     // Private member functions
