@@ -481,10 +481,9 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::avl_tree(const Compare& comp, const Allocator& alloc)
         : _size(0), _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        _nil->_right = _nil;
-        _nil->_parent = _nil;
+        std::construct_at(_nil);
         _root = _nil;
-        _nil->_left = _root;
+        _root->_parent = _nil;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -492,14 +491,13 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::avl_tree(InputIter first, InputIter last, const Compare& comp,
         const Allocator& alloc) : _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        _nil->_right = _nil;
-        _nil->_parent = _nil;
+        std::construct_at(_nil);
         vector<value_type> v;
         for (InputIter it = first; it != last; ++it) {
             v.push_back(*it);
         }
         _root = _build(v, 0, v.size() - 1, _nil);
-        _nil->_left = _root;
+        _set_nil();
         _size = v.size();
     }
 
@@ -517,6 +515,7 @@ namespace j {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(_nil);
         _root = _nil;
+        _root->_parent = _nil;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -539,6 +538,7 @@ namespace j {
         x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
         std::construct_at(x._nil);
         x._root = x._nil;
+        x._root->_parent = x._nil;
         x._size = 0;
     }
 
@@ -594,6 +594,7 @@ namespace j {
                 x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
                 std::construct_at(x._nil);
                 x._root = x._nil;
+                x._root->_parent = x._nil;
                 x._size = 0;
              }
              return *this;
