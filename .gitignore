@@ -1,7 +1,6 @@
-cmake-build-debug/
 .vscode/
 .idea/
 *.cmake
-*_main.cc
-*_main.cpp
 trash/
+cmake-build-debug*/
+/execute_file/*
