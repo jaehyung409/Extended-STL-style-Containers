@@ -186,7 +186,10 @@ namespace j {
         template <class... Args>
         requires std::is_constructible_v<T, Args...>
         explicit _forward_list_node(Args&&... args) : _value(std::forward<Args>(args)...), _next(nullptr) {}
-        ~_forward_list_node() = default;
+        ~_forward_list_node() {
+            _value.~value_type();
+            _next = nullptr;
+        }
 
         T& operator*() { return _value; }
         const T& operator*() const { return _value; }
@@ -317,7 +320,7 @@ namespace j {
     template <class T, class Allocator>
     forward_list<T, Allocator>::~forward_list() {
         clear();
-        std::destroy_at(std::addressof(_before_head->_value));
+        std::destroy_at(_before_head);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, _before_head, 1);
     }
 
@@ -337,7 +340,7 @@ namespace j {
     forward_list<T, Allocator>& forward_list<T, Allocator>::operator=(forward_list&& x) noexcept {
         if (this != &x) {
             clear();
-            std::destroy_at(std::addressof(_before_head->_value));
+            std::destroy_at(_before_head);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, _before_head, 1);
 
             _head = x.get_head();
@@ -500,7 +503,7 @@ namespace j {
 
         Node* node_to_delete = position->_next;
         position->_next = node_to_delete->_next;
-        std::destroy_at(std::addressof(node_to_delete->_value));
+        std::destroy_at(node_to_delete);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, node_to_delete, 1);
         return position->_next;
     }
@@ -535,7 +538,7 @@ namespace j {
         Node* del_node = _head;
         _head = _head->_next;
         _before_head->_next = _head;
-        std::destroy_at(std::addressof(del_node->_value));
+        std::destroy_at(del_node);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, del_node, 1);
     }
 
@@ -568,7 +571,7 @@ namespace j {
         for (auto it = begin(); it != end(); ) {
             auto temp = it;
             ++it;
-            std::destroy_at(std::addressof(temp._ptr->_value));
+            std::destroy_at(temp._ptr);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, temp._ptr, 1);
         }
         _head = nullptr;

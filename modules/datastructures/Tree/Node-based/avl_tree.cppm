@@ -293,18 +293,26 @@ namespace j {
 
     protected:
         using node = _avl_tree_node;
-        key_type _key = key_type();
-        node *_left = nullptr;
-        node *_right = nullptr;
-        node *_parent = nullptr;
-        size_type _height = 0;
+        key_type _key;
+        node *_left;
+        node *_right;
+        node *_parent;
+        size_type _height;
 
     public:
-        _avl_tree_node() = default;
-        _avl_tree_node(const key_type &key) : _key(key) {}
-        _avl_tree_node(key_type &&key) : _key(std::move(key)) {}
+        _avl_tree_node() : _key(key_type()), _left(nullptr), _right(nullptr), _parent(nullptr), _height(0) {}
+        _avl_tree_node(const key_type &key)
+            : _key(key), _left(nullptr), _right(nullptr), _parent(nullptr), _height(0) {}
+        _avl_tree_node(key_type &&key)
+            : _key(std::move(key)), _left(nullptr), _right(nullptr), _parent(nullptr), _height(0) {}
         key_type& operator*() { return _key; }
         const key_type& operator*() const { return _key; }
+        ~_avl_tree_node() {
+            _key.~key_type();
+            _left = nullptr;
+            _right = nullptr;
+            _parent = nullptr;
+        }
     };
 
     template <class Key, class Compare, class Allocator>
@@ -341,7 +349,7 @@ namespace j {
         }
         ~node_type() {
             if (_ptr) {
-                std::destroy_at(std::addressof(_ptr->_key));
+                std::destroy_at(_ptr);
                 std::allocator_traits<node_allocator_type>::deallocate(_alloc, _ptr, 1);
                 _ptr = nullptr;
             }
@@ -942,7 +950,7 @@ namespace j {
         Node* erase_node = position._ptr;
         Node* next_node = std::next(erase_node);
         erase_node = _erase(erase_node);
-        std::destroy_at(std::addressof(erase_node->_key));
+        std::destroy_at(erase_node);
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, erase_node, 1);
           return iterator(next_node, this);
     }
@@ -1562,7 +1570,7 @@ namespace j {
         }
         _delete(node->_left);
         _delete(node->_right);
-        std::destroy_at(std::addressof(node->_key));
+        std::destroy_at(node);
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, node, 1);
     }
 }
