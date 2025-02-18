@@ -449,7 +449,7 @@ namespace j {
         _iterator_base &operator--() {
             if (_ptr->_left != nullptr) {
                 _ptr = _ptr->_left;
-                while (_ptr->_right != _tree->_nil) {
+                while (_ptr->_right != _tree->_nil || _ptr->_right != nullptr) {
                     _ptr = _ptr->_right;
                 }
             } else {
@@ -809,8 +809,6 @@ namespace j {
         auto is_unique = find_pos.second;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, std::forward<Args>(args)...);
-        new_node->_left = _nil;
-        new_node->_right = _nil;
         if (is_unique == false) {
             return iterator(node, this);
         }
