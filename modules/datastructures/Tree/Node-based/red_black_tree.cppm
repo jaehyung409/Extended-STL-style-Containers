@@ -982,6 +982,38 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     void red_black_tree<Key, Compare, Allocator>::_insert_up(const_iterator position) {
+        Node* node = position._ptr;
+        while (node->_parent != _nil && node->_parent->_color == color::RED) {
+            Node* parent = node->_parent;
+            Node* grandparent = parent->_parent;
+            if (grandparent == _nil) {
+                break;
+            }
+            Node* uncle = (parent == grandparent->_left) ? grandparent->_right : grandparent->_left;
+            auto uncle_color = (uncle && uncle != _nil) ? uncle->_color : color::BLACK;
+            if (uncle_color == color::RED) {
+                _recolor_insert(node);
+                uncle->_color = color::BLACK;
+                node = grandparent;
+            } else {
+                if (_comp(parent->_key, grandparent->_key)) {
+                    if (_comp(parent->_key, node->_key)) {
+                        _left_rotate(parent);
+                        node = parent;
+                    }
+                    _right_rotate(grandparent);
+                } else {
+                    if (_comp(node->_key, parent->_key)) {
+                        _right_rotate(parent);
+                        node = parent;
+                    }
+                    _left_rotate(grandparent);
+                }
+                parent->_color = color::BLACK;
+                grandparent->_color = color::RED;
+            }
+        }
+        _root->_color = color::BLACK;
     }
 
     template <class Key, class Compare, class Allocator>
