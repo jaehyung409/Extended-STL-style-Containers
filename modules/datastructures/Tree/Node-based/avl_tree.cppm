@@ -481,7 +481,7 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::avl_tree(const Compare& comp, const Allocator& alloc)
         : _size(0), _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(_nil);
+        std::construct_at(static_cast<_nil_node*>(_nil));
         _root = _nil;
         _root->_parent = _nil;
     }
@@ -491,7 +491,7 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::avl_tree(InputIter first, InputIter last, const Compare& comp,
         const Allocator& alloc) : _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(_nil);
+        std::construct_at(static_cast<_nil_node*>(_nil));
         vector<value_type> v;
         for (InputIter it = first; it != last; ++it) {
             v.push_back(*it);
@@ -513,7 +513,7 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::avl_tree(const Allocator& alloc)
         : _size(0), _alloc(alloc){
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(_nil);
+        std::construct_at(static_cast<_nil_node*>(_nil));
         _root = _nil;
         _root->_parent = _nil;
     }
@@ -522,7 +522,7 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::avl_tree(const avl_tree& x, const Allocator& alloc)
         : _comp(x._comp), _alloc(_alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(_nil);
+        std::construct_at(static_cast<_nil_node*>(_nil));
         vector<value_type> v;
         for (const auto& elem : x) {
             v.push_back(elem);
@@ -569,7 +569,7 @@ namespace j {
             _comp = x._comp;
             _alloc = x._alloc;
             _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-            std::construct_at(_nil);
+            std::construct_at(static_cast<_nil_node*>(_nil));
             vector<value_type> v;
             for (const auto& elem : x) {
                 v.push_back(elem);
