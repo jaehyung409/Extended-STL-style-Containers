@@ -74,6 +74,8 @@ namespace j {
         void _insert_up(Node* position); // helper function
         Node* find_for_min(Node *position); // helper function
         Node* _erase(Node *position); // helper function
+        void _transplant(Node* u, Node* v); // helper function
+        void _erase_fix(Node* position); // helper function)
         void _delete(Node *node); // helper function
 
     public:
@@ -1016,13 +1018,130 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::Node* red_black_tree<Key, Compare, Allocator>::
-    find_for_erase(Node* position) {
+    typename red_black_tree<Key, Compare, Allocator>::Node*
+    red_black_tree<Key, Compare, Allocator>::find_for_min(Node* position) {
+        Node* node = position;
+        while (node->_left != _nil) {
+            node = node->_left;
+        }
+        return node;
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::Node* red_black_tree<Key, Compare, Allocator>::_erase(
-        Node* position) {
+    typename red_black_tree<Key, Compare, Allocator>::Node*
+    red_black_tree<Key, Compare, Allocator>::_erase(Node* node) {
+        Node* erased = node;
+        Node* fix = nullptr;
+        auto erased_original_color = erased->_color;
+        if (node->_left == _nil) {
+            fix = node->_right;
+            _transplant(node, node->_right);
+            if (node == _nil->_left) {
+                _nil->_left = fix;
+            }
+        } else if (node->_right == _nil) {
+            fix = node->_left;
+            _transplant(node, node->_left);
+            if (node == _nil->_parent) {
+                _nil->_parent = fix;
+            }
+        } else {
+            erased = find_for_min(node->_right);
+            erased_original_color = erased->_color;
+            fix = erased->_right;
+            if (erased->_parent == node) {
+                if (fix) {
+                    fix->_parent = erased;  // if fix is nil, it's ok to set parent to nil
+                }
+            } else {
+                _transplant(erased, erased->_right);
+                erased->_right = node->_right;
+                erased->_right->_parent = erased;
+            }
+            _transplant(node, erased);
+            erased->_left = node->_left;
+            erased->_left->_parent = erased;
+            erased->_color = node->_color;
+        }
+        if (erased_original_color == color::BLACK && fix != _nil) {
+            _erase_fix(fix);
+        }
+        return node;
+    }
+
+    template <class Key, class Compare, class Allocator>
+    void red_black_tree<Key, Compare, Allocator>::_transplant(Node* u, Node* v) {
+        if (u->_parent == _nil) {
+            _root = v;
+        } else if (u == u->_parent->_left) {
+            u->_parent->_left = v;
+        } else {
+            u->_parent->_right = v;
+        }
+        if (v) {
+            v->_parent = u->_parent;
+        }
+
+    }
+
+    template <class Key, class Compare, class Allocator>
+    void red_black_tree<Key, Compare, Allocator>::_erase_fix(Node* position) {
+        Node* node = position;
+        Node* sibling = nullptr;
+        while (node->_parent != _nil && node->_color == color::BLACK) {
+            if (node == node->_parent->_left) {
+                sibling = node->_parent->_right;
+                if (sibling->_color == color::RED) {
+                    sibling->_color = color::BLACK;
+                    node->_parent->_color = color::RED;
+                    _left_rotate(node->_parent);
+                    sibling = node->_parent->_right;
+                }
+                if (sibling != _nil && sibling->_left->_color == color::BLACK &&
+                                       sibling->_right->_color == color::BLACK) {
+                    sibling->_color = color::RED;
+                    node = node->_parent;
+                } else {
+                    if (sibling != _nil && sibling->_right->_color == color::BLACK) {
+                        sibling->_left->_color = color::BLACK;
+                        sibling->_color = color::RED;
+                        _right_rotate(sibling);
+                        sibling = node->_parent->_right;
+                    }
+                    sibling->_color = node->_parent->_color;
+                    node->_parent->_color = color::BLACK;
+                    sibling->_right->_color = color::BLACK;
+                    _left_rotate(node->_parent);
+                    node = _root;
+                }
+            } else {
+                sibling = node->_parent->_left;
+                if (sibling->_color == color::RED) {
+                    sibling->_color = color::BLACK;
+                    node->_parent->_color = color::RED;
+                    _right_rotate(node->_parent);
+                    sibling = node->_parent->_left;
+                }
+                if (sibling != _nil && sibling->_right->_color == color::BLACK &&
+                                       sibling->_left->_color == color::BLACK) {
+                    sibling->_color = color::RED;
+                    node = node->_parent;
+                } else {
+                    if (sibling != _nil && sibling->_left->_color == color::BLACK) {
+                        sibling->_right->_color = color::BLACK;
+                        sibling->_color = color::RED;
+                        _left_rotate(sibling);
+                        sibling = node->_parent->_left;
+                    }
+                    sibling->_color = node->_parent->_color;
+                    node->_parent->_color = color::BLACK;
+                    sibling->_left->_color = color::BLACK;
+                    _right_rotate(node->_parent);
+                    node = _root;
+                }
+            }
+        }
+        node->_color = color::BLACK;
     }
 
     template <class Key, class Compare, class Allocator>
