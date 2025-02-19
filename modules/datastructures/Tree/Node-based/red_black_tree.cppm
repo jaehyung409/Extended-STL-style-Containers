@@ -71,8 +71,8 @@ namespace j {
         void _left_rotate(Node* x);
         void _right_rotate(Node* x);
         std::pair<const_iterator, bool> find_insert_position(const_iterator hint, const key_type &x); // helper function
-        void _insert_up(const_iterator position); // helper function
-        Node* find_for_erase(Node *position); // helper function
+        void _insert_up(Node* position); // helper function
+        Node* find_for_min(Node *position); // helper function
         Node* _erase(Node *position); // helper function
         void _delete(Node *node); // helper function
 
@@ -941,7 +941,7 @@ namespace j {
     void red_black_tree<Key, Compare, Allocator>::_left_rotate(Node* x) {
         Node* right = x->_right;
         x->_right = right->_left;
-        if (right->_left) {
+        if (right->_left != _nil) {
             right->_left->_parent = x;
         }
         right->_parent = x->_parent;
@@ -960,7 +960,7 @@ namespace j {
     void red_black_tree<Key, Compare, Allocator>::_right_rotate(Node* x) {
         Node* left = x->_left;
         x->_left = left->_right;
-        if (left->right) {
+        if (left->right != _nil) {
             left->_right->_parent = x;
         }
         left->_parent = x->_parent;
@@ -981,8 +981,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    void red_black_tree<Key, Compare, Allocator>::_insert_up(const_iterator position) {
-        Node* node = position._ptr;
+    void red_black_tree<Key, Compare, Allocator>::_insert_up(Node* node) {
         while (node->_parent != _nil && node->_parent->_color == color::RED) {
             Node* parent = node->_parent;
             Node* grandparent = parent->_parent;
