@@ -138,11 +138,11 @@ namespace j {
         iterator emplace_hint(const_iterator hint, Args &&... args);
         iterator insert(const value_type &x);
         iterator insert(value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         iterator insert(K &&x);
         iterator insert(const_iterator hint, const value_type &x);
         iterator insert(const_iterator hint, value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         iterator insert(const_iterator hint, K &&x);
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
@@ -157,11 +157,11 @@ namespace j {
         iterator emplace_hint_unique(const_iterator hint, Args &&... args);
         std::pair<iterator, bool> insert_unique(const value_type &x);
         std::pair<iterator, bool> insert_unique(value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         std::pair<iterator, bool> insert_unique(K &&x);
         iterator insert_unique(const_iterator hint, const value_type &x);
         iterator insert_unique(const_iterator hint, value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         iterator insert_unique(const_iterator hint, K &&x);
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
@@ -172,7 +172,7 @@ namespace j {
 
         node_type extract(const_iterator position);
         node_type extract(const key_type &x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         node_type extract(K &&x);
         insert_return_type insert(node_type &&node);
         insert_return_type insert(const_iterator position, node_type &&node);
@@ -183,7 +183,7 @@ namespace j {
             requires (!std::is_same_v<iterator, const_iterator>);
         iterator erase(const_iterator position);
         size_type erase(const key_type &x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         size_type erase(K &&x);
         iterator erase(const_iterator first, const_iterator last);
         void swap(avl_tree &x) noexcept(
@@ -208,48 +208,39 @@ namespace j {
         // Operations
         iterator find(const key_type &x);
         const_iterator find(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         iterator find(const K &x);
         template <class K>
         requires std::convertible_to<K, Key>
         const_iterator find(const K &x) const;
 
         size_type count(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         size_type count(const K &x) const;
 
         bool contains(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         bool contains(const K &x) const;
 
         iterator lower_bound(const key_type &x);
         const_iterator lower_bound(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         iterator lower_bound(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         const_iterator lower_bound(const K &x) const;
 
         iterator upper_bound(const key_type &x);
         const_iterator upper_bound(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         iterator upper_bound(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         const_iterator upper_bound(const K &x) const;
 
         std::pair<iterator, iterator> equal_range(const key_type &x);
         std::pair<const_iterator, const_iterator> equal_range(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         std::pair<iterator, iterator> equal_range(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, Key>
         std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
     };
 
@@ -756,9 +747,9 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::insert(K&& x) {
-        return emplace_hint(begin(), std::move(x));
+        return emplace_hint(begin(), std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -774,10 +765,10 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::insert(const_iterator hint, K&& x) {
-        return emplace_hint(hint, std::move(x));
+        return emplace_hint(hint, std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -828,7 +819,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+    template <class K> requires std::convertible_to<K, Key>
     std::pair<typename avl_tree<Key, Compare, Allocator>::iterator, bool>
     avl_tree<Key, Compare, Allocator>::insert_unique(K&& x) {
         return emplacee_hint_unique(begin(), std::forward<K>(x));
@@ -847,7 +838,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::insert_unique(const_iterator hint, K&& x) {
         return emplace_hint_unique(hint, std::forward<K>(x));
@@ -882,7 +873,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::node_type avl_tree<Key, Compare, Allocator>::extract(K&& x) {
         return extract(find(std::forward<K>(x)));
     }
@@ -972,7 +963,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::erase(K&& x) {
         size_type old_size = _size;
         erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
@@ -1189,15 +1180,13 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::find(const K& x) {
         return find(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::const_iterator avl_tree<Key, Compare, Allocator>::find(const K& x) const {
         return const_iterator(find(static_cast<const key_type&>(x)));
     }
@@ -1214,8 +1203,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::count(const K& x) const {
         return count(static_cast<const key_type&>(x));
     }
@@ -1226,8 +1214,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     bool avl_tree<Key, Compare, Allocator>::contains(const K& x) const {
         return contains(static_cast<const key_type&>(x));
     }
@@ -1255,15 +1242,13 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::lower_bound(const K& x) {
         return lower_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::lower_bound(const K& x) const {
         return const_iterator(lower_bound(static_cast<const key_type&>(x)));
@@ -1292,15 +1277,13 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::upper_bound(const K& x) {
         return upper_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::upper_bound(const K& x) const {
         return const_iterator(upper_bound(static_cast<const key_type&>(x)));
@@ -1321,21 +1304,21 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     std::pair<typename avl_tree<Key, Compare, Allocator>::iterator,
               typename avl_tree<Key, Compare, Allocator>::iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const K& x) {
-        return std::make_pair(lower_bound(static_cast<const key_type&>(x)), upper_bound(static_cast<const key_type&>(x)));
+        return std::make_pair(lower_bound(static_cast<const key_type&>(x)),
+                              upper_bound(static_cast<const key_type&>(x)));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, Key>
     std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator,
               typename avl_tree<Key, Compare, Allocator>::const_iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const K& x) const {
-        return std::make_pair(lower_bound(static_cast<const key_type&>(x)), upper_bound(static_cast<const key_type&>(x)));
+        return std::make_pair(lower_bound(static_cast<const key_type&>(x)),
+                              upper_bound(static_cast<const key_type&>(x)));
     }
 
     // Private member functions
