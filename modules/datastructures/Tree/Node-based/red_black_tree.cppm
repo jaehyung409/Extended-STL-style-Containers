@@ -827,19 +827,25 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::node_type red_black_tree<Key, Compare, Allocator>::extract(
-        const_iterator position) {
+    typename red_black_tree<Key, Compare, Allocator>::node_type
+    red_black_tree<Key, Compare, Allocator>::extract(const_iterator position) {
+        if (position == end()) {
+            return node_type(_alloc);
+        }
+        return node_type(_erase(position._ptr), _alloc);
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::node_type red_black_tree<Key, Compare, Allocator>::extract(
-        const key_type& x) {
+    typename red_black_tree<Key, Compare, Allocator>::node_type
+    red_black_tree<Key, Compare, Allocator>::extract(const key_type& x) {
+        return extract(find(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    typename red_black_tree<Key, Compare, Allocator>::node_type red_black_tree<Key, Compare, Allocator>::
-    extract(K&& x) {
+        template <class K> requires std::convertible_to<K, Key>
+    typename red_black_tree<Key, Compare, Allocator>::node_type
+    red_black_tree<Key, Compare, Allocator>::extract(K&& x) {
+        return extract(find(std::forward<K>(x)));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -883,28 +889,48 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::
-    erase(iterator position) requires (!std::is_same_v<_iterator_base<false>, _iterator_base<true>>) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::erase(iterator position)
+        requires (!std::is_same_v<_iterator_base<false>, _iterator_base<true>>) {
+        return erase(const_iterator(position, this));
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::erase(
-        const_iterator position) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::erase(const_iterator position) {
+        if (position == end()) {
+            return end();
+        }
+        Node* next_node = std::next(position._ptr);
+        Node* erase_node = _erase(position._ptr);
+        std::destroy_at(erase_node);
+        std::allocator_traits<node_allocator_type>::deallocate(_alloc, erase_node, 1);
+        return iterator(next_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::size_type red_black_tree<Key, Compare, Allocator>::erase(
-        const key_type& x) {
+    typename red_black_tree<Key, Compare, Allocator>::size_type
+    red_black_tree<Key, Compare, Allocator>::erase(const key_type& x) {
+        const size_type old_size = _size;
+        erase(lower_bound(x), upper_bound(x));
+        return old_size - _size;
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+    template <class K> requires std::convertible_to<K, Key>
     typename red_black_tree<Key, Compare, Allocator>::size_type red_black_tree<Key, Compare, Allocator>::erase(K&& x) {
+        const size_type old_size = _size;
+        erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
+        return old_size - _size;
     }
 
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::erase(
         const_iterator first, const_iterator last) {
+        while (first != last) {
+            first = erase(first);
+        }
+        return iterator(last._ptr, this);
     }
 
     template <class Key, class Compare, class Allocator>
