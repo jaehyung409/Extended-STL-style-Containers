@@ -65,8 +65,8 @@ namespace j {
         key_compare _comp;
         node_allocator_type _alloc;
 
-        Node* _build(vector<value_type> &v, size_type left, size_type right, Node *head);
-        Node* _build(vector<Node*> &v, size_type left, size_type right, Node *head);
+        Node* _build(vector<value_type> &v, int left, int right, Node *head);
+        Node* _build(vector<Node*> &v, int left, int right, Node *head);
         Node* _find_begin() const;
         void _set_nil() const;
         void _left_rotate(Node* x);
@@ -1324,29 +1324,29 @@ namespace j {
     // Private member functions
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::Node*
-    avl_tree<Key, Compare, Allocator>::_build(vector<value_type>& v, size_type left, size_type right, Node* head) {
+    avl_tree<Key, Compare, Allocator>::_build(vector<value_type>& v, int left, int right, Node* head) {
         if (left > right) {
             return nullptr;
         }
-        size_type mid = left + (right - left) / 2;
+        int mid = left + (right - left) / 2;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, v[mid]);
         new_node->_parent = head;
-        new_node->left = _build(v, left, mid - 1, new_node);
-        new_node->right = _build(v, mid + 1, right, new_node);
+        new_node->_left = _build(v, left, mid - 1, new_node);
+        new_node->_right = _build(v, mid + 1, right, new_node);
         return new_node;
     }
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::Node*
-    avl_tree<Key, Compare, Allocator>::_build(vector<Node*>& v, size_type left, size_type right, Node* head) {
+    avl_tree<Key, Compare, Allocator>::_build(vector<Node*>& v, int left, int right, Node* head) {
         if (left > right) {
             return nullptr;
         }
-        size_type mid = left + (right - left) / 2;
+        int mid = left + (right - left) / 2;
         v[mid]->_parent = head;
-        v[mid]->left = _build(v, left, mid - 1, v[mid]);
-        v[mid]->right = _build(v, mid + 1, right, v[mid]);
+        v[mid]->_left = _build(v, left, mid - 1, v[mid]);
+        v[mid]->_right = _build(v, mid + 1, right, v[mid]);
         return v[mid];
     }
 
