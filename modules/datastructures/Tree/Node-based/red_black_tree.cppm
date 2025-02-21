@@ -71,6 +71,7 @@ namespace j {
         void _left_rotate(Node* x);
         void _right_rotate(Node* x);
         std::pair<const_iterator, bool> find_insert_position(const_iterator hint, const key_type &x); // helper function
+        void _insert_child(Node* node, Node* new_node); // helper function
         void _insert_up(Node* position); // helper function
         Node* find_for_min(Node *position); // helper function
         Node* _erase(Node *position); // helper function
@@ -682,107 +683,147 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     template <class ... Args>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::
-    emplace(Args&&... args) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::emplace(Args&&... args) {
+        return emplace_hint(begin(), std::forward<Args>(args)...);
     }
 
     template <class Key, class Compare, class Allocator>
     template <class ... Args>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::emplace_hint(
-        const_iterator hint, Args&&... args) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::emplace_hint(const_iterator hint, Args&&... args) {
+        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto node = find_pos.first._ptr;
+        Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(new_node, std::forward<Args>(args)...);
+        _insert_child(node, new_node);
+        _insert_up(new_node);
+        return iterator(new_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert(
-        const value_type& x) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert(const value_type& x) {
+        return emplace_hint(begin(), x);
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert(
-        value_type&& x) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert(value_type&& x) {
+        return emplace_hint(begin(), std::forward<value_type>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
+        template <class K> requires std::convertible_to<K, Key>
     typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert(K&& x) {
+        return emplace_hint(begin(), std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert(
-        const_iterator hint, const value_type& x) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert(const_iterator hint, const value_type& x) {
+        return emplace_hint(hint, x);
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert(
-        const_iterator hint, value_type&& x) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert(const_iterator hint, value_type&& x) {
+        return emplace_hint(hint, std::forward<value_type>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert(
-        const_iterator hint, K&& x) {
+        template <class K> requires std::convertible_to<K, Key>
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert(const_iterator hint, K&& x) {
+        return emplace_hint(hint, std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class InputIter> requires (!std::is_integral_v<InputIter>)
     void red_black_tree<Key, Compare, Allocator>::insert(InputIter first, InputIter last) {
+        for (InputIter it = first; it != last; ++it) {
+            insert(*it);
+        }
     }
 
     template <class Key, class Compare, class Allocator>
     void red_black_tree<Key, Compare, Allocator>::insert(std::initializer_list<value_type> il) {
+        insert(il.begin(), il.end());
     }
 
     template <class Key, class Compare, class Allocator>
     template <class ... Args>
-    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool> red_black_tree<Key, Compare, Allocator>
-    ::emplace_unique(Args&&... args) {
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::emplace_unique(Args&&... args) {
+        return emplace_hint_unique(begin(), std::forward<Args>(args)...);
     }
 
     template <class Key, class Compare, class Allocator>
     template <class ... Args>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::
-    emplace_hint_unique(const_iterator hint, Args&&... args) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::emplace_hint_unique(const_iterator hint, Args&&... args) {
+        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto node = find_pos.first._ptr;
+        auto is_unique = find_pos.second;
+        if (is_unique == false) {
+            return iterator(node, this);
+        }
+        Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(new_node, std::forward<Args>(args)...);
+        _insert_child(node, new_node);
+        _insert_up(new_node);
+        return iterator(new_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
-    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool> red_black_tree<Key, Compare, Allocator>
-    ::insert_unique(const value_type& x) {
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::insert_unique(const value_type& x) {
+        return emplace_hint_unique(begin(), x);
     }
 
     template <class Key, class Compare, class Allocator>
-    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool> red_black_tree<Key, Compare, Allocator>
-    ::insert_unique(value_type&& x) {
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::insert_unique(value_type&& x) {
+        return emplacee_hint_unique(begin(), std::move(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool> red_black_tree<Key, Compare, Allocator>
-    ::insert_unique(K&& x) {
+        template <class K> requires std::convertible_to<K, Key>
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::insert_unique(K&& x) {
+        return emplacee_hint_unique(begin(), std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert_unique(
-        const_iterator hint, const value_type& x) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator hint, const value_type& x) {
+        return emplace_hint_unique(hint, x);
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert_unique(
-        const_iterator hint, value_type&& x) {
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator hint, value_type&& x) {
+        return emplace_hint_unique(hint, std::move(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K>
-    typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert_unique(
-        const_iterator hint, K&& x) {
+        template <class K> requires std::convertible_to<K, Key>
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator hint, K&& x) {
+        return emplace_hint_unique(hint, std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class InputIter> requires (!std::is_integral_v<InputIter>)
     void red_black_tree<Key, Compare, Allocator>::insert_unique(InputIter first, InputIter last) {
+        for (InputIter it = first; it != last; ++it) {
+            insert_unique(*it);
+        }
     }
 
     template <class Key, class Compare, class Allocator>
     void red_black_tree<Key, Compare, Allocator>::insert_unique(std::initializer_list<value_type> il) {
+        insert_unique(il.begin(), il.end());
     }
 
     template <class Key, class Compare, class Allocator>
@@ -802,23 +843,43 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::insert_return_type red_black_tree<Key, Compare, Allocator>::
-    insert(node_type&& node) {
+    typename red_black_tree<Key, Compare, Allocator>::insert_return_type
+    red_black_tree<Key, Compare, Allocator>::insert(node_type&& node) {
+        return insert(begin(), std::move(node));
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::insert_return_type red_black_tree<Key, Compare, Allocator>::
-    insert(const_iterator position, node_type&& node) {
+    typename red_black_tree<Key, Compare, Allocator>::insert_return_type
+    red_black_tree<Key, Compare, Allocator>::insert(const_iterator position, node_type&& node) {
+        auto find_pos = find_insert_position(position, node.key());
+        auto parent = find_pos.first._ptr;
+        auto new_node= node._ptr;
+        node._ptr = nullptr;
+        _insert_child(parent, new_node);
+        _insert_up(new_node);
+        return std::make_pair(iterator(new_node, this), node);
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::insert_return_type red_black_tree<Key, Compare, Allocator>::
-    insert_unique(node_type&& node) {
+    typename red_black_tree<Key, Compare, Allocator>::insert_return_type
+    red_black_tree<Key, Compare, Allocator>::insert_unique(node_type&& node) {
+        return insert_unique(begin(), std::move(node));
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::insert_return_type red_black_tree<Key, Compare, Allocator>::
-    insert_unique(const_iterator position, node_type&& node) {
+    typename red_black_tree<Key, Compare, Allocator>::insert_return_type
+    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
+        auto find_pos = find_insert_position(position, node.key());
+        auto parent = find_pos.first._ptr;
+        auto is_unique = find_pos.second;
+        if (is_unique == false) {
+            return std::make_pair(find_pos.first, node);
+        }
+        auto new_node= node._ptr;
+        node._ptr = nullptr;
+        _insert_child(parent, new_node);
+        _insert_up(new_node);
+        return std::make_pair(iterator(new_node, this), node);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1044,6 +1105,43 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::const_iterator, bool>
     red_black_tree<Key, Compare, Allocator>::find_insert_position(const_iterator hint, const key_type& x) {
+        if (_size == 0) {
+            return std::make_pair(end(), true);
+        }
+        if ((hint == end() || _comp(x, *hint)) && (hint == begin() || _comp(*std::prev(hint), x))) {
+            return std::make_pair(hint, true);
+        }
+        Node *finder = _root;
+        if (finder == _nil) {
+            return std::make_pair(const_iterator(finder, this), true);
+        }
+        bool unique = true;
+        while (true) {
+            if (finder->_key == x) {
+                unique = false;
+            }
+            if (_comp(finder->_key, x)) {
+                if (finder->_right == _nil) {
+                    return std::make_pair(const_iterator(finder, this), unique);
+                }
+                finder = finder->_right;
+            } else {
+                if (finder->_left == _nil) {
+                    return std::make_pair(const_iterator(finder, this), unique);
+                }
+                finder = finder->_left;
+            }
+        }
+    } // return leaf position
+
+    template <class Key, class Compare, class Allocator>
+    void red_black_tree<Key, Compare, Allocator>::_insert_child(Node* node, Node* new_node) {
+        if (_comp(node->_key, new_node->_key)) {
+            node->_right = new_node;
+        } else {
+            node->_left = new_node;
+        }
+        new_node->_parent = node;
     }
 
     template <class Key, class Compare, class Allocator>
