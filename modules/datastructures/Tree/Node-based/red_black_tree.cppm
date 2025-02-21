@@ -35,7 +35,6 @@ namespace j {
     class red_black_tree {
     private:
         class _red_black_tree_node;
-        class _nil_node;
         template <bool IsConst>
         class _iterator_base;
 
@@ -305,17 +304,18 @@ namespace j {
     protected:
         using node = _red_black_tree_node;
         key_type _key;
-        enum color _color;
+        color _color;
         node *_left;
         node *_right;
         node *_parent;
 
     public:
-        _red_black_tree_node() : _key(key_type()), _color(color::RED), _left(nullptr), _right(nullptr), _parent(nullptr) {}
-        _red_black_tree_node(const key_type &key, color color = color::RED)
-            : _key(key), _color(color), _left(nullptr), _right(nullptr), _parent(nullptr) {}
-        _red_black_tree_node(key_type &&key, color color = color::RED)
-            : _key(std::move(key)), _color(color), _left(nullptr), _right(nullptr), _parent(nullptr) {}
+        _red_black_tree_node() : _red_black_tree_node(color::RED, nullptr) {}
+        _red_black_tree_node(color color, node* node) : _red_black_tree_node(key_type(), color, node) {}
+        _red_black_tree_node(const key_type &key, color color, node* node)
+            : _key(key), _color(color), _left(node), _right(node), _parent(node) {}
+        _red_black_tree_node(key_type &&key, color color, node* node)
+            : _key(std::move(key)), _color(color), _left(node), _right(node), _parent(node) {}
         key_type& operator*() { return _key; }
         const key_type& operator*() const { return _key; }
         ~_red_black_tree_node() {
@@ -323,17 +323,6 @@ namespace j {
             _left = nullptr;
             _right = nullptr;
             _parent = nullptr;
-        }
-    };
-
-    template <class Key, class Compare, class Allocator>
-    class red_black_tree<Key, Compare, Allocator>::_nil_node : public _red_black_tree_node {
-    public:
-        _nil_node() {
-            this->_color = color::BLACK;
-            this->_left = this;
-            this->_right = this;
-            this->_parent = this;
         }
     };
 
@@ -423,7 +412,7 @@ namespace j {
         pointer operator->() const { return &**_ptr; }
 
         _iterator_base &operator++() {
-            if (_ptr->_right != _tree->_nil || _ptr == _tree->_nil->_parent) {
+            if (_ptr->_right != _tree->_nil || _ptr == _tree->_nil->_right) {
                 _ptr = _ptr->_right;
                 if (_ptr == _tree->_nil) {
                     return *this;
@@ -483,7 +472,7 @@ namespace j {
     red_black_tree<Key, Compare, Allocator>::red_black_tree(const Compare& comp, const Allocator& alloc)
         : _size(0), _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(reinterpret_cast<_nil_node*>(_nil));
+        std::construct_at(_nil, color::BLACK, _nil);
         _root = _nil;
     }
 
@@ -494,7 +483,7 @@ namespace j {
         : _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         _root = _nil;
-        std::construct_at(static_cast<_nil_node*>(_nil));
+        std::construct_at(_nil, color::BLACK, _nil);
         insert(first, last);
     }
 
@@ -508,7 +497,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     red_black_tree<Key, Compare, Allocator>::red_black_tree(const Allocator& alloc) : _size(0), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(static_cast<_nil_node*>(_nil));
+        std::construct_at(_nil, color::BLACK, _nil);
         _root = _nil;
     }
 
@@ -516,7 +505,7 @@ namespace j {
     red_black_tree<Key, Compare, Allocator>::red_black_tree(const red_black_tree& x, const Allocator& alloc)
         : _comp(x._comp), _alloc(_alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(static_cast<_nil_node*>(_nil));
+        std::construct_at(_nil, color::BLACK, _nil);
         _root = _nil;
         auto it = this->begin();
         for (const auto& elem : x) {
@@ -528,7 +517,7 @@ namespace j {
     red_black_tree<Key, Compare, Allocator>::red_black_tree(red_black_tree&& x, const Allocator& alloc)
         : _root(x._root), _nil(x._nil), _size(x._size), _comp(std::move(x._comp)), _alloc(alloc) {
         x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
-        std::construct_at(static_cast<node_allocator_type>(x._nil));
+        std::construct_at(x._nil, color::BLACK, x._nil);
         x._root = x._nil;
         x._size = 0;
     }
@@ -551,7 +540,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     red_black_tree<Key, Compare, Allocator>::~red_black_tree() {
         _delete(_root);
-        std::destroy_at(static_cast<_nil_node*>(_nil));
+        std::destroy_at(_nil);
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, _nil, 1);
     }
 
@@ -563,7 +552,7 @@ namespace j {
             _comp = x._comp;
             _alloc = x._alloc;
             _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-            std::construct_at(static_cast<_nil_node*>(_nil));
+            std::construct_at(_nil, color::BLACK, _nil);
             _root = _nil;
             auto it = begin();
             for (const auto& elem : x) {
@@ -580,7 +569,7 @@ namespace j {
              std::is_nothrow_assignable_v<Compare, Compare>) {
         if (this != x) {
             clear();
-            std::destroy_at(static_cast<_nil_node*>(_nil));
+            std::destroy_at(_nil);
             std::allocator_traits<node_allocator_type>::deallocate(_alloc, _nil, 1);
             _root = x._root;
             _nil = x._nil;
@@ -588,7 +577,7 @@ namespace j {
             _comp = std::move(x._comp);
             _alloc = x._alloc;
             x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
-            std::construct_at(x._nil);
+            std::construct_at(x._nil, color::BLACK, x._nil);
             x._root = x._nil;
             x._size = 0;
         }
@@ -713,7 +702,7 @@ namespace j {
         auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)..., color::RED, _nil);
         _insert_child(node, new_node);
         _insert_up(new_node);
         return iterator(new_node, this);
@@ -787,7 +776,7 @@ namespace j {
             return iterator(node, this);
         }
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
+        std::construct_at(new_node, std::forward<Args>(args)..., color::RED, _nil);
         _insert_child(node, new_node);
         _insert_up(new_node);
         return iterator(new_node, this);
@@ -919,7 +908,7 @@ namespace j {
         if (position == end()) {
             return end();
         }
-        Node* next_node = std::next(position._ptr);
+        Node* next_node = std::next(position)._ptr;
         Node* erase_node = _erase(position._ptr);
         std::destroy_at(erase_node);
         std::allocator_traits<node_allocator_type>::deallocate(_alloc, erase_node, 1);
@@ -979,7 +968,7 @@ namespace j {
     void red_black_tree<Key, Compare, Allocator>::clear() noexcept {
         _delete(_root);
         _nil->_left =_nil;
-        _nil->_parent = _nil;
+        _nil->_right = _nil;
         _root = _nil;
         _size = 0;
     }
@@ -1327,17 +1316,15 @@ namespace j {
         } else if (node->_right == _nil) {
             fix = node->_left;
             _transplant(node, node->_left);
-            if (node == _nil->_parent) {
-                _nil->_parent = fix;
+            if (node == _nil->_right) {
+                _nil->_right = fix;
             }
         } else {
             erased = find_for_min(node->_right);
             erased_original_color = erased->_color;
             fix = erased->_right;
             if (erased->_parent == node) {
-                if (fix) {
-                    fix->_parent = erased;  // if fix is nil, it's ok to set parent to nil
-                }
+                fix->_parent = erased;
             } else {
                 _transplant(erased, erased->_right);
                 erased->_right = node->_right;
@@ -1348,7 +1335,7 @@ namespace j {
             erased->_left->_parent = erased;
             erased->_color = node->_color;
         }
-        if (erased_original_color == color::BLACK && fix != _nil) {
+        if (erased_original_color == color::BLACK) {
             _erase_fix(fix);
         }
         return node;
@@ -1363,10 +1350,7 @@ namespace j {
         } else {
             u->_parent->_right = v;
         }
-        if (v) {
-            v->_parent = u->_parent;
-        }
-
+        v->_parent = u->_parent;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1438,7 +1422,7 @@ namespace j {
             std::allocator_traits<node_allocator_type>::deallocate(_alloc, node, 1);
         }
         _nil->_left = _nil;
-        _nil->_parent = _nil;
+        _nil->_right = _nil;
         _size = 0;
     }
 }
