@@ -474,7 +474,6 @@ namespace j {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(static_cast<_nil_node*>(_nil));
         _root = _nil;
-        _root->_parent = _nil;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -574,19 +573,21 @@ namespace j {
     avl_tree<Key, Compare, Allocator>& avl_tree<Key, Compare, Allocator>::operator=(avl_tree&& x)
     noexcept(std::allocator_traits<Allocator>::is_always_equal::value &&
              std::is_nothrow_assignable_v<Compare, Compare>) {
-             if (this != x) {
-                _root= x._root;
-                _nil = x._nil;
-                _size = x._size;
-                _comp = std::move(x._comp);
-                _alloc = x._alloc;
-                x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
-                std::construct_at(x._nil);
-                x._root = x._nil;
-                x._root->_parent = x._nil;
-                x._size = 0;
-             }
-             return *this;
+        if (this != x) {
+            clear();
+            std::destroy_at(static_cast<_nil_node*>(_nil));
+            std::allocator_traits<node_allocator_type>::deallocate(_alloc, _nil, 1);
+           _root = x._root;
+           _nil = x._nil;
+           _size = x._size;
+           _comp = std::move(x._comp);
+           _alloc = x._alloc;
+           x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
+           std::construct_at(x._nil);
+           x._root = x._nil;
+           x._size = 0;
+        }
+        return *this;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -796,11 +797,11 @@ namespace j {
         auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
-        Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
         if (is_unique == false) {
             return iterator(node, this);
         }
+        Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(new_node, std::forward<Args>(args)...);
         return _insert(new_node, find_pos.first);
     }
 
@@ -991,6 +992,7 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     void avl_tree<Key, Compare, Allocator>::unique() {
+        if (empty()) return;
         for (auto it = std::next(begin()), temp = begin(); it != end();) {
             if (*it == *temp) {
                 it = erase(it);
@@ -1003,7 +1005,9 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     void avl_tree<Key, Compare, Allocator>::clear() noexcept {
         _delete(_root);
-        _nil->_left = _root;
+        _nil->_left =_nil;
+        _nil->_parent = _nil;
+        _root = _nil;
         _size = 0;
     }
 
@@ -1060,8 +1064,12 @@ namespace j {
         }
         _root = _build(v, 0, v.size() - 1, _nil);
         _nil->_left = _root;
+        source._root = source._nil;
+        source._size = 0;
+        source._nil->_left = source._nil;
+        source._nil->_parent = source._nil;
         _size = v.size();
-    }
+    } // need to check allocator_type (same is ok, diff -> make new_node and deallocate)
 
     template <class Key, class Compare, class Allocator>
     template <class C2>
@@ -1142,8 +1150,12 @@ namespace j {
         }
         _root = _build(v, 0, v.size() - 1, _nil);
         _nil->_left = _root;
+        source._root = source._nil;
+        source._size = 0;
+        source._nil->_left = source._nil;
+        source._nil->_parent = source._nil;
         _size = v.size();
-    }
+    } // need to check allocator_type (same is ok, diff -> make new_node and deallocate)
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::key_compare avl_tree<Key, Compare, Allocator>::key_comp() const {
