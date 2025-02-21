@@ -1326,7 +1326,7 @@ namespace j {
             fix = node->_right;
             _transplant(node, node->_right);
             if (node == _nil->_left) {
-                _nil->_left = fix;
+                _nil->_left = fix != _nil ? fix : node->_parent;
             }
         } else if (node->_right == _nil) {
             fix = node->_left;
@@ -1353,6 +1353,7 @@ namespace j {
         if (erased_original_color == color::BLACK) {
             _erase_fix(fix);
         }
+        _size--;
         return node;
     }
 
