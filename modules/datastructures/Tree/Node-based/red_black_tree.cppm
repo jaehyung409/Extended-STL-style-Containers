@@ -310,11 +310,11 @@ namespace j {
         node *_parent;
 
     public:
-        _red_black_tree_node() : _key(key_type()), _left(nullptr), _right(nullptr), _parent(nullptr) {}
-        _red_black_tree_node(const key_type &key)
-            : _key(key), _left(nullptr), _right(nullptr), _parent(nullptr) {}
-        _red_black_tree_node(key_type &&key)
-            : _key(std::move(key)), _left(nullptr), _right(nullptr), _parent(nullptr) {}
+        _red_black_tree_node() : _key(key_type()), _color(color::RED), _left(nullptr), _right(nullptr), _parent(nullptr) {}
+        _red_black_tree_node(const key_type &key, color color = color::RED)
+            : _key(key), _color(color), _left(nullptr), _right(nullptr), _parent(nullptr) {}
+        _red_black_tree_node(key_type &&key, color color = color::RED)
+            : _key(std::move(key)), _color(color), _left(nullptr), _right(nullptr), _parent(nullptr) {}
         key_type& operator*() { return _key; }
         const key_type& operator*() const { return _key; }
         ~_red_black_tree_node() {
@@ -329,6 +329,7 @@ namespace j {
     class red_black_tree<Key, Compare, Allocator>::_nil_node : public _red_black_tree_node {
     public:
         _nil_node() {
+            this->_color = color::BLACK;
             this->_left = this;
             this->_right = this;
             this->_parent = this;
@@ -478,69 +479,127 @@ namespace j {
 
 namespace j {
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(const Compare& comp, const Allocator& alloc) {
+    red_black_tree<Key, Compare, Allocator>::red_black_tree(const Compare& comp, const Allocator& alloc)
+        : _size(0), _comp(comp), _alloc(alloc) {
+        _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(reinterpret_cast<_nil_node*>(_nil));
+        _root = _nil;
     }
 
     template <class Key, class Compare, class Allocator>
     template <class InputIter> requires (!std::is_integral_v<InputIter>)
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(InputIter first, InputIter last, const Compare& comp,
-        const Allocator& alloc) {
+    red_black_tree<Key, Compare, Allocator>::
+    red_black_tree(InputIter first, InputIter last, const Compare& comp, const Allocator& alloc)
+        : _comp(comp), _alloc(alloc) {
+        _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        _root = _nil;
+        std::construct_at(static_cast<_nil_node*>(_nil));
+        insert(first, last);
     }
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(const red_black_tree& x) {
+    red_black_tree<Key, Compare, Allocator>::red_black_tree(const red_black_tree& x) : red_black_tree(x, x._alloc) {}
+
+    template <class Key, class Compare, class Allocator>
+    red_black_tree<Key, Compare, Allocator>::red_black_tree(red_black_tree&& x)
+    noexcept(std::allocator_traits<Allocator>::is_always_equal::value) : red_black_tree(std::move(x), x._alloc) {}
+
+    template <class Key, class Compare, class Allocator>
+    red_black_tree<Key, Compare, Allocator>::red_black_tree(const Allocator& alloc) : _size(0), _alloc(alloc) {
+        _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(static_cast<_nil_node*>(_nil));
+        _root = _nil;
     }
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(
-        red_black_tree&& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
+    red_black_tree<Key, Compare, Allocator>::red_black_tree(const red_black_tree& x, const Allocator& alloc)
+        : _comp(x._comp), _alloc(_alloc) {
+        _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(static_cast<_nil_node*>(_nil));
+        _root = _nil;
+        auto it = this->begin();
+        for (const auto& elem : x) {
+            it = this->emplace_hint(elem, it);
+        }
     }
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(const Allocator& alloc) {
+    red_black_tree<Key, Compare, Allocator>::red_black_tree(red_black_tree&& x, const Allocator& alloc)
+        : _root(x._root), _nil(x._nil), _size(x._size), _comp(std::move(x._comp)), _alloc(alloc) {
+        x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
+        std::construct_at(static_cast<node_allocator_type>(x._nil));
+        x._root = x._nil;
+        x._size = 0;
     }
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(const red_black_tree& x, const Allocator& alloc) {
-    }
-
-    template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(red_black_tree&& x, const Allocator& alloc) {
-    }
-
-    template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(std::initializer_list<value_type> il, const Compare& comp,
-        const Allocator& alloc) {
-    }
+    red_black_tree<Key, Compare, Allocator>::
+    red_black_tree(std::initializer_list<value_type> il, const Compare& comp, const Allocator& alloc)
+        : red_black_tree(il.begin(), il.end(), comp, alloc) {}
 
     template <class Key, class Compare, class Allocator>
     template <class InputIter> requires (!std::is_integral_v<InputIter>)
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(InputIter first, InputIter last, const Allocator& alloc) {
-    }
+    red_black_tree<Key, Compare, Allocator>::red_black_tree(InputIter first, InputIter last, const Allocator& alloc)
+        : red_black_tree(first, last, Compare(), alloc) {}
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>::red_black_tree(std::initializer_list<value_type> il,
-        const Allocator& alloc) {
-    }
+    red_black_tree<Key, Compare, Allocator>::
+    red_black_tree(std::initializer_list<value_type> il, const Allocator& alloc)
+        : red_black_tree(il.begin(), il.end(), Compare(), alloc) {}
 
     template <class Key, class Compare, class Allocator>
     red_black_tree<Key, Compare, Allocator>::~red_black_tree() {
+        _delete(_root);
+        std::destroy_at(static_cast<_nil_node*>(_nil));
+        std::allocator_traits<node_allocator_type>::deallocate(_alloc, _nil, 1);
     }
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>& red_black_tree<Key, Compare, Allocator>::operator
-    =(const red_black_tree& x) {
+    red_black_tree<Key, Compare, Allocator>&
+    red_black_tree<Key, Compare, Allocator>::operator=(const red_black_tree& x) {
+        if (this != &x) {
+            clear();
+            _comp = x._comp;
+            _alloc = x._alloc;
+            _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+            std::construct_at(static_cast<_nil_node*>(_nil));
+            _root = _nil;
+            auto it = begin();
+            for (const auto& elem : x) {
+                it = emplace_hint(elem, it);
+            }
+        }
+        return *this;
     }
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>& red_black_tree<Key, Compare, Allocator>::operator=(
-        red_black_tree&& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value && std::
-        is_nothrow_assignable_v<Compare, Compare>) {
+    red_black_tree<Key, Compare, Allocator>&
+    red_black_tree<Key, Compare, Allocator>::operator=(red_black_tree&& x)
+    noexcept(std::allocator_traits<Allocator>::is_always_equal::value &&
+             std::is_nothrow_assignable_v<Compare, Compare>) {
+        if (this != x) {
+            clear();
+            std::destroy_at(static_cast<_nil_node*>(_nil));
+            std::allocator_traits<node_allocator_type>::deallocate(_alloc, _nil, 1);
+            _root = x._root;
+            _nil = x._nil;
+            _size = x._size;
+            _comp = std::move(x._comp);
+            _alloc = x._alloc;
+            x._nil = std::allocator_traits<node_allocator_type>::allocate(x._alloc, 1);
+            std::construct_at(x._nil);
+            x._root = x._nil;
+            x._size = 0;
+        }
+        return *this;
     }
 
     template <class Key, class Compare, class Allocator>
-    red_black_tree<Key, Compare, Allocator>& red_black_tree<Key, Compare, Allocator>::operator=(
-        std::initializer_list<value_type> il) {
+    red_black_tree<Key, Compare, Allocator>&
+    red_black_tree<Key, Compare, Allocator>::operator=(std::initializer_list<value_type> il) {
+        clear();
+        insert(il);
+        return *this;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -799,6 +858,11 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     void red_black_tree<Key, Compare, Allocator>::clear() noexcept {
+        _delete(_root);
+        _nil->_left =_nil;
+        _nil->_parent = _nil;
+        _root = _nil;
+        _size = 0;
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1146,5 +1210,14 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     void red_black_tree<Key, Compare, Allocator>::_delete(Node* node) {
+        if (node != _nil) {
+            _delete(node->_left);
+            _delete(node->_right);
+            std::destroy_at(node);
+            std::allocator_traits<node_allocator_type>::deallocate(_alloc, node, 1);
+        }
+        _nil->_left = _nil;
+        _nil->_parent = _nil;
+        _size = 0;
     }
 }
