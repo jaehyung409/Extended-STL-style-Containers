@@ -138,11 +138,11 @@ namespace j {
         iterator emplace_hint(const_iterator hint, Args &&... args);
         iterator insert(const value_type &x);
         iterator insert(value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         iterator insert(K &&x);
         iterator insert(const_iterator hint, const value_type &x);
         iterator insert(const_iterator hint, value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         iterator insert(const_iterator hint, K &&x);
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
@@ -157,11 +157,11 @@ namespace j {
         iterator emplace_hint_unique(const_iterator hint, Args &&... args);
         std::pair<iterator, bool> insert_unique(const value_type &x);
         std::pair<iterator, bool> insert_unique(value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         std::pair<iterator, bool> insert_unique(K &&x);
         iterator insert_unique(const_iterator hint, const value_type &x);
         iterator insert_unique(const_iterator hint, value_type &&x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         iterator insert_unique(const_iterator hint, K &&x);
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
@@ -172,7 +172,7 @@ namespace j {
 
         node_type extract(const_iterator position);
         node_type extract(const key_type &x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         node_type extract(K &&x);
         insert_return_type insert(node_type &&node);
         insert_return_type insert(const_iterator position, node_type &&node);
@@ -183,7 +183,7 @@ namespace j {
             requires (!std::is_same_v<iterator, const_iterator>);
         iterator erase(const_iterator position);
         size_type erase(const key_type &x);
-        template <class K>
+        template <class K> requires std::convertible_to<K, Key>
         size_type erase(K &&x);
         iterator erase(const_iterator first, const_iterator last);
         void swap(red_black_tree &x) noexcept(
