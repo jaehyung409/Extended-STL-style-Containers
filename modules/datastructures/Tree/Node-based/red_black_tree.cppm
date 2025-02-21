@@ -1199,7 +1199,7 @@ namespace j {
     void red_black_tree<Key, Compare, Allocator>::_right_rotate(Node* x) {
         Node* left = x->_left;
         x->_left = left->_right;
-        if (left->right != _nil) {
+        if (left->_right != _nil) {
             left->_right->_parent = x;
         }
         left->_parent = x->_parent;
@@ -1248,10 +1248,24 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     void red_black_tree<Key, Compare, Allocator>::_insert_child(Node* node, Node* new_node) {
+        _size++;
+        if (node == _nil) {
+            _root = new_node;
+            new_node->_parent = node;
+            _nil->_left = new_node;
+            _nil->_right = new_node;
+            return;
+        } // empty tree
         if (_comp(node->_key, new_node->_key)) {
             node->_right = new_node;
+            if (node == _nil->_right) {
+                _nil->_right = new_node;
+            }
         } else {
             node->_left = new_node;
+            if (node == _nil->_left) {
+                _nil->_left = new_node;
+            }
         }
         new_node->_parent = node;
     }
@@ -1267,7 +1281,8 @@ namespace j {
             Node* uncle = (parent == grandparent->_left) ? grandparent->_right : grandparent->_left;
             auto uncle_color = (uncle && uncle != _nil) ? uncle->_color : color::BLACK;
             if (uncle_color == color::RED) {
-                _recolor_insert(node);
+                parent->_color = color::BLACK;
+                grandparent->_color = color::RED;
                 uncle->_color = color::BLACK;
                 node = grandparent;
             } else {
