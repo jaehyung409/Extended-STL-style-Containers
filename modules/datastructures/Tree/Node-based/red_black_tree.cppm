@@ -17,15 +17,16 @@ import j.tree_helper;
 namespace j {
     enum class color { RED, BLACK };
 
-    export template <class Key, class Compare = default_compare<Key>, class Allocator = std::allocator<Key>>
+    export template <class Key, class Compare = _default_compare<Key>, class Allocator = std::allocator<Key>>
     class red_black_tree {
     private:
         class _red_black_tree_node;
         template <bool IsConst>
         class _iterator_base;
+        using key_mapper = _key_mapper<Key>;
+        using key_extractor = _key_extractor<Key>;
 
     public:
-        using key_mapper = key_mapper<Key>;
         using key_type = typename key_mapper::key_type;
         using mapped_type = typename key_mapper::mapped_type;
         using value_type = Key;
@@ -51,16 +52,16 @@ namespace j {
         Node *_root;
         Node *_nil;// _nil is a dummy node (sentinel), using Nil struct
         size_type _size;
-
         key_compare _comp;
         node_allocator_type _alloc;
 
         void _left_rotate(Node* x);
         void _right_rotate(Node* x);
-        std::pair<const_iterator, bool> find_insert_position(const_iterator hint, const key_type &x); // helper function
+        std::pair<iterator, bool> _find_insert_position(const key_type &x); // helper function
+        std::pair<iterator, bool> _find_insert_position(const_iterator hint, const key_type &x); // helper function
         void _insert_child(Node* node, Node* new_node); // helper function
         void _insert_up(Node* position); // helper function
-        Node* find_for_min(Node *position); // helper function
+        Node* _find_for_min(Node *position); // helper function
         Node* _erase(Node *position); // helper function
         void _transplant(Node* u, Node* v); // helper function
         void _erase_fix(Node* position); // helper function
@@ -126,11 +127,11 @@ namespace j {
         iterator emplace_hint(const_iterator hint, Args &&... args);
         iterator insert(const value_type &x);
         iterator insert(value_type &&x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, value_type>
         iterator insert(K &&x);
         iterator insert(const_iterator hint, const value_type &x);
         iterator insert(const_iterator hint, value_type &&x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, value_type>
         iterator insert(const_iterator hint, K &&x);
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
@@ -145,11 +146,11 @@ namespace j {
         iterator emplace_hint_unique(const_iterator hint, Args &&... args);
         std::pair<iterator, bool> insert_unique(const value_type &x);
         std::pair<iterator, bool> insert_unique(value_type &&x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, value_type>
         std::pair<iterator, bool> insert_unique(K &&x);
         iterator insert_unique(const_iterator hint, const value_type &x);
         iterator insert_unique(const_iterator hint, value_type &&x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, value_type>
         iterator insert_unique(const_iterator hint, K &&x);
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
@@ -160,18 +161,18 @@ namespace j {
 
         node_type extract(const_iterator position);
         node_type extract(const key_type &x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         node_type extract(K &&x);
         insert_return_type insert(node_type &&node);
-        insert_return_type insert(const_iterator position, node_type &&node);
+        iterator insert(const_iterator position, node_type &&node);
         insert_return_type insert_unique(node_type &&node);
-        insert_return_type insert_unique(const_iterator position, node_type &&node);
+        iterator insert_unique(const_iterator position, node_type &&node);
 
         iterator erase(iterator position)
             requires (!std::is_same_v<iterator, const_iterator>);
         iterator erase(const_iterator position);
         size_type erase(const key_type &x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         size_type erase(K &&x);
         iterator erase(const_iterator first, const_iterator last);
         void swap(red_black_tree &x) noexcept(
@@ -196,48 +197,38 @@ namespace j {
         // Operations
         iterator find(const key_type &x);
         const_iterator find(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         iterator find(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         const_iterator find(const K &x) const;
 
         size_type count(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         size_type count(const K &x) const;
 
         bool contains(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         bool contains(const K &x) const;
 
         iterator lower_bound(const key_type &x);
         const_iterator lower_bound(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         iterator lower_bound(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         const_iterator lower_bound(const K &x) const;
 
         iterator upper_bound(const key_type &x);
         const_iterator upper_bound(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         iterator upper_bound(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         const_iterator upper_bound(const K &x) const;
 
         std::pair<iterator, iterator> equal_range(const key_type &x);
         std::pair<const_iterator, const_iterator> equal_range(const key_type &x) const;
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         std::pair<iterator, iterator> equal_range(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
     };
 
@@ -275,7 +266,7 @@ namespace j {
         explicit value_compare(Compare c) : _comp(c) {}
 
         bool operator()(Key const &lhs, Key const& rhs) const {
-            if constexpr (is_std_pair_v<Key>) {
+            if constexpr (_is_std_pair_v<Key>) {
                 return _comp(lhs.first, rhs.first);
             } else {
                 return _comp(lhs, rhs);
@@ -291,7 +282,7 @@ namespace j {
 
     protected:
         using node = _red_black_tree_node;
-        key_type _key;
+        value_type _value;
         color _color;
         node *_left;
         node *_right;
@@ -299,15 +290,16 @@ namespace j {
 
     public:
         _red_black_tree_node() : _red_black_tree_node(color::RED, nullptr) {}
-        _red_black_tree_node(color color, node* node) : _red_black_tree_node(key_type(), color, node) {}
-        _red_black_tree_node(const key_type &key, color color, node* node)
-            : _key(key), _color(color), _left(node), _right(node), _parent(node) {}
-        _red_black_tree_node(key_type &&key, color color, node* node)
-            : _key(std::move(key)), _color(color), _left(node), _right(node), _parent(node) {}
-        key_type& operator*() { return _key; }
-        const key_type& operator*() const { return _key; }
+        _red_black_tree_node(color color, node* node) : _red_black_tree_node(value_type(), color, node) {}
+        _red_black_tree_node(const value_type &value, color color, node* node)
+            : _value(value), _color(color), _left(node), _right(node), _parent(node) {}
+        _red_black_tree_node(value_type &&value, color color, node* node)
+            : _value(std::move(value)), _color(color), _left(node), _right(node), _parent(node) {}
+        key_type& key() { return key_extractor(_value); }
+        const key_type& key() const { return key_extractor(_value); }
+        value_type& operator*() { return _value; }
+        const value_type& operator*() const { return _value; }
         ~_red_black_tree_node() {
-            _key.~key_type();
             _left = nullptr;
             _right = nullptr;
             _parent = nullptr;
@@ -352,19 +344,11 @@ namespace j {
         void swap(node_type &other) noexcept { std::swap(_ptr, other._ptr); }
         const auto& key() const {
             if (empty()) throw std::runtime_error("node_type is empty");
-            if constexpr (is_std_pair_v<Key>) {
-                return _ptr->_key.first;
-            } else {
-                return _ptr->_key;
-            }
+            return _ptr->key();
         }
         const auto& value() const {
             if (empty()) throw std::runtime_error("node_type is empty");
-            if constexpr (is_std_pair_v<Key>) {
-                return _ptr->_key.second;
-            } else {
-                static_assert(sizeof(Key) == 0, "value() is not available for non-pair key_type");
-            }
+            return _ptr->_value;
         }
     };
 
@@ -378,7 +362,7 @@ namespace j {
         using value_type = Key;
         using difference_type = std::ptrdiff_t;
         using pointer = _red_black_tree_node*;
-        using reference = reference_selector<Key, IsConst>;
+        using reference = _reference_selector<Key, IsConst>;
 
     protected:
         pointer _ptr;
@@ -470,8 +454,8 @@ namespace j {
     red_black_tree(InputIter first, InputIter last, const Compare& comp, const Allocator& alloc)
         : _comp(comp), _alloc(alloc) {
         _nil = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
-        _root = _nil;
         std::construct_at(_nil, color::BLACK, _nil);
+        _root = _nil;
         insert(first, last);
     }
 
@@ -687,7 +671,7 @@ namespace j {
     template <class ... Args>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::emplace_hint(const_iterator hint, Args&&... args) {
-        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto find_pos = _find_insert_position(hint, key_extractor(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, std::forward<Args>(args)..., color::RED, _nil);
@@ -750,14 +734,24 @@ namespace j {
     template <class ... Args>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::emplace_unique(Args&&... args) {
-        return emplace_hint_unique(begin(), std::forward<Args>(args)...);
+        auto find_pos = _find_insert_position(key_extractor(std::forward<Args>(args)...));
+        auto node = find_pos.first._ptr;
+        auto is_unique = find_pos.second;
+        if (is_unique == false) {
+            return std::make_pair(iterator(node, this), false);
+        }
+        Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(new_node, std::forward<Args>(args)..., color::RED, _nil);
+        _insert_child(node, new_node);
+        _insert_up(new_node);
+        return std::make_pair(iterator(new_node, this, true));
     }
 
     template <class Key, class Compare, class Allocator>
     template <class ... Args>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::emplace_hint_unique(const_iterator hint, Args&&... args) {
-        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto find_pos = _find_insert_position(hint, key_extractor(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
@@ -773,20 +767,20 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::insert_unique(const value_type& x) {
-        return emplace_hint_unique(begin(), x);
+        return emplace_unique(x);
     }
 
     template <class Key, class Compare, class Allocator>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::insert_unique(value_type&& x) {
-        return emplacee_hint_unique(begin(), std::move(x));
+        return emplacee_unique(std::move(x));
     }
 
     template <class Key, class Compare, class Allocator>
         template <class K> requires std::convertible_to<K, Key>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::insert_unique(K&& x) {
-        return emplacee_hint_unique(begin(), std::forward<K>(x));
+        return emplacee_unique(std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -837,7 +831,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-        template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::node_type
     red_black_tree<Key, Compare, Allocator>::extract(K&& x) {
         return extract(find(std::forward<K>(x)));
@@ -846,13 +840,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::insert_return_type
     red_black_tree<Key, Compare, Allocator>::insert(node_type&& node) {
-        return insert(begin(), std::move(node));
-    }
-
-    template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::insert_return_type
-    red_black_tree<Key, Compare, Allocator>::insert(const_iterator position, node_type&& node) {
-        auto find_pos = find_insert_position(position, node.key());
+        auto find_pos = _find_insert_position(node.key());
         auto parent = find_pos.first._ptr;
         auto new_node= node._ptr;
         node._ptr = nullptr;
@@ -862,15 +850,21 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::insert_return_type
-    red_black_tree<Key, Compare, Allocator>::insert_unique(node_type&& node) {
-        return insert_unique(begin(), std::move(node));
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert(const_iterator position, node_type&& node) {
+        auto find_pos = _find_insert_position(position, node.key());
+        auto parent = find_pos.first._ptr;
+        auto new_node= node._ptr;
+        node._ptr = nullptr;
+        _insert_child(parent, new_node);
+        _insert_up(new_node);
+        return iterator(new_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::insert_return_type
-    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
-        auto find_pos = find_insert_position(position, node.key());
+    red_black_tree<Key, Compare, Allocator>::insert_unique(node_type&& node) {
+        auto find_pos = _find_insert_position(node.key());
         auto parent = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
@@ -881,6 +875,22 @@ namespace j {
         _insert_child(parent, new_node);
         _insert_up(new_node);
         return std::make_pair(iterator(new_node, this), node);
+    }
+
+    template <class Key, class Compare, class Allocator>
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
+        auto find_pos = _find_insert_position(position, node.key());
+        auto parent = find_pos.first._ptr;
+        auto is_unique = find_pos.second;
+        if (is_unique == false) {
+            return find_pos.first;
+        }
+        auto new_node= node._ptr;
+        node._ptr = nullptr;
+        _insert_child(parent, new_node);
+        _insert_up(new_node);
+        return iterator(new_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -912,7 +922,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::size_type red_black_tree<Key, Compare, Allocator>::erase(K&& x) {
         const size_type old_size = _size;
         erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
@@ -944,7 +954,7 @@ namespace j {
     void red_black_tree<Key, Compare, Allocator>::unique() {
         if (empty()) return;
         for (auto it = std::next(begin()), temp = begin(); it != end();) {
-            if (*it == *temp) {
+            if (key_extractor(*it) == key_extractor(*temp)) {
                 it = erase(it);
             } else {
                 temp = it++;
@@ -1004,10 +1014,10 @@ namespace j {
     red_black_tree<Key, Compare, Allocator>::find(const key_type& x) {
         Node *finder = _root;
         while (finder != _nil) {
-            if (finder->_key == x) {
+            if (finder->key() == x) {
                 return iterator(finder, this);
             }
-            if (_comp(finder->_key, x)) {
+            if (_comp(finder->key(), x)) {
                 finder = finder->_right;
             } else {
                 finder = finder->_left;
@@ -1023,14 +1033,14 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::find(const K& x) {
         return find(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::const_iterator
     red_black_tree<Key, Compare, Allocator>::find(const K& x) const {
         return find(static_cast<const key_type&>(x));
@@ -1043,7 +1053,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::size_type
     red_black_tree<Key, Compare, Allocator>::count(const K& x) const {
         return count(static_cast<const key_type&>(x));
@@ -1055,7 +1065,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     bool red_black_tree<Key, Compare, Allocator>::contains(const K& x) const {
         return contains(static_cast<const key_type&>(x));
     }
@@ -1066,7 +1076,7 @@ namespace j {
         Node *lower = _root;
         Node *result = _nil;
         while (lower && lower != _nil) {
-            if (!_comp(lower->_key, x)) {
+            if (!_comp(lower->key(), x)) {
                 result = lower;
                 lower = lower->_left;
             } else {
@@ -1083,14 +1093,14 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::lower_bound(const K& x) {
         return lower_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::const_iterator
     red_black_tree<Key, Compare, Allocator>::lower_bound(const K& x) const {
         return const_iterator(lower_bound(static_cast<const key_type&>(x)));
@@ -1102,7 +1112,7 @@ namespace j {
         Node *upper = _root;
         Node *result = _nil;
         while (upper && upper != _nil) {
-            if (_comp(x, upper->_key)) {
+            if (_comp(x, upper->key())) {
                 result = upper;
                 upper = upper->_left;
             } else {
@@ -1119,14 +1129,14 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::upper_bound(const K& x) {
         return upper_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename red_black_tree<Key, Compare, Allocator>::const_iterator
     red_black_tree<Key, Compare, Allocator>::upper_bound(const K& x) const {
         return const_iterator(upper_bound(static_cast<const key_type&>(x)));
@@ -1147,7 +1157,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator,
               typename red_black_tree<Key, Compare, Allocator>::iterator>
     red_black_tree<Key, Compare, Allocator>::equal_range(const K& x) {
@@ -1156,7 +1166,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::const_iterator,
               typename red_black_tree<Key, Compare, Allocator>::const_iterator>
     red_black_tree<Key, Compare, Allocator>::equal_range(const K& x) const {
@@ -1203,35 +1213,36 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    std::pair<typename red_black_tree<Key, Compare, Allocator>::const_iterator, bool>
-    red_black_tree<Key, Compare, Allocator>::find_insert_position(const_iterator hint, const key_type& x) {
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::_find_insert_position(const key_type& x) {
+        return _find_insert_position(begin(), x);
+    }
+
+    template <class Key, class Compare, class Allocator>
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::_find_insert_position(const_iterator hint, const key_type& x) {
         if (_size == 0) {
             return std::make_pair(end(), true);
         }
-        if ((hint == end() || _comp(x, *hint)) && (hint == begin() || _comp(*std::prev(hint), x))) {
-            return std::make_pair(hint, true);
-        }
         Node *finder = _root;
-        if (finder == _nil) {
-            return std::make_pair(const_iterator(finder, this), true);
+        if ((hint == end() || _comp(x, key_extractor(*hint))) &&
+           (hint == begin() || _comp(key_extractor(*std::prev(hint)), x))) {
+            finder = hint._ptr;
         }
         bool unique = true;
-        while (true) {
-            if (finder->_key == x) {
+        while (finder != _nil) {
+            if (finder->key() == x) {
                 unique = false;
             }
-            if (_comp(finder->_key, x)) {
-                if (finder->_right == _nil) {
-                    return std::make_pair(const_iterator(finder, this), unique);
-                }
+            if (_comp(finder->key(), x)) {
+                if (finder->_right == _nil) break;
                 finder = finder->_right;
             } else {
-                if (finder->_left == _nil) {
-                    return std::make_pair(const_iterator(finder, this), unique);
-                }
+                if (finder->_left == _nil) break;
                 finder = finder->_left;
             }
         }
+        return std::make_pair(iterator(finder, this), unique);
     } // return leaf position
 
     template <class Key, class Compare, class Allocator>
@@ -1244,7 +1255,7 @@ namespace j {
             _nil->_right = new_node;
             return;
         } // empty tree
-        if (_comp(node->_key, new_node->_key)) {
+        if (_comp(node->key(), new_node->key())) {
             node->_right = new_node;
             if (node == _nil->_right) {
                 _nil->_right = new_node;
@@ -1274,14 +1285,14 @@ namespace j {
                 uncle->_color = color::BLACK;
                 node = grandparent;
             } else {
-                if (_comp(parent->_key, grandparent->_key)) {
-                    if (_comp(parent->_key, node->_key)) {
+                if (_comp(parent->key(), grandparent->key())) {
+                    if (_comp(parent->key(), node->key())) {
                         _left_rotate(parent);
                         node = parent;
                     }
                     _right_rotate(grandparent);
                 } else {
-                    if (_comp(node->_key, parent->_key)) {
+                    if (_comp(node->key(), parent->key())) {
                         _right_rotate(parent);
                         node = parent;
                     }
@@ -1296,7 +1307,7 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::Node*
-    red_black_tree<Key, Compare, Allocator>::find_for_min(Node* position) {
+    red_black_tree<Key, Compare, Allocator>::_find_for_min(Node* position) {
         Node* node = position;
         while (node->_left != _nil) {
             node = node->_left;
@@ -1323,7 +1334,7 @@ namespace j {
                 _nil->_right = fix;
             }
         } else {
-            erased = find_for_min(node->_right);
+            erased = _find_for_min(node->_right);
             erased_original_color = erased->_color;
             fix = erased->_right;
             if (erased->_parent == node) {
