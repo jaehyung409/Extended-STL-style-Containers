@@ -17,15 +17,16 @@ import j.tree_helper;
 namespace j {
     enum class color { RED, BLACK };
 
-    export template <class Key, class Compare = default_compare<Key>, class Allocator = std::allocator<Key>>
+    export template <class Key, class Compare = _default_compare<Key>, class Allocator = std::allocator<Key>>
     class red_black_tree {
     private:
         class _red_black_tree_node;
         template <bool IsConst>
         class _iterator_base;
+        using key_mapper = _key_mapper<Key>;
+        using key_extractor = _key_extractor<Key>;
 
     public:
-        using key_mapper = key_mapper<Key>;
         using key_type = typename key_mapper::key_type;
         using mapped_type = typename key_mapper::mapped_type;
         using value_type = Key;
@@ -51,16 +52,16 @@ namespace j {
         Node *_root;
         Node *_nil;// _nil is a dummy node (sentinel), using Nil struct
         size_type _size;
-
         key_compare _comp;
         node_allocator_type _alloc;
 
         void _left_rotate(Node* x);
         void _right_rotate(Node* x);
-        std::pair<const_iterator, bool> find_insert_position(const_iterator hint, const key_type &x); // helper function
+        std::pair<iterator, bool> _find_insert_position(const key_type &x); // helper function
+        std::pair<iterator, bool> _find_insert_position(const_iterator hint, const key_type &x); // helper function
         void _insert_child(Node* node, Node* new_node); // helper function
         void _insert_up(Node* position); // helper function
-        Node* find_for_min(Node *position); // helper function
+        Node* _find_for_min(Node *position); // helper function
         Node* _erase(Node *position); // helper function
         void _transplant(Node* u, Node* v); // helper function
         void _erase_fix(Node* position); // helper function
@@ -378,7 +379,7 @@ namespace j {
         using value_type = Key;
         using difference_type = std::ptrdiff_t;
         using pointer = _red_black_tree_node*;
-        using reference = reference_selector<Key, IsConst>;
+        using reference = _reference_selector<Key, IsConst>;
 
     protected:
         pointer _ptr;
@@ -687,7 +688,7 @@ namespace j {
     template <class ... Args>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::emplace_hint(const_iterator hint, Args&&... args) {
-        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto find_pos = _find_insert_position(hint, key_extractor(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, std::forward<Args>(args)..., color::RED, _nil);
@@ -757,7 +758,7 @@ namespace j {
     template <class ... Args>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::emplace_hint_unique(const_iterator hint, Args&&... args) {
-        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto find_pos = _find_insert_position(hint, key_extractor(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
@@ -852,7 +853,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::insert_return_type
     red_black_tree<Key, Compare, Allocator>::insert(const_iterator position, node_type&& node) {
-        auto find_pos = find_insert_position(position, node.key());
+        auto find_pos = _find_insert_position(position, node.key());
         auto parent = find_pos.first._ptr;
         auto new_node= node._ptr;
         node._ptr = nullptr;
@@ -870,7 +871,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::insert_return_type
     red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
-        auto find_pos = find_insert_position(position, node.key());
+        auto find_pos = _find_insert_position(position, node.key());
         auto parent = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
@@ -1203,8 +1204,14 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    std::pair<typename red_black_tree<Key, Compare, Allocator>::const_iterator, bool>
-    red_black_tree<Key, Compare, Allocator>::find_insert_position(const_iterator hint, const key_type& x) {
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::_find_insert_position(const key_type& x) {
+        return _find_insert_position(begin(), x);
+    }
+
+    template <class Key, class Compare, class Allocator>
+    std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
+    red_black_tree<Key, Compare, Allocator>::_find_insert_position(const_iterator hint, const key_type& x) {
         if (_size == 0) {
             return std::make_pair(end(), true);
         }
@@ -1296,7 +1303,7 @@ namespace j {
 
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::Node*
-    red_black_tree<Key, Compare, Allocator>::find_for_min(Node* position) {
+    red_black_tree<Key, Compare, Allocator>::_find_for_min(Node* position) {
         Node* node = position;
         while (node->_left != _nil) {
             node = node->_left;
@@ -1323,7 +1330,7 @@ namespace j {
                 _nil->_right = fix;
             }
         } else {
-            erased = find_for_min(node->_right);
+            erased = _find_for_min(node->_right);
             erased_original_color = erased->_color;
             fix = erased->_right;
             if (erased->_parent == node) {
