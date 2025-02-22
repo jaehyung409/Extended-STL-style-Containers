@@ -17,18 +17,6 @@ namespace j
     export template <class T, class Alloc>
     struct uses_allocator : std::false_type {};
 
-    template <typename T>
-    struct is_std_pair : std::false_type { };
-
-    template <typename T, typename U>
-    struct is_std_pair<std::pair<T, U>> : std::true_type { };
-
-    template <typename T>
-    inline constexpr bool is_std_pair_v = is_std_pair<T>::value;
-
-    export template <typename T>
-    concept IsPair = is_std_pair_v<T>;
-
     // Operation (Monoid)
     export template <class T>
     struct plus

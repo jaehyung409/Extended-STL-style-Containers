@@ -12,26 +12,12 @@ export module j.red_black_tree;
 
 import j.vector;
 import j.basics;
+import j.tree_helper;
 
 namespace j {
     enum class color { RED, BLACK };
 
-    template <typename Key, bool IsConst, bool IsPairValue>
-    struct reference_selector {
-        using type = const Key&;
-    };
-
-    template <typename Key>
-    struct reference_selector<Key, false, true> {
-        using type = std::pair< const typename Key::first_type, typename Key::second_type>&;
-    };
-
-    template <typename Key>
-    struct reference_selector<Key, true, true> {
-        using type = const Key&;
-    };
-
-    export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>>
+    export template <class Key, class Compare = default_compare<Key>, class Allocator = std::allocator<Key>>
     class red_black_tree {
     private:
         class _red_black_tree_node;
@@ -39,7 +25,9 @@ namespace j {
         class _iterator_base;
 
     public:
-        using key_type = Key;
+        using key_mapper = key_mapper<Key>;
+        using key_type = typename key_mapper::key_type;
+        using mapped_type = typename key_mapper::mapped_type;
         using value_type = Key;
         using size_type = std::size_t;
         using key_compare = Compare;
@@ -75,7 +63,7 @@ namespace j {
         Node* find_for_min(Node *position); // helper function
         Node* _erase(Node *position); // helper function
         void _transplant(Node* u, Node* v); // helper function
-        void _erase_fix(Node* position); // helper function)
+        void _erase_fix(Node* position); // helper function
         void _delete(Node *node); // helper function
 
     public:
@@ -286,11 +274,11 @@ namespace j {
         Compare _comp;
         explicit value_compare(Compare c) : _comp(c) {}
 
-        bool operator()(const value_type &x, const value_type &y) const {
-            if constexpr (IsPair<Key>) {
-                return _comp(x.first, y.first);
+        bool operator()(Key const &lhs, Key const& rhs) const {
+            if constexpr (is_std_pair_v<Key>) {
+                return _comp(lhs.first, rhs.first);
             } else {
-                return _comp(x, y);
+                return _comp(lhs, rhs);
             }
         }
     };
@@ -364,7 +352,7 @@ namespace j {
         void swap(node_type &other) noexcept { std::swap(_ptr, other._ptr); }
         const auto& key() const {
             if (empty()) throw std::runtime_error("node_type is empty");
-            if constexpr (IsPair<Key>) {
+            if constexpr (is_std_pair_v<Key>) {
                 return _ptr->_key.first;
             } else {
                 return _ptr->_key;
@@ -372,7 +360,7 @@ namespace j {
         }
         const auto& value() const {
             if (empty()) throw std::runtime_error("node_type is empty");
-            if constexpr (IsPair<Key>) {
+            if constexpr (is_std_pair_v<Key>) {
                 return _ptr->_key.second;
             } else {
                 static_assert(sizeof(Key) == 0, "value() is not available for non-pair key_type");
@@ -390,7 +378,7 @@ namespace j {
         using value_type = Key;
         using difference_type = std::ptrdiff_t;
         using pointer = _red_black_tree_node*;
-        using reference = typename reference_selector<Key, IsConst, IsPair<Key>>::type;
+        using reference = reference_selector<Key, IsConst>;
 
     protected:
         pointer _ptr;
