@@ -15,16 +15,17 @@ import j.basics;
 import j.tree_helper;
 
 namespace j {
-    export template <class Key, class Compare = default_compare<Key>, class Allocator = std::allocator<Key>>
+    export template <class Key, class Compare = _default_compare<Key>, class Allocator = std::allocator<Key>>
     class avl_tree {
     private:
         class _avl_tree_node;
         class _nil_node;
         template <bool IsConst>
         class _iterator_base;
+        using key_mapper = _key_mapper<Key>;
+        using key_extractor = _key_extractor<Key>;
 
     public:
-        using key_mapper = key_mapper<Key>;
         using key_type = typename key_mapper::key_type;
         using mapped_type = typename key_mapper::mapped_type;
         using value_type = Key;
@@ -60,9 +61,10 @@ namespace j {
         void _left_rotate(Node* x);
         void _right_rotate(Node* x);
         void _rotate_up(Node* x);
-        std::pair<const_iterator, bool> find_insert_position(const_iterator hint, const key_type &x); // helper function
+        std::pair<iterator, bool> _find_insert_position(const key_type &x); // helper function
+        std::pair<iterator, bool> _find_insert_position(const_iterator hint, const key_type &x); // helper function
         iterator _insert(Node* node, const_iterator position); // helper function
-        Node* find_for_erase(Node *position); // helper function
+        Node* _find_for_min(Node *position); // helper function
         Node* _erase(Node *position); // helper function
         void _delete(Node *node); // helper function
 
@@ -265,11 +267,11 @@ namespace j {
         Compare _comp;
         explicit value_compare(Compare c) : _comp(c) {}
 
-        bool operator()(const value_type &x, const value_type &y) const {
-            if constexpr (is_std_pair_v<Key>) {
-                return _comp(x.first, y.first);
+        bool operator()(const value_type &lhs, const value_type &rhs) const {
+            if constexpr (_is_std_pair_v<Key>) {
+                return _comp(lhs.first, rhs.first);
             } else {
-                return _comp(x, y);
+                return _comp(lhs, rhs);
             }
         }
     };
@@ -378,7 +380,7 @@ namespace j {
         using value_type = Key;
         using difference_type = std::ptrdiff_t;
         using pointer = _avl_tree_node*;
-        using reference = reference_selector<Key, IsConst>;
+        using reference = _reference_selector<Key, IsConst>;
 
     protected:
         pointer _ptr;
@@ -694,7 +696,7 @@ namespace j {
     template <class ... Args>
     typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::emplace_hint(const_iterator hint, Args&&... args) {
-        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto find_pos = _find_insert_position(hint, key_extractor(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
@@ -782,7 +784,7 @@ namespace j {
     template <class ... Args>
     typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::emplace_hint_unique(const_iterator hint, Args&&... args) {
-        auto find_pos = find_insert_position(hint, key_type(std::forward<Args>(args)...));
+        auto find_pos = _find_insert_position(hint, key_extractor(std::forward<Args>(args)...));
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
@@ -874,7 +876,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::insert_return_type
     avl_tree<Key, Compare, Allocator>::insert(const_iterator position, node_type&& node) {
-        auto find_pos = find_insert_position(position, node.key());
+        auto find_pos = _find_insert_position(position, node.key());
         auto pos = find_pos.first;
         auto is_unique = find_pos.second;
         Node* new_node = node._ptr;
@@ -911,7 +913,7 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::insert_return_type
     avl_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
-        auto find_pos = find_insert_position(position, node->_key);
+        auto find_pos = _find_insert_position(position, node.key());
         auto pos = find_pos.first;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
@@ -1435,8 +1437,14 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator, bool>
-    avl_tree<Key, Compare, Allocator>::find_insert_position(const_iterator hint, const key_type& x) {
+    std::pair<typename avl_tree<Key, Compare, Allocator>::iterator, bool>
+    avl_tree<Key, Compare, Allocator>::_find_insert_position(const key_type& x) {
+        return _find_insert_position(begin(), x);
+    }
+
+    template <class Key, class Compare, class Allocator>
+    std::pair<typename avl_tree<Key, Compare, Allocator>::iterator, bool>
+    avl_tree<Key, Compare, Allocator>::_find_insert_position(const_iterator hint, const key_type& x) {
         if (_size == 0) {
             return std::make_pair(end(), true);
         }
