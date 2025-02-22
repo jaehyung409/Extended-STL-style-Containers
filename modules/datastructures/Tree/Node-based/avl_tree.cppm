@@ -127,11 +127,11 @@ namespace j {
         iterator emplace_hint(const_iterator hint, Args &&... args);
         iterator insert(const value_type &x);
         iterator insert(value_type &&x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, value_type>
         iterator insert(K &&x);
         iterator insert(const_iterator hint, const value_type &x);
         iterator insert(const_iterator hint, value_type &&x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, value_type>
         iterator insert(const_iterator hint, K &&x);
         template <class InputIter>
         requires (!std::is_integral_v<InputIter>)
@@ -161,7 +161,7 @@ namespace j {
 
         node_type extract(const_iterator position);
         node_type extract(const key_type &x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         node_type extract(K &&x);
         insert_return_type insert(node_type &&node);
         insert_return_type insert(const_iterator position, node_type &&node);
@@ -172,7 +172,7 @@ namespace j {
             requires (!std::is_same_v<iterator, const_iterator>);
         iterator erase(const_iterator position);
         size_type erase(const key_type &x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         size_type erase(K &&x);
         iterator erase(const_iterator first, const_iterator last);
         void swap(avl_tree &x) noexcept(
@@ -197,39 +197,38 @@ namespace j {
         // Operations
         iterator find(const key_type &x);
         const_iterator find(const key_type &x) const;
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         iterator find(const K &x);
-        template <class K>
-        requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         const_iterator find(const K &x) const;
 
         size_type count(const key_type &x) const;
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         size_type count(const K &x) const;
 
         bool contains(const key_type &x) const;
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         bool contains(const K &x) const;
 
         iterator lower_bound(const key_type &x);
         const_iterator lower_bound(const key_type &x) const;
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         iterator lower_bound(const K &x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         const_iterator lower_bound(const K &x) const;
 
         iterator upper_bound(const key_type &x);
         const_iterator upper_bound(const key_type &x) const;
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         iterator upper_bound(const K &x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         const_iterator upper_bound(const K &x) const;
 
         std::pair<iterator, iterator> equal_range(const key_type &x);
         std::pair<const_iterator, const_iterator> equal_range(const key_type &x) const;
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         std::pair<iterator, iterator> equal_range(const K &x);
-        template <class K> requires std::convertible_to<K, Key>
+        template <class K> requires std::convertible_to<K, key_type>
         std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
     };
 
@@ -290,19 +289,14 @@ namespace j {
         size_type _height;
 
     public:
-        _avl_tree_node() : _key(key_type()), _left(nullptr), _right(nullptr), _parent(nullptr), _height(0) {}
-        _avl_tree_node(const key_type &key)
-            : _key(key), _left(nullptr), _right(nullptr), _parent(nullptr), _height(0) {}
-        _avl_tree_node(key_type &&key)
-            : _key(std::move(key)), _left(nullptr), _right(nullptr), _parent(nullptr), _height(0) {}
-        key_type& operator*() { return _key; }
-        const key_type& operator*() const { return _key; }
         _avl_tree_node() : _avl_tree_node(nullptr) {}
         _avl_tree_node(node* node) : _avl_tree_node(value_type(), node) {}
         _avl_tree_node(const value_type &value, node* node)
             : _value(value), _left(node), _right(node), _parent(node), _height(0) {}
         _avl_tree_node(value_type &&value, node* node)
             : _value(std::move(value)), _left(node), _right(node), _parent(node), _height(0) {}
+        key_type& key() { return key_extractor(_value); }
+        const key_type& key() const { return key_extractor(_value); }
         value_type& operator*() { return _value; }
         const value_type& operator*() const { return _value; }
         ~_avl_tree_node() {
@@ -350,19 +344,11 @@ namespace j {
         void swap(node_type &other) noexcept { std::swap(_ptr, other._ptr); }
         const auto& key() const {
             if (empty()) throw std::runtime_error("node_type is empty");
-            if constexpr (is_std_pair_v<Key>) {
-                return _ptr->_key.first;
-            } else {
-                return _ptr->_key;
-            }
+            return _ptr->key();
         }
         const auto& value() const {
             if (empty()) throw std::runtime_error("node_type is empty");
-            if constexpr (is_std_pair_v<Key>) {
-                return _ptr->_key.second;
-            } else {
-                static_assert(sizeof(Key) == 0, "value() is not available for non-pair key_type");
-            }
+            return _ptr->_value;
         }
     };
 
@@ -698,12 +684,12 @@ namespace j {
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, std::forward<Args>(args)..., _nil);
         if (is_unique == false) {
-            if (_comp(node->_key, new_node->_key)) {
+            if (_comp(node->key(), new_node->key())) {
                 new_node->_right = node->_right;
                 new_node->_parent = node;
                 node->_right = new_node;
                 if (new_node->_right == _nil) {
-                    _nil->_parent = new_node;
+                    _nil->_right = new_node;
                 }
             } else {
                 new_node->_left = node->_left;
@@ -858,7 +844,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::node_type avl_tree<Key, Compare, Allocator>::extract(K&& x) {
         return extract(find(std::forward<K>(x)));
     }
@@ -870,7 +856,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    typename avl_tree<Key, Compare, Allocator>::insert_return_type
+    typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::insert(const_iterator position, node_type&& node) {
         auto find_pos = _find_insert_position(position, node.key());
         auto pos = find_pos.first;
@@ -878,12 +864,12 @@ namespace j {
         Node* new_node = node._ptr;
         node._ptr = nullptr;
         if (is_unique == false) {
-            if (_comp(find_pos->_key, new_node->_key)) {
+            if (_comp(find_pos->key(), new_node->key())) {
                 new_node->_right = find_pos->_right;
                 new_node->_parent = find_pos;
                 find_pos->_right = new_node;
                 if (new_node->_right == _nil) {
-                    _nil->_parent = new_node;
+                    _nil->_right = new_node;
                 }
             } else {
                 new_node->_left = find_pos->_left;
@@ -907,7 +893,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    typename avl_tree<Key, Compare, Allocator>::insert_return_type
+    typename avl_tree<Key, Compare, Allocator>::iterator
     avl_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
         auto find_pos = _find_insert_position(position, node.key());
         auto pos = find_pos.first;
@@ -948,7 +934,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::erase(K&& x) {
         const size_type old_size = _size;
         erase(lower_bound(std::forward<K>(x)), upper_bound(std::forward<K>(x)));
@@ -980,7 +966,7 @@ namespace j {
     void avl_tree<Key, Compare, Allocator>::unique() {
         if (empty()) return;
         for (auto it = std::next(begin()), temp = begin(); it != end();) {
-            if (*it == *temp) {
+            if (key_extractor(*it) == key_extractor(*temp)) {
                 it = erase(it);
             } else {
                 temp = it++;
@@ -1004,7 +990,7 @@ namespace j {
         auto src = source.begin();
         auto it = begin();
         while (src != source.end() && it != end()) {
-            if (_comp(*src, *it)) {
+            if (_comp(key_extractor(*src), key_extractor(*it))) {
                 Node* new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
                 std::construct_at(new_node, *src, _nil);
                 v.push_back(new_node);
@@ -1034,7 +1020,7 @@ namespace j {
         auto src = source.begin();
         auto it = begin();
         while (src != source.end() && it != end()) {
-            if (_comp(*src, *it)) {
+            if (_comp(key_extractor(*src), key_extractor(*it))) {
                 v.push_back(src._ptr);
                 ++src;
             } else {
@@ -1063,36 +1049,36 @@ namespace j {
         vector<Node*> v;
         auto src = source.begin();
         auto it = begin();
-        key_type last_key = _comp(*src, *it) ? *src : *it;
+        key_type last_key = _comp(key_extractor(*src), key_extractor(*it)) ? key_extractor(*src) : key_extractor(*it);
         while (src != source.end() && it != end()) {
-            if (_comp(*src, *it)) {
-                if (last_key != *src) {
+            if (_comp(key_extractor(*src), key_extractor(*it))) {
+                if (last_key != key_extractor(*src)) {
                     Node* new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
                     std::construct_at(new_node, *src, _nil);
                     v.push_back(new_node);
-                    last_key = *src;
+                    last_key = key_extractor(*src);
                 }
                 ++src;
             } else {
-                if (last_key != *it) {
+                if (last_key != key_extractor(*it)) {
                     v.push_back(it._ptr);
-                    last_key = *it;
+                    last_key = key_extractor(*it);
                 }
                 ++it;
             }
         }
         for (;src != source.end(); ++src) {
-            if (last_key != *src) {
+            if (last_key != key_extractor(*src)) {
                 Node* new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
                 std::construct_at(new_node, *src, _nil);
                 v.push_back(new_node);
-                last_key = *src;
+                last_key = key_extractor(*src);
             }
         }
         for (; it != end(); ++it) {
-            if (last_key != *it) {
+            if (last_key != key_extractor(*it)) {
                 v.push_back(it._ptr);
-                last_key = *it;
+                last_key = key_extractor(*it);
             }
         }
         _root = _build(v, 0, v.size() - 1, _nil);
@@ -1106,32 +1092,32 @@ namespace j {
         vector<Node*> v;
         auto src = source.begin();
         auto it = begin();
-        key_type last_key = _comp(*src, *it) ? *src : *it;
+        key_type last_key = _comp(key_extractor(*src), key_extractor(*it)) ? key_extractor(*src) : key_extractor(*it);
         while (src != source.end() && it != end()) {
-            if (_comp(*src, *it)) {
-                if (last_key != *src) {
+            if (_comp(key_extractor(*src), key_extractor(*it))) {
+                if (last_key != key_extractor(*src)) {
                     v.push_back(src._ptr);
-                    last_key = *src;
+                    last_key = key_extractor(*src);
                 }
                 ++src;
             } else {
-                if (last_key != *it) {
+                if (last_key != key_extractor(*it)) {
                     v.push_back(it._ptr);
-                    last_key = *it;
+                    last_key = key_extractor(*it);
                 }
                 ++it;
             }
         }
         for (;src != source.end(); ++src) {
-            if (last_key != *src) {
+            if (last_key != key_extractor(*src)) {
                 v.push_back(src._ptr);
-                last_key = *src;
+                last_key = key_extractor(*src);
             }
         }
         for (; it != end(); ++it) {
-            if (last_key != *it) {
+            if (last_key != key_extractor(*it)) {
                 v.push_back(it._ptr);
-                last_key = *it;
+                last_key = key_extractor(*it);
             }
         }
         _root = _build(v, 0, v.size() - 1, _nil);
@@ -1157,10 +1143,10 @@ namespace j {
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::find(const key_type& x) {
         Node *finder = _root;
         while (finder != _nil) {
-            if (finder->_key == x) {
+            if (finder->key() == x) {
                 return iterator(finder, this);
             }
-            if (_comp(finder->_key, x)) {
+            if (_comp(finder->key(), x)) {
                 finder = finder->_right;
             } else {
                 finder = finder->_left;
@@ -1176,13 +1162,13 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::find(const K& x) {
         return find(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::const_iterator avl_tree<Key, Compare, Allocator>::find(const K& x) const {
         return const_iterator(find(static_cast<const key_type&>(x)));
     }
@@ -1194,7 +1180,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::size_type avl_tree<Key, Compare, Allocator>::count(const K& x) const {
         return count(static_cast<const key_type&>(x));
     }
@@ -1205,7 +1191,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     bool avl_tree<Key, Compare, Allocator>::contains(const K& x) const {
         return contains(static_cast<const key_type&>(x));
     }
@@ -1215,8 +1201,8 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::lower_bound(const key_type& x) {
         Node *lower = _root;
         Node *result = _nil;
-            if (!_comp(lower->_key, x)) {
         while (lower != _nil) {
+            if (!_comp(lower->key(), x)) {
                 result = lower;
                 lower = lower->_left;
             } else {
@@ -1233,13 +1219,13 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::lower_bound(const K& x) {
         return lower_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::lower_bound(const K& x) const {
         return const_iterator(lower_bound(static_cast<const key_type&>(x)));
@@ -1250,8 +1236,8 @@ namespace j {
     avl_tree<Key, Compare, Allocator>::upper_bound(const key_type& x) {
         Node *upper = _root;
         Node *result = _nil;
-            if (_comp(x, upper->_key)) {
         while (upper != _nil) {
+            if (_comp(x, upper->key())) {
                 result = upper;
                 upper = upper->_left;
             } else {
@@ -1268,13 +1254,13 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::iterator avl_tree<Key, Compare, Allocator>::upper_bound(const K& x) {
         return upper_bound(static_cast<const key_type&>(x));
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     typename avl_tree<Key, Compare, Allocator>::const_iterator
     avl_tree<Key, Compare, Allocator>::upper_bound(const K& x) const {
         return const_iterator(upper_bound(static_cast<const key_type&>(x)));
@@ -1295,7 +1281,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     std::pair<typename avl_tree<Key, Compare, Allocator>::iterator,
               typename avl_tree<Key, Compare, Allocator>::iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const K& x) {
@@ -1304,7 +1290,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-    template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::key_type>
     std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator,
               typename avl_tree<Key, Compare, Allocator>::const_iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const K& x) const {
@@ -1433,32 +1419,27 @@ namespace j {
         if (_size == 0) {
             return std::make_pair(end(), true);
         }
-        if (_size != 0 && *hint == x) {
+        if (_size != 0 && key_extractor(*hint) == x) {
             return std::make_pair(hint, false);
         }
-        if ((hint == end() || _comp(x, *hint)) && (hint == begin() || _comp(*std::prev(hint), x))) {
+        if ((hint == end() || _comp(x, key_extractor(*hint))) &&
+            (hint == begin() || _comp(key_extractor(*std::prev(hint)), x))) {
             return std::make_pair(hint, true);
         }
         Node *finder = _root;
-        if (finder == _nil) {
-            return std::make_pair(const_iterator(finder, this), true);
-        }
-        while (true) {
-            if (finder->_key == x) {
+        while (finder != _nil) {
+            if (finder->key() == x) {
                 return std::make_pair(const_iterator(finder, this), false);
             }
-            if (_comp(finder->_key, x)) {
-                if (finder->_right == nullptr || finder->_right == _nil) {
-                    return std::make_pair(const_iterator(finder, this), true);
-                }
+            if (_comp(finder->key(), x)) {
+                if (finder->_right == _nil) break;
                 finder = finder->_right;
             } else {
-                if (finder->_left == nullptr) {
-                    return std::make_pair(const_iterator(finder, this), true);
-                }
+                if (finder->_left == _nil) break;
                 finder = finder->_left;
             }
         }
+        return std::make_pair(iterator(finder, this), true);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1475,7 +1456,7 @@ namespace j {
                 node->_parent->_right = node;
             }
         } else {
-            if (_comp(node->_key, *position)) {
+            if (_comp(node->key(), *position)) {
                 if (position._ptr == _nil->_left) {
                     _nil->_left = node;
                 }
@@ -1516,8 +1497,8 @@ namespace j {
         Node *target = (position->_right != _nil) ? _find_for_min(position->_right) : position;
         Node *rotate_target = (target->_parent == position || target == _root) ? target : target->_parent;
         if (position == target) {                   // no right child
-                if (_comp(position->_key, position->_parent->_key)) {
             if (position->_left == _nil) {       // no child -> position is not root (size > 1)
+                if (_comp(position->key(), position->_parent->key())) {
                     position->_parent->_left = position->_left;
                     if (position == _nil->_left) {
                         _nil->_left = position->_parent;
@@ -1533,7 +1514,7 @@ namespace j {
             } else {
                 if (position == _root) {
                     _root = position->_left;
-                } else if (_comp(position->_key, position->_parent->_key)) {
+                } else if (_comp(position->key(), position->_parent->key())) {
                     position->_parent->_left = position->_left;
                 } else {
                     position->_parent->_right = position->_left;
@@ -1544,7 +1525,7 @@ namespace j {
                 position->_left->_parent = position->_parent;
             }
         } else {
-            if (_comp(target->_key, target->_parent->_key)) {
+            if (_comp(target->key(), target->_parent->key())) {
                 target->_parent->_left = target->_right;
             } else {
                 target->_parent->_right = target->_right;
@@ -1557,7 +1538,7 @@ namespace j {
             }
             if (position == _root) {
                 _root = target;
-            } else if (_comp(position->_key, position->_parent->_key)) {
+            } else if (_comp(position->key(), position->_parent->key())) {
                 position->_parent->_left = target;
             } else {
                 position->_parent->_right = target;
