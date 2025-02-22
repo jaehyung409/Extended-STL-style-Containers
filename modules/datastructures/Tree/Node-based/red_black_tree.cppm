@@ -164,9 +164,9 @@ namespace j {
         template <class K> requires std::convertible_to<K, key_type>
         node_type extract(K &&x);
         insert_return_type insert(node_type &&node);
-        insert_return_type insert(const_iterator position, node_type &&node);
+        iterator insert(const_iterator position, node_type &&node);
         insert_return_type insert_unique(node_type &&node);
-        insert_return_type insert_unique(const_iterator position, node_type &&node);
+        iterator insert_unique(const_iterator position, node_type &&node);
 
         iterator erase(iterator position)
             requires (!std::is_same_v<iterator, const_iterator>);
@@ -734,7 +734,17 @@ namespace j {
     template <class ... Args>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::emplace_unique(Args&&... args) {
-        return emplace_hint_unique(begin(), std::forward<Args>(args)...);
+        auto find_pos = _find_insert_position(key_extractor(std::forward<Args>(args)...));
+        auto node = find_pos.first._ptr;
+        auto is_unique = find_pos.second;
+        if (is_unique == false) {
+            return std::make_pair(iterator(node, this), false);
+        }
+        Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
+        std::construct_at(new_node, std::forward<Args>(args)..., color::RED, _nil);
+        _insert_child(node, new_node);
+        _insert_up(new_node);
+        return std::make_pair(iterator(new_node, this, true));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -757,20 +767,20 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::insert_unique(const value_type& x) {
-        return emplace_hint_unique(begin(), x);
+        return emplace_unique(x);
     }
 
     template <class Key, class Compare, class Allocator>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::insert_unique(value_type&& x) {
-        return emplacee_hint_unique(begin(), std::move(x));
+        return emplacee_unique(std::move(x));
     }
 
     template <class Key, class Compare, class Allocator>
         template <class K> requires std::convertible_to<K, Key>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::insert_unique(K&& x) {
-        return emplacee_hint_unique(begin(), std::forward<K>(x));
+        return emplacee_unique(std::forward<K>(x));
     }
 
     template <class Key, class Compare, class Allocator>
@@ -830,7 +840,13 @@ namespace j {
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::insert_return_type
     red_black_tree<Key, Compare, Allocator>::insert(node_type&& node) {
-        return insert(begin(), std::move(node));
+        auto find_pos = _find_insert_position(node.key());
+        auto parent = find_pos.first._ptr;
+        auto new_node= node._ptr;
+        node._ptr = nullptr;
+        _insert_child(parent, new_node);
+        _insert_up(new_node);
+        return std::make_pair(iterator(new_node, this), node);
     }
 
     template <class Key, class Compare, class Allocator>
@@ -842,19 +858,13 @@ namespace j {
         node._ptr = nullptr;
         _insert_child(parent, new_node);
         _insert_up(new_node);
-        return std::make_pair(iterator(new_node, this), node);
+        return iterator(new_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
     typename red_black_tree<Key, Compare, Allocator>::insert_return_type
     red_black_tree<Key, Compare, Allocator>::insert_unique(node_type&& node) {
-        return insert_unique(begin(), std::move(node));
-    }
-
-    template <class Key, class Compare, class Allocator>
-    typename red_black_tree<Key, Compare, Allocator>::iterator
-    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
-        auto find_pos = _find_insert_position(position, node.key());
+        auto find_pos = _find_insert_position(node.key());
         auto parent = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
@@ -865,6 +875,22 @@ namespace j {
         _insert_child(parent, new_node);
         _insert_up(new_node);
         return std::make_pair(iterator(new_node, this), node);
+    }
+
+    template <class Key, class Compare, class Allocator>
+    typename red_black_tree<Key, Compare, Allocator>::iterator
+    red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator position, node_type&& node) {
+        auto find_pos = _find_insert_position(position, node.key());
+        auto parent = find_pos.first._ptr;
+        auto is_unique = find_pos.second;
+        if (is_unique == false) {
+            return find_pos.first;
+        }
+        auto new_node= node._ptr;
+        node._ptr = nullptr;
+        _insert_child(parent, new_node);
+        _insert_up(new_node);
+        return iterator(new_node, this);
     }
 
     template <class Key, class Compare, class Allocator>
