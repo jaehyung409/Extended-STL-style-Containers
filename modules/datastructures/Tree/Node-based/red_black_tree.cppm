@@ -17,7 +17,7 @@ import j.tree_helper;
 namespace j {
     enum class color { RED, BLACK };
 
-    export template <class Key, class Compare = _default_compare<Key>, class Allocator = std::allocator<Key>>
+    export template <class Key, class Compare = void, class Allocator = std::allocator<Key>>
     class red_black_tree {
     private:
         class _red_black_tree_node;
@@ -25,13 +25,16 @@ namespace j {
         class _iterator_base;
         using key_mapper = _key_mapper<Key>;
         using key_extractor = _key_extractor<Key>;
+        using mapped_extractor = _mapped_extractor<Key>;
 
     public:
         using key_type = typename key_mapper::key_type;
         using mapped_type = typename key_mapper::mapped_type;
-        using value_type = Key;
+        using value_type = typename key_mapper::value_type;
         using size_type = std::size_t;
-        using key_compare = Compare;
+        using key_compare = std::conditional_t<std::is_same_v<Compare, void>,
+                                               std::less<key_type>,
+                                               Compare>;
         struct value_compare;
         using allocator_type = Allocator;
         using pointer = typename std::allocator_traits<Allocator>::pointer;
@@ -295,8 +298,9 @@ namespace j {
             : _value(value), _color(color), _left(node), _right(node), _parent(node) {}
         _red_black_tree_node(value_type &&value, color color, node* node)
             : _value(std::move(value)), _color(color), _left(node), _right(node), _parent(node) {}
-        key_type& key() { return key_extractor(_value); }
         const key_type& key() const { return key_extractor(_value); }
+        mapped_type& mapped() { return  mapped_extractor(_value); }
+        const mapped_type& mapped() const { return  mapped_extractor(_value); }
         value_type& operator*() { return _value; }
         const value_type& operator*() const { return _value; }
         ~_red_black_tree_node() {
@@ -693,7 +697,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-        template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::value_type>
     typename red_black_tree<Key, Compare, Allocator>::iterator red_black_tree<Key, Compare, Allocator>::insert(K&& x) {
         return emplace_hint(begin(), std::forward<K>(x));
     }
@@ -711,7 +715,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-        template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::value_type>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::insert(const_iterator hint, K&& x) {
         return emplace_hint(hint, std::forward<K>(x));
@@ -777,7 +781,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-        template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::value_type>
     std::pair<typename red_black_tree<Key, Compare, Allocator>::iterator, bool>
     red_black_tree<Key, Compare, Allocator>::insert_unique(K&& x) {
         return emplacee_unique(std::forward<K>(x));
@@ -796,7 +800,7 @@ namespace j {
     }
 
     template <class Key, class Compare, class Allocator>
-        template <class K> requires std::convertible_to<K, Key>
+    template <class K> requires std::convertible_to<K, typename _key_mapper<Key>::value_type>
     typename red_black_tree<Key, Compare, Allocator>::iterator
     red_black_tree<Key, Compare, Allocator>::insert_unique(const_iterator hint, K&& x) {
         return emplace_hint_unique(hint, std::forward<K>(x));
