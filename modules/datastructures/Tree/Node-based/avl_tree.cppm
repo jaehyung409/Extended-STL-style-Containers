@@ -765,11 +765,11 @@ namespace j {
         auto node = find_pos.first._ptr;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
-            return std::make_pair(iterator(node, this), false);
+            return {iterator(node, this), false};
         }
         Node *new_node = std::allocator_traits<node_allocator_type>::allocate(_alloc, 1);
         std::construct_at(new_node, std::forward<Args>(args)..., _nil);
-        return std::make_pair(_insert(new_node, find_pos.first), true);
+        return {_insert(new_node, find_pos.first), true};
     }
 
     template <class Key, class Compare, class Allocator>
@@ -885,9 +885,9 @@ namespace j {
             }
             _rotate_up(new_node);
             ++_size;
-            return std::make_pair(iterator(new_node, this), node);
+            return {iterator(new_node, this), node};
         }
-        return std::make_pair(_insert(new_node, pos), node);
+        return {_insert(new_node, pos), node};
     }
 
     template <class Key, class Compare, class Allocator>
@@ -928,11 +928,12 @@ namespace j {
         auto pos = find_pos.first;
         auto is_unique = find_pos.second;
         if (is_unique == false) {
-            return std::make_pair(pos, node);
+            return {pos, node};
         }
         Node* new_node = node._ptr;
         node._ptr = nullptr;
-        return std::make_pair(_insert(new_node, pos), node);    }
+        return {_insert(new_node, pos), node};
+    }
 
     template <class Key, class Compare, class Allocator>
     typename avl_tree<Key, Compare, Allocator>::iterator
@@ -1312,14 +1313,14 @@ namespace j {
     std::pair<typename avl_tree<Key, Compare, Allocator>::iterator,
               typename avl_tree<Key, Compare, Allocator>::iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const key_type& x) {
-        return std::make_pair(lower_bound(x), upper_bound(x));
+        return {lower_bound(x), upper_bound(x)};
     }
 
     template <class Key, class Compare, class Allocator>
     std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator,
               typename avl_tree<Key, Compare, Allocator>::const_iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const key_type& x) const {
-        return std::make_pair(lower_bound(x), upper_bound(x));
+        return {lower_bound(x), upper_bound(x)};
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1327,8 +1328,8 @@ namespace j {
     std::pair<typename avl_tree<Key, Compare, Allocator>::iterator,
               typename avl_tree<Key, Compare, Allocator>::iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const K& x) {
-        return std::make_pair(lower_bound(static_cast<const key_type&>(x)),
-                              upper_bound(static_cast<const key_type&>(x)));
+        return {lower_bound(static_cast<const key_type&>(x)),
+                upper_bound(static_cast<const key_type&>(x))};
     }
 
     template <class Key, class Compare, class Allocator>
@@ -1336,8 +1337,8 @@ namespace j {
     std::pair<typename avl_tree<Key, Compare, Allocator>::const_iterator,
               typename avl_tree<Key, Compare, Allocator>::const_iterator>
     avl_tree<Key, Compare, Allocator>::equal_range(const K& x) const {
-        return std::make_pair(lower_bound(static_cast<const key_type&>(x)),
-                              upper_bound(static_cast<const key_type&>(x)));
+        return {lower_bound(static_cast<const key_type&>(x)),
+                upper_bound(static_cast<const key_type&>(x))};
     }
 
     // Private member functions
@@ -1459,19 +1460,19 @@ namespace j {
     std::pair<typename avl_tree<Key, Compare, Allocator>::iterator, bool>
     avl_tree<Key, Compare, Allocator>::_find_insert_position(const_iterator hint, const key_type& x) {
         if (_size == 0) {
-            return std::make_pair(end(), true);
+            return {end(), true};
         }
         if (_size != 0 && key_extractor(*hint) == x) {
-            return std::make_pair(hint, false);
+            return {hint, false};
         }
         if ((hint == end() || _comp(x, key_extractor(*hint))) &&
             (hint == begin() || _comp(key_extractor(*std::prev(hint)), x))) {
-            return std::make_pair(hint, true);
+            return {hint, true};
         }
         Node *finder = _root;
         while (finder != _nil) {
             if (finder->key() == x) {
-                return std::make_pair(const_iterator(finder, this), false);
+                return {const_iterator(finder, this), false};
             }
             if (_comp(finder->key(), x)) {
                 if (finder->_right == _nil) break;
@@ -1481,7 +1482,7 @@ namespace j {
                 finder = finder->_left;
             }
         }
-        return std::make_pair(iterator(finder, this), true);
+        return {iterator(finder, this), true};
     }
 
     template <class Key, class Compare, class Allocator>
