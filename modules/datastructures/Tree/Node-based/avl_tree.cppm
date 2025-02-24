@@ -346,14 +346,12 @@ namespace j {
             return alloc();
         }
         void swap(node_type &other) noexcept { std::swap(_ptr, other._ptr); }
-        const auto& key() const {
-            if (empty()) throw std::runtime_error("node_type is empty");
-            return _ptr->key();
-        }
-        const auto& value() const {
-            if (empty()) throw std::runtime_error("node_type is empty");
-            return _ptr->_value;
-        }
+        key_type& key() { return key_extractor(_ptr->_value); }
+        const key_type& key() const { return key_extractor(_ptr->_value); }
+        mapped_type& mapped() { return  mapped_extractor(_ptr->_value); }
+        const mapped_type& mapped() const { return  mapped_extractor(_ptr->_value); }
+        value_type& operator*() { return _ptr->_value; }
+        const value_type& operator*() const { return _ptr->_value; }
     };
 
     template <class Key, class Compare, class Allocator>
