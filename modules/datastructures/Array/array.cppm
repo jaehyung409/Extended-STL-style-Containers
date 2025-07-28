@@ -313,6 +313,76 @@ namespace j {
     }
 
     template <typename T, std::size_t N>
+    constexpr T* array<T, N>::data() noexcept {
+        return _data;
+    }
+
+    template <typename T, std::size_t N>
+    constexpr const T* array<T, N>::data() const noexcept {
+        return _data;
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::iterator array<T, N>::begin() noexcept {
+        return iterator(_data);
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_iterator array<T, N>::begin() const noexcept {
+        return const_iterator(_data);
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::iterator array<T, N>::end() noexcept {
+        return iterator(_data + N);
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_iterator array<T, N>::end() const noexcept {
+        return const_iterator(_data + N);
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::reverse_iterator array<T, N>::rbegin() noexcept {
+        return reverse_iterator(end());
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_reverse_iterator array<T, N>::rbegin() const noexcept {
+        return const_reverse_iterator(end());
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::reverse_iterator array<T, N>::rend() noexcept {
+        return reverse_iterator(begin());
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_reverse_iterator array<T, N>::rend() const noexcept {
+        return const_reverse_iterator(begin());
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_iterator array<T, N>::cbegin() const noexcept {
+        return const_iterator(_data);
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_iterator array<T, N>::cend() const noexcept {
+        return const_iterator(_data + N);
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_reverse_iterator array<T, N>::crbegin() const noexcept {
+        return const_reverse_iterator(cend());
+    }
+
+    template <class T, std::size_t N>
+    constexpr typename array<T, N>::const_reverse_iterator array<T, N>::crend() const noexcept {
+        return const_reverse_iterator(cbegin());
+    }
+
+    template <typename T, std::size_t N>
     constexpr std::size_t array<T, N>::max_size() const noexcept{
         return N;
     }
@@ -334,8 +404,61 @@ namespace j {
         }
     }
 
+    template <class T, std::size_t N>
+    constexpr void array<T, N>::swap(array& other) noexcept(std::is_nothrow_swappable_v<T>) requires (std::
+        is_swappable_v<T>) {
+        if constexpr (N > 0) {
+            std::swap_ranges(_data, _data + N, other._data);
+        }
+    }
+
+    template <std::size_t I, class T, std::size_t N>
+    constexpr T& get(array<T, N>& a) noexcept {
+        static_assert(I < N, "Index out of bounds in array get");
+        return a._data[I];
+    }
+
+    template <std::size_t I, class T, std::size_t N>
+    constexpr T&& get(array<T, N>&& a) noexcept {
+        static_assert(I < N, "Index out of bounds in array get");
+        return a._data[I];
+    }
+
+    template <std::size_t I, class T, std::size_t N>
+    constexpr const T& get(const array<T, N>& a) noexcept {
+        static_assert(I < N, "Index out of bounds in array get");
+        return a._data[I];
+    }
+
+    template <std::size_t I, class T, std::size_t N>
+    constexpr const T&& get(const array<T, N>&& a) noexcept {
+        static_assert(I < N, "Index out of bounds in array get");
+        return a._data[I];
+    }
+
     template <typename T, std::size_t N>
-    constexpr void swap(array<T, N>&a, array<T, N>& b) noexcept {
-        std::swap_ranges(std::begin(a), std::end(a), std::begin(b));
+    constexpr void swap(array<T, N>&a, array<T, N>& b) noexcept(
+        N == 0 || std::is_nothrow_swappable_v<T>
+    ) requires (N == 0 || std::is_swappable_v<T>
+    ) {
+        a.swap(b);
+    }
+
+    template <class T, std::size_t N>
+    constexpr array<std::remove_cv_t<T>, N> to_array(T(& arr)[N]) {
+        array<std::remove_cv_t<T>, N> ret;
+        for (std::size_t i = 0; i < N; i++) {
+            ret[i] = arr[i];
+        }
+        return ret;
+    }
+
+    template <class T, std::size_t N>
+    constexpr array<std::remove_cv_t<T>, N> to_array(T(&& arr)[N]) {
+        array<std::remove_cv_t<T>, N> ret;
+        for (std::size_t i = 0; i < N; i++) {
+            ret[i] = std::move(arr[i]);
+        }
+        return ret;
     }
 }
