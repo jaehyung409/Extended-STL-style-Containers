@@ -153,7 +153,7 @@ TEST_CASE("Array Benchmarks: fill") {
 
 TEST_CASE("Array Benchmarks: with std::sort") {
     SECTION("std::sort with j::array") {
-        std::array<int, N> arr;
+        j::array<int, N> arr;
         for (size_t i = 0; i < N; ++i) {
             arr[i] = N - i; // Reverse order
         }
