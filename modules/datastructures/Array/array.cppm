@@ -433,7 +433,7 @@ namespace j {
     template <std::size_t I, class T, std::size_t N>
     constexpr const T&& get(const array<T, N>&& a) noexcept {
         static_assert(I < N, "Index out of bounds in array get");
-        return a._data[I];
+        return std::move(a._data[I]);
     }
 
     template <typename T, std::size_t N>
