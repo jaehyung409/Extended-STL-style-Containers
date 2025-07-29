@@ -15,22 +15,17 @@ namespace j {
     export template <class T, std::size_t N>
     class array {
     public:
-        class iterator;
-        class const_iterator;
-
-        using value_type            = T;
-        using pointer               = T*;
-        using const_pointer         = const T*;
-        using reference             = T&;
-        using const_reference       = const T&;
-        using size_type             = std::size_t;
-        using difference_type       = std::ptrdiff_t;
-        using iterator              = iterator;
-        using const_iterator        = const_iterator;
-        using reverse_iterator      = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using value_type                    = T;
+        using pointer                       = T*;
+        using const_pointer                 = const T*;
+        using reference                     = T&;
+        using const_reference               = const T&;
+        using size_type                     = size_t;
+        using difference_type               = ptrdiff_t;
         using iterator                      = T*;
         using const_iterator                = const T*;
+        using reverse_iterator              = std::reverse_iterator<iterator>;
+        using const_reverse_iterator        = std::reverse_iterator<const_iterator>;
 
         // Aggregate Type (no explicit construct/copy/destroy)
         T _data[N];
