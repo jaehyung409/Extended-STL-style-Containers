@@ -5,9 +5,7 @@
  */
 
 module;
-#include <cstddef>
 #include <stdexcept>
-#include <algorithm>
 
 export module j.array;
 
@@ -20,8 +18,8 @@ namespace j {
         using const_pointer                 = const T*;
         using reference                     = T&;
         using const_reference               = const T&;
-        using size_type                     = size_t;
-        using difference_type               = ptrdiff_t;
+        using size_type                     = std::size_t;
+        using difference_type               = std::ptrdiff_t;
         using iterator                      = T*;
         using const_iterator                = const T*;
         using reverse_iterator              = std::reverse_iterator<iterator>;
@@ -31,55 +29,55 @@ namespace j {
         T _data[N];
 
         // Accessor
-        constexpr reference operator[](size_type index);
-        constexpr const_reference operator[](size_type index) const;
-        constexpr reference at(std::size_t pos);
-        constexpr const_reference at(size_type pos) const;
-        constexpr value_type front() const;
-        constexpr value_type back() const;
-        constexpr pointer data() noexcept;
-        constexpr const_pointer data() const noexcept;
+        constexpr reference                 operator[](size_type index);
+        constexpr const_reference           operator[](size_type index) const;
+        constexpr reference                 at(size_type pos);
+        constexpr const_reference           at(size_type pos) const;
+        constexpr value_type                front() const;
+        constexpr value_type                back() const;
+        constexpr pointer                   data() noexcept;
+        constexpr const_pointer             data() const noexcept;
 
         // Iterators
-        constexpr iterator begin() noexcept;
-        constexpr const_iterator begin() const noexcept;
-        constexpr iterator end() noexcept;
-        constexpr const_iterator end() const noexcept;
-        constexpr reverse_iterator rbegin() noexcept;
-        constexpr const_reverse_iterator rbegin() const noexcept;
-        constexpr reverse_iterator rend() noexcept;
-        constexpr const_reverse_iterator rend() const noexcept;
+        constexpr iterator                  begin() noexcept;
+        constexpr const_iterator            begin() const noexcept;
+        constexpr iterator                  end() noexcept;
+        constexpr const_iterator            end() const noexcept;
+        constexpr reverse_iterator          rbegin() noexcept;
+        constexpr const_reverse_iterator    rbegin() const noexcept;
+        constexpr reverse_iterator          rend() noexcept;
+        constexpr const_reverse_iterator    rend() const noexcept;
 
-        constexpr const_iterator cbegin() const noexcept;
-        constexpr const_iterator cend() const noexcept;
-        constexpr const_reverse_iterator crbegin() const noexcept;
-        constexpr const_reverse_iterator crend() const noexcept;
+        constexpr const_iterator            cbegin() const noexcept;
+        constexpr const_iterator            cend() const noexcept;
+        constexpr const_reverse_iterator    crbegin() const noexcept;
+        constexpr const_reverse_iterator    crend() const noexcept;
 
         // Capacity
-        constexpr size_type max_size() const noexcept;
-        constexpr size_type size() const noexcept;
-        constexpr bool empty() const noexcept;
+        constexpr size_type                 max_size() const noexcept;
+        constexpr size_type                 size() const noexcept;
+        constexpr bool                      empty() const noexcept;
 
         // modifiers
-        constexpr void fill(const T& value);
-        constexpr void swap(array& other) noexcept( std::is_nothrow_swappable_v<T>)
-        requires (std::is_swappable_v<T>);
+        constexpr void                      fill(const_reference value);
+        constexpr void                      swap(array& other) noexcept( std::is_nothrow_swappable_v<T>)
+                                                               requires (std::is_swappable_v<T>);
     };
 
     template<class T, class... U>
     array(T, U...) -> array<T, 1 + sizeof...(U)>;
 
     // Non-member functions
-    export template <std::size_t I, class T, std::size_t N>
+    export template <std::size_t I, class T, size_t N>
     constexpr T& get(array<T, N>& a) noexcept;
 
-    export template <std::size_t I, class T, std::size_t N>
+    export template <std::size_t I, class T, size_t N>
     constexpr T&& get(array<T, N>&& a) noexcept;
 
-    export template <std::size_t I, class T, std::size_t N>
+    export template <std::size_t I, class T, size_t N>
     constexpr const T& get(const array<T, N>& a) noexcept;
 
-    export template <std::size_t I, class T, std::size_t N>
+    export template <std::size_t I, class T, size_t N>
     constexpr const T&& get(const array<T, N>&& a) noexcept;
 
     export template <typename T, std::size_t N>
@@ -98,12 +96,12 @@ namespace j {
 
 namespace j {
     template <typename T, std::size_t N>
-    constexpr T& array<T, N>::operator[](const size_type index) {
+    constexpr T& array<T, N>::operator[](const std::size_t index) {
         return _data[index];
     }
 
     template <typename T, std::size_t N>
-    constexpr const T& array<T, N>::operator[](const size_type index) const {
+    constexpr const T& array<T, N>::operator[](const std::size_t index) const {
         return _data[index];
     }
 
@@ -116,7 +114,7 @@ namespace j {
     }
 
     template <typename T, std::size_t N>
-    constexpr const T& array<T, N>::at(size_type pos) const {
+    constexpr const T& array<T, N>::at(std::size_t pos) const {
         if (pos >= N){
             throw std::out_of_range("index out of range");
         }
@@ -233,25 +231,25 @@ namespace j {
         }
     }
 
-    template <std::size_t I, class T, std::size_t N>
+    template <std::size_t I, class T, size_t N>
     constexpr T& get(array<T, N>& a) noexcept {
         static_assert(I < N, "Index out of bounds in array get");
         return a._data[I];
     }
 
-    template <std::size_t I, class T, std::size_t N>
+    template <std::size_t I, class T, size_t N>
     constexpr T&& get(array<T, N>&& a) noexcept {
         static_assert(I < N, "Index out of bounds in array get");
         return a._data[I];
     }
 
-    template <std::size_t I, class T, std::size_t N>
+    template <std::size_t I, class T, size_t N>
     constexpr const T& get(const array<T, N>& a) noexcept {
         static_assert(I < N, "Index out of bounds in array get");
         return a._data[I];
     }
 
-    template <std::size_t I, class T, std::size_t N>
+    template <std::size_t I, class T, size_t N>
     constexpr const T&& get(const array<T, N>&& a) noexcept {
         static_assert(I < N, "Index out of bounds in array get");
         return std::move(a._data[I]);
