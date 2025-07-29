@@ -112,8 +112,6 @@ namespace j {
 
     public:
         explicit iterator(pointer ptr = nullptr) : _ptr(ptr) {}
-        explicit iterator(const const_iterator &other)
-                : _ptr(other._ptr) {}
         iterator &operator=(const const_iterator &other) {
             _ptr = other._ptr;
             return *this;
