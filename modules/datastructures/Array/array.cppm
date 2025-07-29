@@ -29,6 +29,8 @@ namespace j {
         using const_iterator        = const_iterator;
         using reverse_iterator      = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using iterator                      = T*;
+        using const_iterator                = const T*;
 
         // Aggregate Type (no explicit construct/copy/destroy)
         T _data[N];
@@ -95,182 +97,6 @@ namespace j {
 
     export template <class T, std::size_t N>
     constexpr j::array<std::remove_cv_t<T>, N> to_array (T (&&arr)[N]);
-
-    template <class T, std::size_t N>
-    class array<T, N>::iterator {
-        friend class array;
-
-    public:
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
-
-    private:
-        pointer _ptr;
-
-    public:
-        explicit iterator(pointer ptr = nullptr) : _ptr(ptr) {}
-        explicit iterator(const const_iterator &other)
-                : _ptr(other._ptr) {}
-        iterator &operator=(const const_iterator &other) {
-            _ptr = other._ptr;
-            return *this;
-        }
-
-        reference operator*() { return *_ptr; }
-        pointer operator->() { return &*_ptr; }
-
-        iterator &operator++() {
-            ++_ptr;
-            return *this;
-        }
-
-        iterator operator++(int) {
-            iterator temp = *this;
-            ++(*this);
-            return temp;
-        }
-
-        iterator &operator--() {
-            --_ptr;
-            return *this;
-        }
-
-        iterator operator--(int) {
-            iterator temp = *this;
-            --(*this);
-            return temp;
-        }
-
-        iterator &operator+=(difference_type n) {
-            _ptr += n;
-            return *this;
-        }
-
-        iterator operator+(difference_type n) const {
-            iterator temp = *this;
-            return temp += n;
-        }
-
-        friend iterator operator+(difference_type n, const iterator &it) {
-            return it + n;
-        }
-
-        iterator &operator-=(difference_type n) {
-            _ptr -= n;
-            return *this;
-        }
-
-        iterator operator-(difference_type n) const {
-            iterator temp = *this;
-            return temp -= n;
-        }
-
-        difference_type operator-(const iterator &other) const {
-            return _ptr - other._ptr;
-        }
-
-        reference operator[](difference_type n) {
-            return *(*this + n);
-        }
-
-        bool operator==(const iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const iterator &other) const { return _ptr >= other._ptr; }
-        operator const_iterator() const { return const_iterator(_ptr); }
-    };
-
-    template <class T, std::size_t N>
-    class array<T, N>::const_iterator {
-        friend class array;
-
-    public:
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type = const T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = const T*;
-        using reference = const T&;
-        using const_pointer = const T*;
-        using const_reference = const T&;
-
-    private:
-        pointer _ptr;
-
-    public:
-        explicit const_iterator(pointer ptr = nullptr) : _ptr(ptr) {}
-        explicit const_iterator(const iterator &other)
-                : _ptr(other._ptr) {}
-        const_iterator &operator=(const iterator &other) {
-            _ptr = other._ptr;
-            return *this;
-        }
-
-        const_reference operator*() const { return *_ptr; }
-        const_pointer operator->() const { return _ptr; }
-
-        const_iterator &operator++() {
-            ++_ptr;
-            return *this;
-        }
-
-        const_iterator operator++(int) {
-            const_iterator temp = *this;
-            ++(*this);
-            return temp;
-        }
-
-        const_iterator &operator--() {
-            --_ptr;
-            return *this;
-        }
-
-        const_iterator operator--(int) {
-            const_iterator temp = *this;
-            --(*this);
-            return temp;
-        }
-
-        const_iterator &operator+=(difference_type n) {
-            _ptr += n;
-            return *this;
-        }
-
-        const_iterator operator+(difference_type n) const {
-            const_iterator temp = *this;
-            return temp += n;
-        }
-
-        const_iterator &operator-=(difference_type n) {
-            _ptr -= n;
-            return *this;
-        }
-
-        const_iterator operator-(difference_type n) const {
-            const_iterator temp = *this;
-            return temp -= n;
-        }
-
-        difference_type operator-(const const_iterator &other) const {
-            return _ptr - other._ptr;
-        }
-
-        const_reference operator[](difference_type n) const {
-            return *(*this + n);
-        }
-
-        bool operator==(const const_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const const_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const const_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const const_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const const_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const const_iterator &other) const { return _ptr >= other._ptr; }
-    };
-
 }
 
 // implementation
@@ -324,22 +150,22 @@ namespace j {
 
     template <class T, std::size_t N>
     constexpr typename array<T, N>::iterator array<T, N>::begin() noexcept {
-        return iterator(_data);
+        return _data;
     }
 
     template <class T, std::size_t N>
     constexpr typename array<T, N>::const_iterator array<T, N>::begin() const noexcept {
-        return const_iterator(_data);
+        return _data;
     }
 
     template <class T, std::size_t N>
     constexpr typename array<T, N>::iterator array<T, N>::end() noexcept {
-        return iterator(_data + N);
+        return _data + N;
     }
 
     template <class T, std::size_t N>
     constexpr typename array<T, N>::const_iterator array<T, N>::end() const noexcept {
-        return const_iterator(_data + N);
+        return _data + N;
     }
 
     template <class T, std::size_t N>
@@ -364,12 +190,12 @@ namespace j {
 
     template <class T, std::size_t N>
     constexpr typename array<T, N>::const_iterator array<T, N>::cbegin() const noexcept {
-        return const_iterator(_data);
+        return _data;
     }
 
     template <class T, std::size_t N>
     constexpr typename array<T, N>::const_iterator array<T, N>::cend() const noexcept {
-        return const_iterator(_data + N);
+        return _data + N;
     }
 
     template <class T, std::size_t N>
