@@ -68,16 +68,16 @@ namespace j {
     array(T, U...) -> array<T, 1 + sizeof...(U)>;
 
     // Non-member functions
-    export template <std::size_t I, class T, size_t N>
+    export template <std::size_t I, class T, std::size_t N>
     constexpr T& get(array<T, N>& a) noexcept;
 
-    export template <std::size_t I, class T, size_t N>
+    export template <std::size_t I, class T, std::size_t N>
     constexpr T&& get(array<T, N>&& a) noexcept;
 
-    export template <std::size_t I, class T, size_t N>
+    export template <std::size_t I, class T, std::size_t N>
     constexpr const T& get(const array<T, N>& a) noexcept;
 
-    export template <std::size_t I, class T, size_t N>
+    export template <std::size_t I, class T, std::size_t N>
     constexpr const T&& get(const array<T, N>&& a) noexcept;
 
     export template <typename T, std::size_t N>
@@ -96,17 +96,17 @@ namespace j {
 
 namespace j {
     template <typename T, std::size_t N>
-    constexpr T& array<T, N>::operator[](const std::size_t index) {
+    constexpr T& array<T, N>::operator[](const size_type index) {
         return _data[index];
     }
 
     template <typename T, std::size_t N>
-    constexpr const T& array<T, N>::operator[](const std::size_t index) const {
+    constexpr const T& array<T, N>::operator[](const size_type index) const {
         return _data[index];
     }
 
     template <typename T, std::size_t N>
-    constexpr T& array<T, N>::at(std::size_t pos) {
+    constexpr T& array<T, N>::at(size_type pos) {
         if (pos >= N){
             throw std::out_of_range("index out of range");
         }
@@ -114,7 +114,7 @@ namespace j {
     }
 
     template <typename T, std::size_t N>
-    constexpr const T& array<T, N>::at(std::size_t pos) const {
+    constexpr const T& array<T, N>::at(size_type pos) const {
         if (pos >= N){
             throw std::out_of_range("index out of range");
         }
