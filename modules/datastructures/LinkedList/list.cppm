@@ -759,6 +759,7 @@ namespace j {
 
     template <class T, class Allocator>
     template <class InputIter>
+    requires std::input_iterator<InputIter>
     typename list<T, Allocator>::iterator
     list<T, Allocator>::insert(const_iterator position, InputIter first, InputIter last) {
         for (; first != last; ++first) {
@@ -1035,13 +1036,13 @@ namespace j {
 
     template <class T, class Allocator>
     void list<T, Allocator>::sort() {
-        merge_sort(*this, std::less<T>());
+        _sort_impl(*this, std::less<T>());
     }
 
     template <class T, class Allocator>
     template<class Compare>
     void list<T, Allocator>::sort(Compare comp) {
-        merge_sort(*this, comp);
+        _sort_impl(*this, comp);
     }
 
     template <class T, class Allocator>
