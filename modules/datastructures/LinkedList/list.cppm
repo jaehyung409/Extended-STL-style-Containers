@@ -573,11 +573,11 @@ namespace j {
     template <class T, class Allocator>
     void list<T, Allocator>::resize(size_type sz, const T& c) {
         if (sz < _size) {
-            for (size_type i = 0; i < _size - sz; ++i) {
+            while (_size != sz) {
                 pop_back();
             }
         } else if (sz > _size) {
-            for (size_type i = 0; i < sz - _size; ++i) {
+            while (_size != sz) {
                 emplace_back(c);
             }
         }
