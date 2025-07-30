@@ -18,9 +18,6 @@ namespace j {
     export template<class T, class Allocator = std::allocator <T>>
     class list {
     public:
-        class iterator;
-        class const_iterator;
-
         using value_type                = T;
         using allocator_type            = std::allocator<T>;
         using pointer                   = value_type *;
@@ -29,8 +26,8 @@ namespace j {
         using const_reference           = const value_type &;
         using size_type                 = std::size_t;
         using different_type            = std::ptrdiff_t;
-        using iterator                  = j::list<T, Allocator>::iterator;
-        using const_iterator            = j::list<T, Allocator>::const_iterator;
+        class iterator;
+        class const_iterator;
         using reverse_iterator          = std::reverse_iterator<iterator>;
         using const_reverse_iterator    = std::reverse_iterator<const_iterator>;
 
@@ -195,9 +192,9 @@ namespace j {
 
     template <class T, class Allocator>
     struct list<T, Allocator>::_list_node {
-        friend class list;
-        friend class iterator;
-        friend class const_iterator;
+        friend list;
+        friend iterator;
+        friend const_iterator;
 
     private:
         value_type _value;
@@ -216,7 +213,7 @@ namespace j {
 
     template <class T, class Allocator>
     class list<T, Allocator>::iterator {
-        friend class list;
+        friend list;
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
@@ -268,7 +265,7 @@ namespace j {
 
     template <class T, class Allocator>
     class list<T, Allocator>::const_iterator  {
-        friend class list;
+        friend list;
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
