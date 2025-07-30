@@ -162,6 +162,7 @@ namespace j {
 
         size_type unique();
         template<class BinaryPredicate>
+        requires std::predicate<BinaryPredicate, T, T>
         size_type unique(BinaryPredicate binary_pred);
 
         void merge(list& x);
@@ -947,6 +948,13 @@ namespace j {
 
     template <class T, class Allocator>
     typename list<T, Allocator>::size_type list<T, Allocator>::unique() {
+        return unique(std::equal_to<T>());
+    }
+
+    template <class T, class Allocator>
+    template <class BinaryPredicate>
+    requires std::predicate<BinaryPredicate, T, T>
+    typename list<T, Allocator>::size_type list<T, Allocator>::unique(BinaryPredicate binary_pred) {
         if (empty()) {
             return 0;
         }
@@ -954,7 +962,7 @@ namespace j {
         auto it = begin();
         auto next = std::next(it);
         while (next != end()) {
-            if (*it == *next) {
+            if (binary_pred(*it, *next)) {
                 next = erase(next);
             } else {
                 it = next;
