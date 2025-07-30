@@ -920,6 +920,7 @@ namespace j {
 
     template <class T, class Allocator>
     typename list<T, Allocator>::size_type list<T, Allocator>::remove(const T& value) {
+        size_type original_size = size();
         for (auto it = begin(); it != end();){
             if (*it == value) {
                 it = erase(it);
@@ -927,12 +928,13 @@ namespace j {
                 ++it;
             }
         }
-        return size();
+        return original_size - size();
     }
 
     template <class T, class Allocator>
     template <class Predicate>
     typename list<T, Allocator>::size_type list<T, Allocator>::remove_if(Predicate pred) {
+        size_type original_size = size();
         for (auto it = begin(); it != end();) {
             if (pred(*it)) {
                 it = erase(it);
@@ -940,7 +942,7 @@ namespace j {
                 ++it;
             }
         }
-        return size();
+        return original_size - size();
     }
 
     template <class T, class Allocator>
@@ -948,6 +950,7 @@ namespace j {
         if (empty()) {
             return 0;
         }
+        size_type original_size = size();
         auto it = begin();
         auto next = std::next(it);
         while (next != end()) {
@@ -958,7 +961,7 @@ namespace j {
                 ++next;
             }
         }
-        return size();
+        return original_size - size();
     }
 
     template <class T, class Allocator>
