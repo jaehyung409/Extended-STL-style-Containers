@@ -9,8 +9,11 @@ module;
 #include <memory>
 #include <iterator>
 #include <initializer_list>
+#include <ranges>
 
 export module j.list;
+
+import j.range_basics;
 
 namespace j {
     export template<class T, class Allocator = std::allocator <T>>
@@ -67,10 +70,12 @@ namespace j {
         explicit list(const Allocator& alloc);
         explicit list(size_type n, const Allocator& alloc = Allocator());
         list(size_type n, const T& value, const Allocator& alloc = Allocator());
-        //template <class InputIter>
-        //list(InputIter first, InputIter last, const Allocator& alloc = Allocator());
-        //template <container-compatible-range<T> R>
-        //list(from_range_t, R&& range, const Allocator & = Allocator());
+        template <class InputIter>
+        requires std::input_iterator<InputIter>
+        list(InputIter first, InputIter last, const Allocator& alloc = Allocator());
+        template <container_compatible_range<T> R>
+        list(std::ranges::from_range_t, R&& range, const Allocator& alloc = Allocator());
+
         list(const list& x);
         list(list&& x);
         list(const list& x, const std::type_identity_t<Allocator>& alloc);
@@ -80,12 +85,13 @@ namespace j {
         list& operator=(const list& x);
         list& operator=(list&& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value);
         list& operator=(std::initializer_list<T> il);
-        //template<class InputIter>
-        //void assign(InputIter first, InputIter last);
-        //template<container-compatible-range<T> R>
-        //void assign_range(R&& rg);
+        template<class InputIter>
+        requires std::input_iterator<InputIter>
+        void assign(InputIter first, InputIter last);
+        template<container_compatible_range<T> R>
+        void assign_range(R&& rg);
         void assign(size_type n, const T& t);
-        //void assign(initializer_list<T>);
+        void assign(std::initializer_list<T> il);
         allocator_type get_allocator() const noexcept;
 
         // iterators
@@ -123,13 +129,13 @@ namespace j {
         reference emplace_back(Args&&... args);
         void push_front(const T& x);
         void push_front(T&& x);
-        //template<container-compatible-range<T> R>
-        //void prepend_range(R&& rg);
+        template<container_compatible_range<T> R>
+        void prepend_range(R&& rg);
         void pop_front();
         void push_back(const T& x);
         void push_back(T&& x);
-        //template<container-compatible-range<T> R>
-        //void append_range(R&& rg);
+        template<container_compatible_range<T> R>
+        void append_range(R&& rg);
         void pop_back();
 
         template<class... Args>
