@@ -966,18 +966,7 @@ namespace j {
 
     template <class T, class Allocator>
     void list<T, Allocator>::merge(list& x) {
-        auto it = begin();
-        auto xit = x.begin();
-        while (it != end() && xit != x.end()) {
-            if (*it < *xit) {
-                ++it;
-            } else {
-                splice(it, x, xit++);
-            }
-        }
-        if (xit != x.end()) {
-            splice(end(), x, xit, x.end());
-        }
+        merge(x, std::less<T>());
     }
 
     template <class T, class Allocator>
@@ -988,13 +977,17 @@ namespace j {
     template <class T, class Allocator>
     template<class Compare>
     void list<T, Allocator>::merge(list& x, Compare comp) {
+        if (this == &x || x.empty()) return;
+
         auto it = begin();
         auto xit = x.begin();
         while (it != end() && xit != x.end()) {
             if (comp(*it, *xit)) {
                 ++it;
             } else {
-                splice(it, x, xit++);
+                auto xit_next = std::next(xit);
+                splice(it, x, xit);
+                xit = xit_next;
             }
         }
         if (xit != x.end()) {
