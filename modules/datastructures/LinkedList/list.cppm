@@ -148,11 +148,12 @@ namespace j {
         iterator insert(const_iterator position, const T& x);
         iterator insert(const_iterator position, T&& x);
         iterator insert(const_iterator position, size_type n, const T& x);
-        //template<class InputIter>
-        //iterator insert(const_iterator position, InputIter first, InputIter last);
-        //template<container-compatible-range<T> R>
-        //iterator insert_range(const_iterator position, R&& rg);
-        //iterator insert(const_iterator position, initializer_list<T> il);
+        template<class InputIter>
+        requires std::input_iterator<InputIter>
+        iterator insert(const_iterator position, InputIter first, InputIter last);
+        template<container_compatible_range<T> R>
+        iterator insert_range(const_iterator position, R&& rg);
+        iterator insert(const_iterator position, std::initializer_list<T> il);
 
         iterator erase(const_iterator position);
         iterator erase(const_iterator first, const_iterator last);
@@ -174,12 +175,12 @@ namespace j {
                     const_iterator last);
 
         size_type remove(const T& value);
-        //template<class Predicate>
-        //size_type remove_if(Predicate pred);
+        template<class Predicate>
+        size_type remove_if(Predicate pred);
 
         size_type unique();
-        //template<class BinaryPredicate>
-        //size_type unique(BinaryPredicate binary_pred);
+        template<class BinaryPredicate>
+        size_type unique(BinaryPredicate binary_pred);
 
         void merge(list& x);
         void merge(list&& x);
@@ -350,6 +351,20 @@ namespace j {
     }
 
     template <class T, class Allocator>
+    template <class InputIter>
+    requires std::input_iterator<InputIter>
+    list<T, Allocator>::list(InputIter first, InputIter last, const Allocator& alloc) : list(alloc) {
+        for (; first != last; ++first) {
+            emplace_back(*first);
+        }
+    }
+
+    template <class T, class Allocator>
+    template <container_compatible_range<T> R>
+    list<T, Allocator>::list(std::ranges::from_range_t, R&& range, const Allocator& alloc)
+        : list(std::ranges::begin(range), std::ranges::end(range), alloc) {}
+
+    template <class T, class Allocator>
     list<T, Allocator>::list(const list& x)
         : list(std::allocator_traits<Allocator>::select_on_container_copy_construction(x.get_allocator())) {
         for (const T& t : x) {
@@ -440,6 +455,25 @@ namespace j {
             emplace_back(t);
         }
         return *this;
+    }
+
+    template <class T, class Allocator>
+    template <class InputIter>
+    requires std::input_iterator<InputIter>
+    void list<T, Allocator>::assign(InputIter first, InputIter last) {
+        clear();
+        for (; first != last; ++first) {
+            emplace_back(*first);
+        }
+    }
+
+    template <class T, class Allocator>
+    template <container_compatible_range<T> R>
+    void list<T, Allocator>::assign_range(R&& rg) {
+        clear();
+        for (const T& t : rg) {
+            emplace_back(t);
+        }
     }
 
 
@@ -624,6 +658,29 @@ namespace j {
     }
 
     template <class T, class Allocator>
+    template <container_compatible_range<T> R>
+    void list<T, Allocator>::prepend_range(R&& rg) {
+        list temp(std::forward<R>(rg), get_allocator());
+        if (temp.empty()) return;
+        if (empty()) {
+            _head = temp._head;
+            _tail = temp._tail;
+            _size = temp._size;
+            temp._head = nullptr;
+            temp._tail = nullptr;
+        } else {
+            Node* temp_tail = temp._tail->_prev;
+            temp_tail->_next = _head;
+            _head->_prev = temp_tail;
+            _head = temp._head;
+            _size += temp._size;
+            temp._head = nullptr;
+            std::destroy_at(temp._tail);
+            std::allocator_traits<node_allocator>::deallocate(_node_alloc, temp._tail, 1);
+        }
+    }
+
+    template <class T, class Allocator>
     void list<T, Allocator>::pop_front() {
         Node *del_node = _head;
         _head = _head->_next;
@@ -641,6 +698,14 @@ namespace j {
     template <class T, class Allocator>
     void list<T, Allocator>::push_back(T&& x) {
         emplace_back(std::move(x));
+    }
+
+    template <class T, class Allocator>
+    template <container_compatible_range<T> R>
+    void list<T, Allocator>::append_range(R&& rg) {
+        for (const T& t : rg) {
+            emplace_back(t);
+        }
     }
 
     template <class T, class Allocator>
@@ -690,6 +755,28 @@ namespace j {
             position = emplace(position, x);
         }
         return iterator(position._ptr);
+    }
+
+    template <class T, class Allocator>
+    template <class InputIter>
+    typename list<T, Allocator>::iterator
+    list<T, Allocator>::insert(const_iterator position, InputIter first, InputIter last) {
+        for (; first != last; ++first) {
+            position = emplace(position, *first);
+        }
+        return iterator(position._ptr);
+    }
+
+    template <class T, class Allocator>
+    template <container_compatible_range<T> R>
+    typename list<T, Allocator>::iterator list<T, Allocator>::insert_range(const_iterator position, R&& rg) {
+        return insert(position, std::ranges::begin(rg), std::ranges::end(rg));
+    }
+
+    template <class T, class Allocator>
+    typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position,
+        std::initializer_list<T> il) {
+        return insert(position, il.begin(), il.end());
     }
 
     template <class T, class Allocator>
@@ -844,6 +931,19 @@ namespace j {
     typename list<T, Allocator>::size_type list<T, Allocator>::remove(const T& value) {
         for (auto it = begin(); it != end();){
             if (*it == value) {
+                it = erase(it);
+            } else {
+                ++it;
+            }
+        }
+        return size();
+    }
+
+    template <class T, class Allocator>
+    template <class Predicate>
+    typename list<T, Allocator>::size_type list<T, Allocator>::remove_if(Predicate pred) {
+        for (auto it = begin(); it != end();) {
+            if (pred(*it)) {
                 it = erase(it);
             } else {
                 ++it;
