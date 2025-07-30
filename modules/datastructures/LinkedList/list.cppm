@@ -22,16 +22,18 @@ namespace j {
         class iterator;
         class const_iterator;
 
-        using value_type = T;
-        using allocator_type = std::allocator<T>;
-        using size_type = size_t;
-        using different_type = std::ptrdiff_t;
-        using reference = value_type &;
-        using const_reference = const value_type &;
-        using pointer = value_type *;
-        using const_pointer = const value_type *;
-        using reverse_iterator = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using value_type                = T;
+        using allocator_type            = std::allocator<T>;
+        using pointer                   = value_type *;
+        using const_pointer             = const value_type *;
+        using reference                 = value_type &;
+        using const_reference           = const value_type &;
+        using size_type                 = std::size_t;
+        using different_type            = std::ptrdiff_t;
+        using iterator                  = j::list<T, Allocator>::iterator;
+        using const_iterator            = j::list<T, Allocator>::const_iterator;
+        using reverse_iterator          = std::reverse_iterator<iterator>;
+        using const_reverse_iterator    = std::reverse_iterator<const_iterator>;
 
     private:
         struct _list_node;
@@ -62,7 +64,7 @@ namespace j {
 
         // helper function (sort)
         template<class Compare>
-        void merge_sort(list& x, Compare comp);
+        void _sort_impl(list& x, Compare comp);
 
     public:
         // constructor and destructor
@@ -77,11 +79,14 @@ namespace j {
         list(std::ranges::from_range_t, R&& range, const Allocator& alloc = Allocator());
 
         list(const list& x);
-        list(list&& x);
+        list(list&& x) noexcept;
         list(const list& x, const std::type_identity_t<Allocator>& alloc);
         list(list&& x, const std::type_identity_t<Allocator>& alloc);
         list(std::initializer_list<T> il, const Allocator& alloc = Allocator());
+
         ~list();
+
+        // assignment
         list& operator=(const list& x);
         list& operator=(list&& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value);
         list& operator=(std::initializer_list<T> il);
@@ -151,12 +156,7 @@ namespace j {
 
         iterator erase(const_iterator position);
         iterator erase(const_iterator first, const_iterator last);
-        void swap(list& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
-            std::swap(_head, x._head);
-            std::swap(_tail, x._tail);
-            std::swap(_node_alloc, x._node_alloc);
-            std::swap(_size, x._size);
-        }
+        void swap(list& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value);
         void clear() noexcept;
 
         // list operations
@@ -218,14 +218,7 @@ namespace j {
         template <class... Args>
         requires std::is_constructible_v<T, Args...>
         explicit _list_node(Args&&... args) : _value(std::forward<Args>(args)...), _next(nullptr), _prev(nullptr) {}
-        ~_list_node() {
-            _value.~value_type();
-            _next = nullptr;
-            _prev = nullptr;
-        }
-
-        T& operator*() { return _value; }
-        const T& operator*() const { return _value; }
+        ~_list_node() = default;
     };
 
     template <class T, class Allocator>
@@ -245,15 +238,13 @@ namespace j {
 
     public:
         explicit iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-        explicit iterator(const const_iterator& other)
-            : _ptr(other._ptr) {}
         iterator& operator=(const const_iterator& other) {
             _ptr = other._ptr;
             return *this;
         }
 
-        reference operator*() { return (**_ptr); }
-        pointer operator->() { return &(**_ptr); }
+        reference operator*() { return _ptr->_value; }
+        pointer operator->() { return &(_ptr->_value); }
 
         iterator &operator++() {
             _ptr = _ptr->_next;
@@ -277,8 +268,8 @@ namespace j {
             return temp;
         }
 
-        bool operator==(const iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const iterator &other) const { return _ptr != other._ptr; }
+        // friend bool operator==(const iterator& lhs, const iterator& rhs) = default;
+        bool operator==(const iterator& other) const { return _ptr == other._ptr; }
         operator const_iterator() const { return const_iterator(_ptr); }
     };
 
@@ -308,8 +299,8 @@ namespace j {
             return *this;
         }
 
-        const_reference operator*() const { return **_ptr; }
-        const_pointer operator->() const { return &(**_ptr); }
+        const_reference operator*() const { return _ptr->_value; }
+        const_pointer operator->() const { return &(_ptr->_value); }
 
         const_iterator& operator++() {
             _ptr = _ptr->_next;
@@ -333,8 +324,8 @@ namespace j {
             return temp;
         }
 
+        // friend bool operator==(const_iterator& lhs, const_iterator& rhs) = default;
         bool operator==(const const_iterator& other) const { return _ptr == other._ptr; }
-        bool operator!=(const const_iterator& other) const { return _ptr != other._ptr; }
     };
 }
 
@@ -354,7 +345,7 @@ namespace j {
     template <class T, class Allocator>
     list<T, Allocator>::list(size_type n, const T& value, const Allocator& alloc) : list(alloc) {
         for (size_type i = 0; i < n; ++i) {
-            emplace_front(value);
+            emplace_back(value);
         }
     }
 
@@ -456,7 +447,15 @@ namespace j {
     void list<T, Allocator>::assign(size_type n, const T& t) {
         clear();
         for (size_type i = 0; i < n; ++i) {
-            emplace_front(t);
+            emplace_back(t);
+        }
+    }
+
+    template <class T, class Allocator>
+    void list<T, Allocator>::assign(std::initializer_list<T> il) {
+        clear();
+        for (const T& t : il) {
+            emplace_back(t);
         }
     }
 
@@ -592,7 +591,7 @@ namespace j {
         }
         _head = new_node;
         new_node->_prev = new_node;
-        _size++;
+        ++_size;
         return new_node->_value;
     }
 
@@ -610,7 +609,7 @@ namespace j {
         }
         _tail->_prev = new_node;
         new_node->_next = _tail;
-        _size++;
+        ++_size;
         return new_node->_value;
     }
 
@@ -631,7 +630,7 @@ namespace j {
         _head->_prev = _head;
         std::destroy_at(del_node);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, del_node, 1);
-        _size--;
+        --_size;
     }
 
     template <class T, class Allocator>
@@ -651,13 +650,13 @@ namespace j {
         _tail->_prev->_next = _tail;
         std::destroy_at(del_node);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, del_node, 1);
-        _size--;
+        --_size;
     }
 
     template <class T, class Allocator>
     template<class... Args>
     typename list<T, Allocator>::iterator
-        list<T, Allocator>::emplace(typename list<T, Allocator>::const_iterator position, Args&&... args) {
+    list<T, Allocator>::emplace(const_iterator position, Args&&... args) {
         if (position == begin()) {
             emplace_front(std::forward<Args>(args)...);
             return begin();
@@ -668,25 +667,25 @@ namespace j {
         new_node->_next = position._ptr;
         position._ptr->_prev->_next = new_node;
         position._ptr->_prev = new_node;
-        _size++;
+        ++_size;
         return iterator(new_node);
     }
 
     template <class T, class Allocator>
     typename list<T, Allocator>::iterator
-        list<T, Allocator>::insert(typename list<T, Allocator>::const_iterator position, const T& x) {
+    list<T, Allocator>::insert(const_iterator position, const T& x) {
         return emplace(position, x);
     }
 
     template <class T, class Allocator>
     typename list<T, Allocator>::iterator
-        list<T, Allocator>::insert(typename list<T, Allocator>::const_iterator position, T&& x) {
+    list<T, Allocator>::insert(const_iterator position, T&& x) {
         return emplace(position, std::move(x));
     }
 
     template <class T, class Allocator>
     typename list<T, Allocator>::iterator
-        list<T, Allocator>::insert(typename list<T, Allocator>::const_iterator position, size_type n, const T& x) {
+    list<T, Allocator>::insert(const_iterator position, size_type n, const T& x) {
         for (size_type i = 0; i < n; ++i) {
             position = emplace(position, x);
         }
@@ -695,7 +694,7 @@ namespace j {
 
     template <class T, class Allocator>
     typename list<T, Allocator>::iterator
-        list<T, Allocator>::erase(typename list<T, Allocator>::const_iterator position) {
+    list<T, Allocator>::erase(const_iterator position) {
         if (position == begin()) {
             pop_front();
             return begin();
@@ -712,12 +711,19 @@ namespace j {
 
     template <class T, class Allocator>
     typename list<T, Allocator>::iterator
-        list<T, Allocator>::erase(typename list<T, Allocator>::const_iterator first,
-                                  typename list<T, Allocator>::const_iterator last) {
+    list<T, Allocator>::erase(const_iterator first, const_iterator last) {
         while (first != last) {
             first = erase(first);
         }
         return iterator(first._ptr);
+    }
+
+    template <class T, class Allocator>
+    void list<T, Allocator>::swap(list& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
+        std::swap(_head, x._head);
+        std::swap(_tail, x._tail);
+        std::swap(_node_alloc, x._node_alloc);
+        std::swap(_size, x._size);
     }
 
     template <class T, class Allocator>
@@ -734,7 +740,7 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    void list<T, Allocator>::splice(typename list<T, Allocator>::const_iterator position, list& x) {
+    void list<T, Allocator>::splice(const_iterator position, list& x) {
         if (!x.empty()) {
             if (position == begin()){
                 x.get_tail()->_prev->_next = _head;
@@ -757,13 +763,12 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    void list<T, Allocator>::splice(typename list<T, Allocator>::const_iterator position, list&& x) {
+    void list<T, Allocator>::splice(const_iterator position, list&& x) {
         splice(position, x);
     }
 
     template <class T, class Allocator>
-    void list<T, Allocator>::splice(typename list<T, Allocator>::const_iterator position, list& x,
-                                    typename list<T, Allocator>::const_iterator i) {
+    void list<T, Allocator>::splice(const_iterator position, list& x, const_iterator i) {
         if (position == begin()) {
             if (i == x.begin()) {
                 x.set_head(i._ptr->_next);
@@ -789,21 +794,17 @@ namespace j {
             position._ptr->_prev->_next = i._ptr;
             position._ptr->_prev = i._ptr;
         }
-        _size++;
-        x.set_size(x.size() - 1);
+        ++_size;
+        --x._size;
     }
 
     template <class T, class Allocator>
-    void list<T, Allocator>::splice(typename list<T, Allocator>::const_iterator position, list&& x,
-                                    typename list<T, Allocator>::const_iterator i) {
+    void list<T, Allocator>::splice(const_iterator position, list&& x, const_iterator i) {
         splice(position, x, i);
     }
 
     template <class T, class Allocator>
-    void list<T, Allocator>::splice(typename list<T, Allocator>::const_iterator position,
-                                    list& x,
-                                    typename list<T, Allocator>::const_iterator first,
-                                    typename list<T, Allocator>::const_iterator last) {
+    void list<T, Allocator>::splice(const_iterator position, list& x, const_iterator first, const_iterator last) {
         size_type distance = std::distance(first, last);
         if (position == begin()) {
             last._ptr->_prev->_next = _head;
@@ -835,10 +836,7 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    void list<T, Allocator>::splice(typename list<T, Allocator>::const_iterator position,
-                                    list&& x,
-                                    typename list<T, Allocator>::const_iterator first,
-                                    typename list<T, Allocator>::const_iterator last) {
+    void list<T, Allocator>::splice(const_iterator position, list&& x, const_iterator first, const_iterator last) {
         splice(position, x, first, last);
     }
 
@@ -918,7 +916,7 @@ namespace j {
 
     template<class T, class Allocator>
     template<class Compare>
-    void list<T, Allocator>::merge_sort(list &x, Compare comp) {
+    void list<T, Allocator>::_sort_impl(list &x, Compare comp) { // merge sort
         if (x.size() <= 1) {
             return;
         }
