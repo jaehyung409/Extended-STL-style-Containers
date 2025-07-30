@@ -178,6 +178,15 @@ namespace j {
         void reverse() noexcept;
     };
 
+    template <class InputIter, class Allocator = std::allocator<typename std::iterator_traits<InputIter>::value_type>>
+    requires std::input_iterator<InputIter>
+    list(InputIter, InputIter, Allocator = Allocator())
+        -> list<typename std::iterator_traits<InputIter>::value_type, Allocator>;
+
+    template <std::ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
+    list(std::ranges::from_range_t, R&&, Allocator = Allocator())
+        -> list<std::ranges::range_value_t<R>, Allocator>;
+
     export template<class T, class Allocator>
     void swap(list<T, Allocator>& x, list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
         x.swap(y);
