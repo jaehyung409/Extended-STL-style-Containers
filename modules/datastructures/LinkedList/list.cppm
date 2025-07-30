@@ -44,23 +44,6 @@ namespace j {
         node_allocator _node_alloc;
         size_type _size;
 
-        // helper function (getter and setter)
-        Node* get_head() noexcept {
-            return _head;
-        }
-        Node* get_tail() noexcept {
-            return _tail;
-        }
-        void set_head(Node *new_head) noexcept {
-            _head = new_head;
-        }
-        void set_tail(Node *new_tail) noexcept {
-            _tail = new_tail;
-        }
-        void set_size(size_type new_size) noexcept {
-            _size = new_size;
-        }
-
         // helper function (sort)
         template<class Compare>
         void _sort_impl(list& x, Compare comp);
@@ -372,12 +355,15 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    list<T, Allocator>::list(list&& x)
-        : _head(x.get_head()), _tail(x.get_tail()),
-          _node_alloc(std::move(x.get_allocator())), _size(std::move(x.size()))  {
-        x.set_head(nullptr);
-        x.set_tail(nullptr);
-        x.set_size(0);
+    list<T, Allocator>::list(list&& x) noexcept
+        : _head(x._head), _tail(x._tail),
+          _node_alloc(std::move(x._node_alloc)), _size(x._size) {
+        x._tail = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
+        std::construct_at(x._tail);
+        x._tail->_next = x._tail;
+        x._tail->_prev = x._tail;
+        x._head = x._tail;
+        x._size = 0;
     }
 
     template <class T, class Allocator>
@@ -390,14 +376,13 @@ namespace j {
 
     template <class T, class Allocator>
     list<T, Allocator>::list(list&& x, const std::type_identity_t<Allocator>& alloc)
-        : _head(x.get_head()), _tail(x.get_tail()), _node_alloc(alloc), _size(std::move(x.size())) {
-        auto new_tail = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_tail);
-        x.set_tail(new_tail);
+        : _head(x._head), _tail(x._tail), _node_alloc(alloc), _size(x._size) {
+        x._tail = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
+        std::construct_at(x._tail);
         x._tail->_next = x._tail;
         x._tail->_prev = x._tail;
-        x.set_head(x.get_tail());
-        x.set_size(0);
+        x._head = x._tail;
+        x._size = 0;
     }
 
     template <class T, class Allocator>
@@ -432,17 +417,16 @@ namespace j {
             clear();
             std::destroy_at(_tail);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, _tail, 1);
-            _head = x.get_head();
-            _tail = x.get_tail();
-            _node_alloc = std::move(x.get_allocator());
-            _size = std::move(x.size());
-            auto new_tail = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-            std::construct_at(new_tail);
-            x.set_tail(new_tail);
-            x._tail->_next = x._tail;
+            _head = x._head;
+            _tail = x._tail;
+            _node_alloc = std::move(x._node_alloc);
+            _size = x._size;
+
+            x._tail = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
+            std::construct_at(x._tail);
             x._tail->_prev = x._tail;
-            x.set_head(x.get_tail());
-            x.set_size(0);
+            x._head = x._tail;
+            x._size = 0;
         }
         return *this;
     }
@@ -830,22 +814,20 @@ namespace j {
     void list<T, Allocator>::splice(const_iterator position, list& x) {
         if (!x.empty()) {
             if (position == begin()){
-                x.get_tail()->_prev->_next = _head;
-                _head->_prev = x.get_tail()->_prev;
-                _head = x.get_head();
+                x._tail->_prev->_next = _head;
+                _head->_prev = x._tail->_prev;
+                _head = x._head;
                 _head->_prev = _head;
-                x.set_head(nullptr);
-                _size += x.size();
-                x.set_size(0);
             } else {
-                x.get_tail()->_prev->_next = position._ptr;
-                position._ptr->_prev->_next = x.get_head();
-                x.get_head()->_prev = position._ptr->_prev;
-                position._ptr->_prev = x.get_tail()->_prev;
-                x.set_head(nullptr);
-                _size += x.size();
-                x.set_size(0);
+                x._tail->_prev->_next = position._ptr;
+                position._ptr->_prev->_next = x._head;
+                x._head->_prev = position._ptr->_prev;
+                position._ptr->_prev = x._tail->_prev;
             }
+            _size += x._size;
+            x._tail->_prev = x._tail;
+            x._head = x._tail;
+            x._size = 0;
         }
     }
 
@@ -858,8 +840,8 @@ namespace j {
     void list<T, Allocator>::splice(const_iterator position, list& x, const_iterator i) {
         if (position == begin()) {
             if (i == x.begin()) {
-                x.set_head(i._ptr->_next);
-                x.get_head()->_prev = x.get_head();
+                x._head = i._ptr->_next;
+                x._head->_prev = x._head;
             } else {
                 i._ptr->_prev->_next = i._ptr->_next;
                 i._ptr->_next->_prev = i._ptr->_prev;
@@ -870,8 +852,8 @@ namespace j {
             _head->_prev = _head;
         } else {
             if (i == x.begin()) {
-                x.set_head(i._ptr->_next);
-                x.get_head()->_prev = x.get_head();
+                x._head = i._ptr->_next;
+                x._head->_prev = x._head;
             } else {
                 i._ptr->_prev->_next = i._ptr->_next;
                 i._ptr->_next->_prev = i._ptr->_prev;
@@ -897,8 +879,8 @@ namespace j {
             last._ptr->_prev->_next = _head;
             _head->_prev = last._ptr->_prev;
             if (first == x.begin()) {
-                x.set_head(last._ptr);
-                x.get_head()->_prev = x.get_head();
+                x._head = last._ptr;
+                x._head->_prev = x._head;
             } else {
                 first._ptr->_prev->_next = last._ptr;
                 last._ptr->_prev = first._ptr->_prev;
@@ -910,8 +892,8 @@ namespace j {
             last._ptr->_prev->_next = position._ptr;
             position._ptr->_prev = last._ptr->_prev;
             if (first == x.begin()) {
-                x.set_head(last._ptr);
-                x.get_head()->_prev = x.get_head();
+                x._head = last._ptr;
+                x._head->_prev = x._head;
             } else {
                 first._ptr->_prev->_next = last._ptr;
                 last._ptr->_prev = first._ptr->_prev;
@@ -919,7 +901,7 @@ namespace j {
             first._ptr->_prev = position._ptr->_prev;
         }
         _size += distance;
-        x.set_size(x.size() - distance);
+        x._size -= distance;
     }
 
     template <class T, class Allocator>
