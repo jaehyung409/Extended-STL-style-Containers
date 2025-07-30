@@ -1014,16 +1014,13 @@ namespace j {
         if (x.size() <= 1) {
             return;
         }
-        auto slow = x.begin();
-        auto fast = x.begin();
-        while (fast != x.end() && std::next(fast) != x.end()) {
-            std::advance(slow, 1);
-            std::advance(fast, 2);
-        }
-        list<T> temp;
-        temp.splice(temp.begin(), x, slow, x.end());
-        merge_sort(x, comp);
-        merge_sort(temp, comp);
+        auto mid = x.begin();
+        std::advance(mid, x.size() / 2);
+
+        list<T, Allocator> temp;
+        temp.splice(temp.begin(), x, mid, x.end());
+        _sort_impl(x, comp);
+        _sort_impl(temp, comp);
         x.merge(temp, comp);
     }
 
