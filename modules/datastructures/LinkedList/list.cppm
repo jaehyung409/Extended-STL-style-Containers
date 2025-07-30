@@ -5,7 +5,6 @@
  */
 
 module;
-#include <limits>
 #include <memory>
 #include <iterator>
 #include <initializer_list>
@@ -570,7 +569,7 @@ namespace j {
 
     template <class T, class Allocator>
     typename list<T, Allocator>::size_type list<T, Allocator>::max_size() const noexcept {
-        return std::numeric_limits<size_type>::max() / sizeof(Node) - 1; // -1 for _tail
+        return std::allocator_traits<Allocator>::max_size(_node_alloc);
     }
 
     template <class T, class Allocator>
