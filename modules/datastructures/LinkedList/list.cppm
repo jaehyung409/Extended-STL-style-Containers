@@ -25,7 +25,7 @@ namespace j {
         using reference                 = value_type &;
         using const_reference           = const value_type &;
         using size_type                 = std::size_t;
-        using different_type            = std::ptrdiff_t;
+        using differece_type            = std::ptrdiff_t;
         class iterator;
         class const_iterator;
         using reverse_iterator          = std::reverse_iterator<iterator>;
