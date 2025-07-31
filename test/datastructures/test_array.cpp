@@ -1,7 +1,8 @@
 /*
  * @ Created by jaehyung409 on 25. 7. 28.
  * @ Copyright (c) 2025 jaehyung409 All rights reserved.
- * This software is licensed under the MIT License. 
+ * This software is licensed under the MIT License.
+ * Note: This test code was generated with the assistance of an AI agent.
  */
 
 #define CATCH_CONFIG_MAIN
