@@ -3,4 +3,4 @@
 *.cmake
 trash/
 cmake-build-debug*/
-/execute_file/*
+/test/main.cpp
