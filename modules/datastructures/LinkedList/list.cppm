@@ -845,33 +845,9 @@ namespace j {
 
     template <class T, class Allocator>
     void list<T, Allocator>::splice(const_iterator position, list& x, const_iterator i) {
-        if (position == begin()) {
-            if (i == x.begin()) {
-                x._head = i._ptr->_next;
-                x._head->_prev = x._head;
-            } else {
-                i._ptr->_prev->_next = i._ptr->_next;
-                i._ptr->_next->_prev = i._ptr->_prev;
-            }
-            i._ptr->_next = _head;
-            _head->_prev = i._ptr;
-            _head = i._ptr;
-            _head->_prev = _head;
-        } else {
-            if (i == x.begin()) {
-                x._head = i._ptr->_next;
-                x._head->_prev = x._head;
-            } else {
-                i._ptr->_prev->_next = i._ptr->_next;
-                i._ptr->_next->_prev = i._ptr->_prev;
-            }
-            i._ptr->_next = position._ptr;
-            i._ptr->_prev = position._ptr->_prev;
-            position._ptr->_prev->_next = i._ptr;
-            position._ptr->_prev = i._ptr;
-        }
-        ++_size;
-        --x._size;
+        T value = std::move(*i);
+        x.erase(i);
+        emplace(position, std::move(value));
     }
 
     template <class T, class Allocator>
@@ -881,34 +857,11 @@ namespace j {
 
     template <class T, class Allocator>
     void list<T, Allocator>::splice(const_iterator position, list& x, const_iterator first, const_iterator last) {
-        size_type distance = std::distance(first, last);
-        if (position == begin()) {
-            last._ptr->_prev->_next = _head;
-            _head->_prev = last._ptr->_prev;
-            if (first == x.begin()) {
-                x._head = last._ptr;
-                x._head->_prev = x._head;
-            } else {
-                first._ptr->_prev->_next = last._ptr;
-                last._ptr->_prev = first._ptr->_prev;
-            }
-            _head = first._ptr;
-            _head->_prev = _head;
-        } else {
-            position._ptr->_prev->_next = first._ptr;
-            last._ptr->_prev->_next = position._ptr;
-            position._ptr->_prev = last._ptr->_prev;
-            if (first == x.begin()) {
-                x._head = last._ptr;
-                x._head->_prev = x._head;
-            } else {
-                first._ptr->_prev->_next = last._ptr;
-                last._ptr->_prev = first._ptr->_prev;
-            }
-            first._ptr->_prev = position._ptr->_prev;
+        for (auto it = first; it != last;) {
+            auto next = std::next(it);
+            splice(position, x, it);
+            it = next;
         }
-        _size += distance;
-        x._size -= distance;
     }
 
     template <class T, class Allocator>
