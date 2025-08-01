@@ -203,6 +203,17 @@ namespace j {
         x.swap(y);
     }
 
+    export template <class T, class Allocator, class U>
+    typename list<T, Allocator>::size_type erase(list <T, Allocator>& c, const U& value) {
+        return c.remove(value);
+    }
+
+    export template <class T, class Allocator, class Predicate>
+    typename list<T, Allocator>::size_type erase_if(list<T, Allocator>& c, Predicate pred) {
+        return c.remove_if(pred);
+    }
+
+
     template <class T, class Allocator>
     struct list<T, Allocator>::_list_node {
         friend list;
