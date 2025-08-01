@@ -154,6 +154,7 @@ namespace j {
 
         size_type remove(const T& value);
         template<class Predicate>
+        requires std::predicate<Predicate, T>
         size_type remove_if(Predicate pred);
 
         size_type unique();
@@ -170,6 +171,7 @@ namespace j {
 
         void sort();
         template<class Compare>
+        requires std::strict_weak_order<Compare, T, T>
         void sort(Compare comp);
 
         void reverse() noexcept;
@@ -183,6 +185,18 @@ namespace j {
     template <std::ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
     list(std::ranges::from_range_t, R&&, Allocator = Allocator())
         -> list<std::ranges::range_value_t<R>, Allocator>;
+
+    export template <class T, class Allocator>
+    bool operator==(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    }
+
+    export template <class T, class Allocator>
+    auto operator<=>(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+        return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(),
+                                                      rhs.begin(), rhs.end(),
+                                                      std::compare_three_way{});
+    }
 
     export template<class T, class Allocator>
     void swap(list<T, Allocator>& x, list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
@@ -820,6 +834,7 @@ namespace j {
 
     template <class T, class Allocator>
     template <class Predicate>
+    requires std::predicate<Predicate, T>
     typename list<T, Allocator>::size_type list<T, Allocator>::remove_if(Predicate pred) {
         size_type original_size = size();
         for (auto it = begin(); it != end();) {
@@ -918,6 +933,7 @@ namespace j {
 
     template <class T, class Allocator>
     template<class Compare>
+    requires std::strict_weak_order<Compare, T, T>
     void list<T, Allocator>::sort(Compare comp) {
         _sort_impl(*this, comp);
     }
