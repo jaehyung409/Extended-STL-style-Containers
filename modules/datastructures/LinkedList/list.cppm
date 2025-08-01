@@ -171,6 +171,7 @@ namespace j {
 
         void sort();
         template<class Compare>
+        requires std::strict_weak_order<Compare, T, T>
         void sort(Compare comp);
 
         void reverse() noexcept;
@@ -920,6 +921,7 @@ namespace j {
 
     template <class T, class Allocator>
     template<class Compare>
+    requires std::strict_weak_order<Compare, T, T>
     void list<T, Allocator>::sort(Compare comp) {
         _sort_impl(*this, comp);
     }
