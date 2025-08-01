@@ -477,7 +477,7 @@ namespace j {
 
     template <class T, class Allocator>
     void list<T, Allocator>::assign(std::initializer_list<T> il) {
-        return assign(il.begin(), il.end());
+        assign(il.begin(), il.end());
     }
 
     template <class T, class Allocator>
@@ -709,8 +709,8 @@ namespace j {
     */
 
     template <class T, class Allocator>
-    typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position,
-        std::initializer_list<T> il) {
+    typename list<T, Allocator>::iterator
+    list<T, Allocator>::insert(const_iterator position, std::initializer_list<T> il) {
         return insert(position, il.begin(), il.end());
     }
 
@@ -877,18 +877,18 @@ namespace j {
 
     template <class T, class Allocator>
     void list<T, Allocator>::merge(list&& x) {
-        merge(x);
+        merge(x, std::less<T>());
     }
 
     template <class T, class Allocator>
     template<class Compare>
     void list<T, Allocator>::merge(list& x, Compare comp) {
-        if (this == &x || x.empty()) return;
+        if (this == std::addressof(x) || x.empty()) return;
 
         auto it = begin();
         auto xit = x.begin();
         while (it != end() && xit != x.end()) {
-            if (comp(*it, *xit)) {
+            if (!comp(*xit, *it)) {
                 ++it;
             } else {
                 auto xit_next = std::next(xit);
@@ -904,7 +904,7 @@ namespace j {
     template <class T, class Allocator>
     template<class Compare>
     void list<T, Allocator>::merge(list&& x, Compare comp) {
-        merge(x, comp);
+        merge(static_cast<list&>(x), comp);
     }
 
     template<class T, class Allocator>
