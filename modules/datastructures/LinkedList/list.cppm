@@ -334,7 +334,8 @@ namespace j {
 
 namespace j {
     template <class T, class Allocator>
-    list<T, Allocator>::list(const Allocator& alloc) : _node_alloc(alloc), _size(0) {
+    list<T, Allocator>::list(const Allocator& alloc)
+        : _node_alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)), _size(0) {
         _sentinel = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
         std::construct_at(_sentinel);
         _sentinel->_next = _sentinel;
@@ -342,10 +343,12 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    list<T, Allocator>::list(size_type n, const Allocator& alloc) : list(n, T(), alloc) {}
+    list<T, Allocator>::list(size_type n, const Allocator& alloc)
+        : list(n, T(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
     template <class T, class Allocator>
-    list<T, Allocator>::list(size_type n, const T& value, const Allocator& alloc) : list(alloc) {
+    list<T, Allocator>::list(size_type n, const T& value, const Allocator& alloc)
+        : list(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
         for (size_type i = 0; i < n; ++i) {
             emplace_back(value);
         }
@@ -354,7 +357,8 @@ namespace j {
     template <class T, class Allocator>
     template <class InputIter>
     requires std::input_iterator<InputIter>
-    list<T, Allocator>::list(InputIter first, InputIter last, const Allocator& alloc) : list(alloc) {
+    list<T, Allocator>::list(InputIter first, InputIter last, const Allocator& alloc)
+        : list(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
         for (; first != last; ++first) {
             emplace_back(*first);
         }
@@ -369,11 +373,11 @@ namespace j {
 
     template <class T, class Allocator>
     list<T, Allocator>::list(const list& x)
-        : list(std::allocator_traits<Allocator>::select_on_container_copy_construction(x.get_allocator())) {
-        for (const T& t : x) {
-            emplace_back(t);
-        }
-    }
+        : list(
+            x.begin(),
+            x.end(),
+            std::allocator_traits<Allocator>::select_on_container_copy_construction(x._node_alloc)
+          ) {}
 
     template <class T, class Allocator>
     list<T, Allocator>::list(list&& x) noexcept
@@ -386,16 +390,13 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    list<T, Allocator>::list(const list& x, const std::type_identity_t<Allocator>& alloc) : list(alloc) {
-        auto xit = x.begin();
-        for (const T& t : x) {
-            emplace_back(t);
-        }
-    }
+    list<T, Allocator>::list(const list& x, const std::type_identity_t<Allocator>& alloc)
+        : list(x.begin(), x.end(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
     template <class T, class Allocator>
     list<T, Allocator>::list(list&& x, const std::type_identity_t<Allocator>& alloc)
-        : _sentinel(x._sentinel), _node_alloc(alloc), _size(x._size) {
+        : _sentinel(x._sentinel),
+          _node_alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)), _size(x._size) {
         x._sentinel = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
         std::construct_at(x._sentinel);
         x._sentinel->_next = x._sentinel;
@@ -404,11 +405,8 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    list<T, Allocator>::list(std::initializer_list<T> il, const Allocator& alloc) : list(alloc) {
-        for (const T& t : il) {
-            emplace_back(t);
-        }
-    }
+    list<T, Allocator>::list(std::initializer_list<T> il, const Allocator& alloc)
+        : list(il.begin(), il.end(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
     template <class T, class Allocator>
     list<T, Allocator>::~list() {
@@ -477,10 +475,7 @@ namespace j {
 
     template <class T, class Allocator>
     void list<T, Allocator>::assign(std::initializer_list<T> il) {
-        clear();
-        for (const T& t : il) {
-            emplace_back(t);
-        }
+        return assign(il.begin(), il.end());
     }
 
     template <class T, class Allocator>
