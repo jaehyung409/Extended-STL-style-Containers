@@ -73,6 +73,18 @@ namespace j {
     array(T, U...) -> array<T, 1 + sizeof...(U)>;
 
     // Non-member functions
+    export template <class T, std::size_t N>
+    constexpr bool operator==(const array<T, N>& a, const array<T, N>& b) {
+        return std::equal(a.begin(), a.end(), b.begin(), b.end());
+    }
+
+    export template <class T, std::size_t N>
+    constexpr auto operator<=>(const array<T, N>& a, const array<T, N>& b) {
+        return std::lexicographical_compare_three_way(a.begin(), a.end(),
+                                               b.begin(), b.end(),
+                                               std::compare_three_way{});
+    }
+
     export template <std::size_t I, class T, std::size_t N>
     constexpr T& get(array<T, N>& a) noexcept;
 

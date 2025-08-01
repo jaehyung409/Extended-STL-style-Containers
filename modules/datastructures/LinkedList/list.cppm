@@ -186,6 +186,18 @@ namespace j {
     list(std::ranges::from_range_t, R&&, Allocator = Allocator())
         -> list<std::ranges::range_value_t<R>, Allocator>;
 
+    export template <class T, class Allocator>
+    bool operator==(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    }
+
+    export template <class T, class Allocator>
+    auto operator<=>(const list<T, Allocator>& lhs, const list<T, Allocator>& rhs) {
+        return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(),
+                                                      rhs.begin(), rhs.end(),
+                                                      std::compare_three_way{});
+    }
+
     export template<class T, class Allocator>
     void swap(list<T, Allocator>& x, list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
         x.swap(y);

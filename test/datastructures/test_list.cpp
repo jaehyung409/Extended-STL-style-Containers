@@ -211,6 +211,25 @@ TEST_CASE("List Basic") {
         REQUIRE(*it++ == 42);
         REQUIRE(*it++ == 42);
     }
+
+    SECTION("Comparison operators") {
+        j::list<int> lst1 = {1, 2, 3, 4, 5};
+        j::list<int> lst2 = {1, 2, 3, 4, 5};
+        j::list<int> lst3 = {5, 4, 3, 2, 1};
+        j::list<int> lst4 = {1, 2, 3, 4, 6};
+        j::list<int> lst5 = {1, 2, 3, 4};
+
+        REQUIRE(lst1 == lst2);
+        REQUIRE(lst1 != lst3);
+        REQUIRE(lst1 != lst4);
+        REQUIRE(lst1 != lst5);
+
+        REQUIRE((lst1 <=> lst2) == std::strong_ordering::equal);
+        REQUIRE((lst1 <=> lst3) == std::strong_ordering::less);
+        REQUIRE((lst3 <=> lst1) == std::strong_ordering::greater);
+        REQUIRE((lst1 <=> lst4) == std::strong_ordering::less);
+        REQUIRE((lst1 <=> lst5) == std::strong_ordering::greater);
+    }
 }
 
 TEST_CASE("List Modifiers") {

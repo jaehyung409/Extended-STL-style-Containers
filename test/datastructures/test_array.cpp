@@ -112,6 +112,22 @@ TEST_CASE("Array Basic") {
         REQUIRE(converted_arr[0] == 1);
         REQUIRE(converted_arr[4] == 5);
     }
+
+    SECTION("Comparison operators") {
+        j::array<int, 5> arr1 = {1, 2, 3, 4, 5};
+        j::array<int, 5> arr2 = {1, 2, 3, 4, 5};
+        j::array<int, 5> arr3 = {5, 4, 3, 2, 1};
+        j::array<int, 5> arr4 = {1, 2, 3, 4, 6};
+
+        REQUIRE(arr1 == arr2);
+        REQUIRE(arr1 != arr3);
+        REQUIRE(arr1 != arr4);
+
+        REQUIRE((arr1 <=> arr2) == std::strong_ordering::equal);
+        REQUIRE((arr1 <=> arr3) == std::strong_ordering::less);
+        REQUIRE((arr3 <=> arr1) == std::strong_ordering::greater);
+        REQUIRE((arr1 <=> arr4) == std::strong_ordering::less);
+    }
 }
 
 TEST_CASE("Array Edge Cases") {
