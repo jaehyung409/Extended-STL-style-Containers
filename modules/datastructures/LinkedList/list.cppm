@@ -213,15 +213,6 @@ namespace j {
         value_type _value;
         _list_node* _next;
         _list_node* _prev;
-
-    public:
-        _list_node() : _value(T()), _next(nullptr), _prev(nullptr) {}
-        explicit _list_node(const T &value) : _value(value), _next(nullptr), _prev(nullptr) {}
-        explicit _list_node(T &&value) : _value(std::move(value)), _next(nullptr), _prev(nullptr) {}
-        template <class... Args>
-        requires std::is_constructible_v<T, Args...>
-        explicit _list_node(Args&&... args) : _value(std::forward<Args>(args)...), _next(nullptr), _prev(nullptr) {}
-        ~_list_node() = default;
     };
 
     template <class T, class Allocator>
@@ -337,7 +328,7 @@ namespace j {
     list<T, Allocator>::list(const Allocator& alloc)
         : _node_alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)), _size(0) {
         _sentinel = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(_sentinel);
+        std::construct_at(&_sentinel->_value);
         _sentinel->_next = _sentinel;
         _sentinel->_prev = _sentinel;
     }
@@ -383,7 +374,7 @@ namespace j {
     list<T, Allocator>::list(list&& x) noexcept
         : _sentinel(x._sentinel), _node_alloc(std::move(x._node_alloc)), _size(x._size) {
         x._sentinel = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
-        std::construct_at(x._sentinel);
+        std::construct_at(&x._sentinel->_value);
         x._sentinel->_next = x._sentinel;
         x._sentinel->_prev = x._sentinel;
         x._size = 0;
@@ -398,7 +389,7 @@ namespace j {
         : _sentinel(x._sentinel),
           _node_alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)), _size(x._size) {
         x._sentinel = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
-        std::construct_at(x._sentinel);
+        std::construct_at(&x._sentinel->_value);
         x._sentinel->_next = x._sentinel;
         x._sentinel->_prev = x._sentinel;
         x._size = 0;
@@ -411,7 +402,7 @@ namespace j {
     template <class T, class Allocator>
     list<T, Allocator>::~list() {
         clear();
-        std::destroy_at(_sentinel);
+        std::destroy_at(&_sentinel->_value);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, _sentinel, 1);
     }
 
@@ -431,14 +422,14 @@ namespace j {
             noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
         if (this != &x){
             clear();
-            std::destroy_at(_sentinel);
+            std::destroy_at(&_sentinel->_value);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, _sentinel, 1);
             _sentinel = x._sentinel;
             _node_alloc = std::move(x._node_alloc);
             _size = x._size;
 
             x._sentinel = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
-            std::construct_at(x._sentinel);
+            std::construct_at(&x._sentinel->_value);
             x._sentinel->_next = x._sentinel;
             x._sentinel->_prev = x._sentinel;
             x._size = 0;
@@ -600,7 +591,7 @@ namespace j {
     template<class... Args>
     typename list<T, Allocator>::reference list<T, Allocator>::emplace_front(Args&&... args) {
         Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
+        std::construct_at(&new_node->_value, std::forward<Args>(args)...);
         new_node->_next = _sentinel->_next;
         new_node->_prev = _sentinel;
         _sentinel->_next->_prev = new_node;
@@ -613,7 +604,7 @@ namespace j {
     template<class... Args>
     typename list<T, Allocator>::reference list<T, Allocator>::emplace_back(Args&&... args) {
         Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
+        std::construct_at(&new_node->_value, std::forward<Args>(args)...);
         new_node->_next = _sentinel;
         new_node->_prev = _sentinel->_prev;
         _sentinel->_prev->_next = new_node;
@@ -657,7 +648,7 @@ namespace j {
     typename list<T, Allocator>::iterator
     list<T, Allocator>::emplace(const_iterator position, Args&&... args) {
         Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
+        std::construct_at(&new_node->_value, std::forward<Args>(args)...);
         new_node->_prev = position._ptr->_prev;
         new_node->_next = position._ptr;
         position._ptr->_prev->_next = new_node;
@@ -719,7 +710,7 @@ namespace j {
         position._ptr->_prev->_next = position._ptr->_next;
         position._ptr->_next->_prev = position._ptr->_prev;
         auto next = position._ptr->_next;
-        std::destroy_at(del_node);
+        std::destroy_at(&del_node->_value);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, del_node, 1);
         _size--;
         return iterator(next);
@@ -746,7 +737,7 @@ namespace j {
         for (auto it = begin(); it != end();) {
             auto temp = it;
             ++it;
-            std::destroy_at(temp._ptr);
+            std::destroy_at(&temp._ptr->_value);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, temp._ptr, 1);
         }
         _sentinel->_next = _sentinel;
