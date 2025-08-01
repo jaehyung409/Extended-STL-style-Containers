@@ -35,24 +35,9 @@ namespace j {
         using Node = _forward_list_node;
 
         using node_allocator = typename std::allocator_traits<Allocator>::template rebind_alloc<Node>;
-        Node* _before_head; // node for before_begin();
-        Node* _head;        // first node, nullptr if empty (sentinel)
+        Node* _before_head;
         node_allocator _node_alloc;
         // size_type size; didn't use for faster performance
-
-        // helper function (getter and setter)
-        Node* get_before_head() noexcept {
-            return _before_head;
-        }
-        Node* get_head() noexcept {
-            return _head;
-        }
-        void set_before_head(Node* new_before_head) noexcept {
-            _before_head = new_before_head;
-        }
-        void set_head(Node* new_head) noexcept {
-            _head = new_head;
-        }
 
         // helper function (sort)
         template <class Compare>
