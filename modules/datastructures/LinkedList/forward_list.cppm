@@ -204,21 +204,6 @@ namespace j {
     private:
         value_type _value;
         _forward_list_node* _next;
-
-    public:
-        _forward_list_node() : _value(T()), _next(nullptr) {}
-        explicit _forward_list_node(const T& value) : _value(value), _next(nullptr) {}
-        explicit _forward_list_node(T&& value) : _value(std::move(value)), _next(nullptr) {}
-        template <class... Args>
-        requires std::is_constructible_v<T, Args...>
-        explicit _forward_list_node(Args&&... args) : _value(std::forward<Args>(args)...), _next(nullptr) {}
-        ~_forward_list_node() {
-            _value.~value_type();
-            _next = nullptr;
-        }
-
-        T& operator*() { return _value; }
-        const T& operator*() const { return _value; }
     };
 
     template <class T, class Allocator>
