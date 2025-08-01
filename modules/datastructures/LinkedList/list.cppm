@@ -154,6 +154,7 @@ namespace j {
 
         size_type remove(const T& value);
         template<class Predicate>
+        requires std::predicate<Predicate, T>
         size_type remove_if(Predicate pred);
 
         size_type unique();
@@ -820,6 +821,7 @@ namespace j {
 
     template <class T, class Allocator>
     template <class Predicate>
+    requires std::predicate<Predicate, T>
     typename list<T, Allocator>::size_type list<T, Allocator>::remove_if(Predicate pred) {
         size_type original_size = size();
         for (auto it = begin(); it != end();) {
