@@ -1,0 +1,141 @@
+# This starter workflow is for a CMake project running on a single platform.
+name: CI init
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install clang-format
+      - name: Run clang-format check
+        run: clang-format --dry-run --Werror $(git ls-files '*.cpp' '*.cppm')
+
+  clang-tidy-check:
+    runs-on: ubuntu-latest
+    needs: format-check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install clang-tidy
+        run: sudo apt-get update && sudo apt-get install clang-tidy
+      - name: Configure project with CMake
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+      - name: Run clang-tidy
+        run: |
+          cd build
+          clang-tidy -p . $(git ls-files '../modules/**/*.cppm')
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: clang-tidy-check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure project
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+      - name: Build project
+        run: |
+          cd build
+          cmake --build .
+      - name: Run selective tests
+        run: |
+          cd build
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            # force push
+            if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+              BASE="HEAD~1"
+            else
+              BASE="${{ github.event.before }}"
+            fi
+            HEAD="${{ github.sha }}"
+          fi
+          
+          CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD" || git show --name-only "$HEAD")
+          
+          if echo "$CHANGED_FILES" | grep -q "modules/datastructures/Array/"; then
+            ctest -R test_array --output-on-failure
+          fi
+          if echo "$CHANGED_FILES" | grep -q "modules/datastructures/LinkedList/list"; then
+            ctest -R test_list --output-on-failure
+          fi
+          if echo "$CHANGED_FILES" | grep -q "modules/datastructures/LinkedList/forward_list"; then
+            ctest -R test_forward_list --output-on-failure
+          fi
+
+  benchmark:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure project
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+      - name: Build project
+        run: |
+          cd build
+          cmake --build .
+      - name: Run selective benchmarks
+        run: |
+          cd build
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+              BASE="HEAD~1"
+            else
+              BASE="${{ github.event.before }}"
+            fi
+            HEAD="${{ github.sha }}"
+          fi
+          
+          CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD" || git show --name-only "$HEAD")
+          
+          > bench_array_result.txt
+          > bench_list_result.txt
+          > bench_forward_list_result.txt
+          
+          if echo "$CHANGED_FILES" | grep -q "modules/datastructures/Array/"; then
+            ./bench_array > bench_array_result.txt || echo "Array benchmark failed" > bench_array_result.txt
+          fi
+          if echo "$CHANGED_FILES" | grep -q "modules/datastructures/LinkedList/list"; then
+            ./bench_list > bench_list_result.txt || echo "List benchmark failed" > bench_list_result.txt
+          fi
+          if echo "$CHANGED_FILES" | grep -q "modules/datastructures/LinkedList/forward_list"; then
+            ./bench_forward_list > bench_forward_list_result.txt || echo "Forward list benchmark failed" > bench_forward_list_result.txt
+          fi
+          
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            build/bench_array_result.txt
+            build/bench_list_result.txt
+            build/bench_forward_list_result.txt
