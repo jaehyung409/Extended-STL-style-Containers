@@ -20,8 +20,8 @@ namespace j {
     public:
         using value_type        = T;
         using allocator_type    = std::allocator<T>;
-        using pointer           = value_type*;
-        using const_pointer     = const value_type*;
+        using pointer           = typename std::allocator_traits<Allocator>::pointer;
+        using const_pointer     = typename std::allocator_traits<Allocator>::const_pointer;
         using reference         = value_type&;
         using const_reference   = const value_type&;
         using size_type         = std::size_t;
