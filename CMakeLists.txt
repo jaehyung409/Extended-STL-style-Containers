@@ -32,6 +32,11 @@ add_executable(test_array
 )
 target_link_libraries(test_array PRIVATE j_array Catch2::Catch2WithMain)
 
+add_executable(bench_array
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/bench_array.cpp
+)
+target_link_libraries(bench_array PRIVATE j_array Catch2::Catch2WithMain)
+
 add_library(j_list)
 target_sources(j_list
         PUBLIC
@@ -67,3 +72,10 @@ add_executable(bench_forward_list
         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/bench_forward_list.cpp
 )
 target_link_libraries(bench_forward_list PRIVATE j_forward_list Catch2::Catch2WithMain)
+
+
+# --------------- Add CTest ---------------
+enable_testing()
+add_test(NAME test_array COMMAND test_array)
+add_test(NAME test_list COMMAND test_list)
+add_test(NAME test_forward_list COMMAND test_forward_list)
