@@ -15,9 +15,9 @@
 import j.forward_list;
 
 constexpr size_t N = 1000;
-constexpr std::random_device rd;
-constexpr std::mt19937 gen(42); // Fixed seed for reproducibility
-constexpr std::uniform_int_distribution<> dis(1, 10000);
+std::random_device rd;
+std::mt19937 gen(42); // Fixed seed for reproducibility
+std::uniform_int_distribution<> dis(1, 10000);
 
 TEST_CASE("Forward List Benchmarks: Push Operations") {
     SECTION("Push front comparison") {
