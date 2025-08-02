@@ -154,8 +154,8 @@ forward_list(InputIter first, InputIter last, const Allocator & = Allocator())
     -> forward_list<typename std::iterator_traits<InputIter>::value_type, Allocator>;
 
 template <std::ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
-forward_list(std::ranges::from_range_t, R &&range,
-             const Allocator & = Allocator()) -> forward_list<std::ranges::range_value_t<R>, Allocator>;
+forward_list(std::ranges::from_range_t, R &&range, const Allocator & = Allocator())
+    -> forward_list<std::ranges::range_value_t<R>, Allocator>;
 
 export template <class T, class Allocator>
 bool operator==(const forward_list<T, Allocator> &lhs, const forward_list<T, Allocator> &rhs) {

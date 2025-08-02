@@ -163,8 +163,8 @@ export template <class T, class Allocator = std::allocator<T>> class list {
 
 template <class InputIter, class Allocator = std::allocator<typename std::iterator_traits<InputIter>::value_type>>
     requires std::input_iterator<InputIter>
-list(InputIter, InputIter,
-     Allocator = Allocator()) -> list<typename std::iterator_traits<InputIter>::value_type, Allocator>;
+list(InputIter, InputIter, Allocator = Allocator())
+    -> list<typename std::iterator_traits<InputIter>::value_type, Allocator>;
 
 template <std::ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
 list(std::ranges::from_range_t, R &&, Allocator = Allocator()) -> list<std::ranges::range_value_t<R>, Allocator>;
