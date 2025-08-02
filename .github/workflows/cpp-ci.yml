@@ -83,7 +83,7 @@ jobs:
             HEAD="${{ github.sha }}"
           fi
           
-          CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD" || git show --name-only "$HEAD")
+          CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD")
           
           if echo "$CHANGED_FILES" | grep -q "modules/datastructures/Array/"; then
             ctest -R test_array --output-on-failure
