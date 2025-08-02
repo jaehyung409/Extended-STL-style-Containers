@@ -476,7 +476,7 @@ namespace j {
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::const_iterator forward_list<T, Allocator>::cend() const noexcept {
-        return iterator(nullptr);
+        return const_iterator(nullptr);
     }
 
     template <class T, class Allocator>
@@ -761,8 +761,8 @@ namespace j {
 
         auto it = before_begin();
 
-        while (std::next(it) != end()) {
-            if (binary_pred(*it, *std::next(it))) {
+        while (std::next(it) != end() && std::next(std::next(it)) != end()) {
+            if (binary_pred(*std::next(it), *std::next(std::next(it)))) {
                 erase_after(it);
                 ++count;
             } else {
