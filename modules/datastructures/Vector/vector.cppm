@@ -14,34 +14,31 @@ module;
 
 export module j.vector;
 
+import j.range_basics;
+
 namespace j {
     // not-yet specialization for bool ...
     export template<class T, class Allocator = std::allocator<T>>
     class vector {
     public:
+        using value_type                = T;
+        using allocator_type            = Allocator;
+        using pointer                   = typename std::allocator_traits<Allocator>::pointer;
+        using const_pointer             = typename std::allocator_traits<Allocator>::const_pointer;
+        using reference                 = value_type&;
+        using const_reference           = const value_type&;
+        using size_type                 = std::size_t;
+        using difference_type           = std::ptrdiff_t;
         class iterator;
         class const_iterator;
-
-        using value_type = T;
-        using allocator_type = Allocator;
-        using pointer = typename std::allocator_traits<Allocator>::pointer;
-        using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
-        using reference = value_type&;
-        using const_reference = const value_type&;
-        using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
-        using reverse_iterator = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using reverse_iterator          = std::reverse_iterator<iterator>;
+        using const_reverse_iterator    = std::reverse_iterator<const_iterator>;
 
     private:
         size_type _size;
         size_type _capacity;
         pointer _data;
         allocator_type _alloc;
-
-        void _set_data(pointer data) { _data = data; }
-        void _set_size(size_type size) { _size = size; }
-        void _set_capacity(size_type capacity) { _capacity = capacity; }
 
     public:
         // constructor/copy/destructor
@@ -50,26 +47,27 @@ namespace j {
         constexpr explicit vector(size_type n, const Allocator& alloc = Allocator());
         constexpr vector(size_type n, const T& value, const Allocator& alloc = Allocator());
         template<class InputIter>
-        requires (!std::is_integral_v<InputIter>)
+        requires std::input_iterator<InputIter>
         constexpr vector(InputIter first, InputIter last, const Allocator& alloc = Allocator());
-        //template<container-compatible-range<T> R>
-        //vector(from_range_t, R&& range, const Allocator& = Allocator());
+        template<container-compatible-range<T> R>
+        constexpr vector(from_range_t, R&& range, const Allocator& = Allocator()) = delete;
         constexpr vector(const vector& x);
-        constexpr vector(vector&& x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value);
+        constexpr vector(vector&& x) noexcept;
         constexpr vector(const vector& x, const std::type_identity_t<Allocator>& alloc);
         constexpr vector(vector&& x, const std::type_identity_t<Allocator>& alloc);
         constexpr vector(std::initializer_list<T> il, const Allocator& alloc = Allocator());
         constexpr ~vector();
+
         constexpr vector& operator=(const vector& x);
         constexpr vector& operator=(vector&& x) noexcept(
                 std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value ||
                 std::allocator_traits<Allocator>::is_always_equal::value);
         constexpr vector& operator=(std::initializer_list<T> il);
         template<class InputIter>
-        requires (!std::is_integral_v<InputIter>)
+        requires std::input_iterator<InputIter>
         constexpr void assign(InputIter first, InputIter last);
-        //template<container-compatible-range<T> R>
-        //void assign_range(R&& rg);
+        template<container-compatible-range<T> R>
+        constexpr void assign_range(R&& rg) = delete;
         constexpr void assign(size_type n, const T& u);
         constexpr void assign(std::initializer_list<T> il);
         constexpr allocator_type get_allocator() const noexcept;
@@ -118,8 +116,8 @@ namespace j {
         constexpr reference emplace_back(Args&&... args);
         constexpr void push_back(const T& x);
         constexpr void push_back(T&& x);
-        //template<container-compatible-range<T> R>
-        //void append_range(R&& rg);
+        template<container-compatible-range<T> R>
+        constexpr void append_range(R&& rg) = delete;
         constexpr void pop_back();
 
         template<class... Args>
@@ -128,10 +126,10 @@ namespace j {
         constexpr iterator insert(const_iterator position, T&& x);
         constexpr iterator insert(const_iterator position, size_type n, const T& x);
         template<class InputIter>
-        requires (!std::is_integral_v<InputIter>)
+        requires std::input_iterator<InputIter>
         constexpr iterator insert(const_iterator position, InputIter first, InputIter last);
-        //template<container-compatible-range<T> R>
-        //void insert_range(const_iterator position, R&& rg);
+        template<container-compatible-range<T> R>
+        constexpr void insert_range(const_iterator position, R&& rg) = delete;
         constexpr iterator insert(const_iterator position, std::initializer_list<T> il);
         constexpr iterator erase(const_iterator position);
         constexpr iterator erase(const_iterator first, const_iterator last);
@@ -145,35 +143,61 @@ namespace j {
     vector(InputIter, InputIter, Allocator = Allocator())
         -> vector<typename std::iterator_traits<InputIter>::value_type, Allocator>;
 
-    //template <ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
-    //vector(from_range_t, R&&, Allocator = Allocator())
-    //    -> vector<std::ranges::range_value_t<R>, Allocator>;
+    template <std::ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
+    vector(std::ranges::from_range_t, R&&, Allocator = Allocator())
+        -> vector<std::ranges::range_value_t<R>, Allocator>;
+
+
+    export template <class T, class Allocator>
+    bool operator==(const vector<T, Allocator>& lhs, const vector<T, Allocator>& rhs) {
+        return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    }
+
+    export template <class T, class Allocator>
+    auto operator<=>(const vector<T, Allocator>& lhs, const vector<T, Allocator>& rhs) {
+        return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(),
+                                                      rhs.begin(), rhs.end(),
+                                                      std::compare_three_way{});
+    }
+
+    export template <class T, class Allocator>
+    void swap(vector<T, Allocator>& x, vector<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
+        x.swap(y);
+    }
+
+    export template <class T, class Allocator, class U>
+    typename vector<T, Allocator>::size_type remove(vector<T, Allocator>& c, const U& value) {
+        return c.remove(value);
+    }
+
+    export template <class T, class Allocator, class Predicate>
+    typename vector<T, Allocator>::size_type remove_if(vector<T, Allocator>& c, Predicate pred) {
+        return c.remove_if(pred);
+    }
 
     template <class T, class Allocator>
     class vector<T, Allocator>::iterator {
-        friend class vector;
+        friend vector;
 
     public:
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
+        using value_type        = typename vector::value_type;
+        using difference_type   = typename vector::difference_type;
+        using pointer           = typename vector::pointer;
+        using reference         = typename vector::reference;
 
     private:
         pointer _ptr;
 
     public:
         explicit iterator(pointer ptr = nullptr) : _ptr(ptr) {}
-        explicit iterator(const const_iterator &other)
-                : _ptr(other._ptr) {}
         iterator &operator=(const const_iterator &other) {
             _ptr = other._ptr;
             return *this;
         }
 
         reference operator*() { return *_ptr; }
-        pointer operator->() { return &*_ptr; }
+        pointer operator->() { return &(*_ptr); }
 
         iterator &operator++() {
             ++_ptr;
@@ -230,26 +254,22 @@ namespace j {
         }
 
         bool operator==(const iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const iterator &other) const { return _ptr >= other._ptr; }
+        auto operator<=>(const iterator &other) const { return  _ptr <=> other._ptr; }
         operator const_iterator() const { return const_iterator(_ptr); }
     };
 
     template <class T, class Allocator>
     class vector<T, Allocator>::const_iterator {
-        friend class vector;
+        friend vector;
 
     public:
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = const T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
-        using const_pointer = const T*;
-        using const_reference = const T&;
+        using value_type        = typename vector::value_type;
+        using difference_type   = typename vector::difference_type;
+        using pointer           = typename vector::const_pointer;
+        using reference         = typename vector::const_reference;
+        using const_pointer     = typename vector::const_pointer;
+        using const_reference   = typename vector::const_reference;
 
     private:
         pointer _ptr;
@@ -317,11 +337,7 @@ namespace j {
         }
 
         bool operator==(const const_iterator &other) const { return _ptr == other._ptr; }
-        bool operator!=(const const_iterator &other) const { return _ptr != other._ptr; }
-        bool operator<(const const_iterator &other) const { return _ptr < other._ptr; }
-        bool operator>(const const_iterator &other) const { return _ptr > other._ptr; }
-        bool operator<=(const const_iterator &other) const { return _ptr <= other._ptr; }
-        bool operator>=(const const_iterator &other) const { return _ptr >= other._ptr; }
+        auto operator<=>(const const_iterator &other) const { return _ptr <=> other._ptr; }
     };
 
 }
@@ -349,7 +365,7 @@ namespace j {
 
     template<class T, class Allocator>
     template<class InputIter>
-    requires (!std::is_integral_v<InputIter>)
+    requires std::input_iterator<InputIter>
     constexpr vector<T, Allocator>::vector(InputIter first, InputIter last, const Allocator &alloc)
         : vector(alloc) {
             this->reserve(std::distance(first, last));
@@ -361,8 +377,7 @@ namespace j {
         : vector(x, std::allocator_traits<Allocator>::select_on_container_copy_construction(x.get_allocator())) {}
 
     template<class T, class Allocator>
-    constexpr vector<T, Allocator>::vector(vector &&x)
-    noexcept(std::allocator_traits<Allocator>::is_always_equal::value) : vector(std::move(x), x.get_allocator()) {}
+    constexpr vector<T, Allocator>::vector(vector &&x) noexcept : vector(std::move(x), x.get_allocator()) {}
 
     template<class T, class Allocator>
     constexpr vector<T, Allocator>::vector(const vector &x, const std::type_identity_t <Allocator> &alloc)
@@ -452,7 +467,7 @@ namespace j {
 
     template<class T, class Allocator>
     template<class InputIter>
-    requires (!std::is_integral_v<InputIter>)
+    requires std::input_iterator<InputIter>
     constexpr void vector<T, Allocator>::assign(InputIter first, InputIter last) {
         clear();
         this->reserve(std::distance(first, last));
@@ -751,7 +766,7 @@ namespace j {
 
     template<class T, class Allocator>
     template<class InputIter>
-    requires (!std::is_integral_v<InputIter>)
+    requires std::input_iterator<InputIter>
     constexpr typename vector<T, Allocator>::iterator
     vector<T, Allocator>::insert(vector::const_iterator position, InputIter first, InputIter last) {
         const size_type len = std::distance(first, last);
