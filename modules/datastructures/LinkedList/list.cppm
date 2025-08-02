@@ -383,7 +383,7 @@ namespace j {
 
     template <class T, class Allocator>
     list<T, Allocator>::list(list&& x) noexcept
-        : _sentinel(x._sentinel), _node_alloc(std::move(x._node_alloc)), _size(x._size) {
+        : _sentinel(x._sentinel), _node_alloc(x._node_alloc), _size(x._size) {
         x._sentinel = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
         std::construct_at(&x._sentinel->_value);
         x._sentinel->_next = x._sentinel;
@@ -419,7 +419,7 @@ namespace j {
 
     template <class T, class Allocator>
     list<T, Allocator>& list<T, Allocator>::operator=(const list& x) {
-        if (this != &x){
+        if (this != std::addressof(x)) {
             clear();
             for (const T& t : x) {
                 emplace_back(t);
@@ -431,12 +431,12 @@ namespace j {
     template <class T, class Allocator>
     list<T, Allocator>& list<T, Allocator>::operator=(list&& x)
             noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
-        if (this != &x){
+        if (this != std::addressof(x)){
             clear();
             std::destroy_at(&_sentinel->_value);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, _sentinel, 1);
             _sentinel = x._sentinel;
-            _node_alloc = std::move(x._node_alloc);
+            _node_alloc = x._node_alloc;
             _size = x._size;
 
             x._sentinel = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
