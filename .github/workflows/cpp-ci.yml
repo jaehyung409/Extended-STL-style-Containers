@@ -7,13 +7,12 @@ on:
 
 env:
   BUILD_TYPE: Release
-  DOCKER_IMAGE: ghcr.io/jaehyung/extended-stl-style-containers/cpp-dev:latest
 
 jobs:
   format-check:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.DOCKER_IMAGE }}
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -44,7 +43,7 @@ jobs:
             cc: clang-20
             cxx: clang++-20
     container:
-      image: ${{ env.DOCKER_IMAGE }}
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -88,7 +87,7 @@ jobs:
             cc: clang-20
             cxx: clang++-20
     container:
-      image: ${{ env.DOCKER_IMAGE }}
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -152,7 +151,7 @@ jobs:
             cc: clang-20
             cxx: clang++-20
     container:
-      image: ${{ env.DOCKER_IMAGE }}
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -210,4 +209,3 @@ jobs:
         with:
           name: benchmark-results-${{ matrix.compiler }}
           path: build-${{ matrix.compiler }}/*_result.txt
-
