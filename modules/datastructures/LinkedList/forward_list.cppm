@@ -255,7 +255,7 @@ namespace j {
         using value_type        = const typename forward_list::value_type;
         using difference_type   = typename forward_list::difference_type;
         using pointer           = typename forward_list::const_pointer;
-        using reference         = const typename forward_list::const_reference;
+        using reference         = typename forward_list::const_reference;
         using const_pointer     = typename forward_list::const_pointer;
         using const_reference   = typename forward_list::const_reference;
 

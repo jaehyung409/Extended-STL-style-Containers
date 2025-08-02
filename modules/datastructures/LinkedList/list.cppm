@@ -25,7 +25,7 @@ namespace j {
         using reference                 = value_type &;
         using const_reference           = const value_type &;
         using size_type                 = std::size_t;
-        using differece_type            = std::ptrdiff_t;
+        using difference_type            = std::ptrdiff_t;
         class iterator;
         class const_iterator;
         using reverse_iterator          = std::reverse_iterator<iterator>;
@@ -235,7 +235,7 @@ namespace j {
         using value_type        = typename list::value_type;
         using difference_type   = typename list::difference_type;
         using pointer           = typename list::pointer;
-        using reference         = typename list::reference
+        using reference         = typename list::reference;
 
     private:
         using node_pointer = Node*;
