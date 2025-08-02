@@ -21,7 +21,7 @@ jobs:
       - name: Run clang-format check
         run: |
           FILES=$(git ls-files 'modules/datastructures/LinkedList/**/*.cppm'
-          'modules/datastructures/Array/**/*.cppm')
+          'modules/datastructures/Array/*.cppm')
           if [ -n "$FILES" ]; then
             clang-format --dry-run --Werror $FILES
           else
