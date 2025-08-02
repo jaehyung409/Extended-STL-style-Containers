@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
+          fetch-depth: 0
       - name: Install clang-format
         run: sudo apt-get update && sudo apt-get install clang-format
       - name: Run clang-format check
@@ -26,7 +26,7 @@ jobs:
           else
             echo "No C++ files to check."
           fi
-# need to be update (check all files)
+  # need to be update (check all files)
 
   clang-tidy-check:
     runs-on: ubuntu-latest
@@ -40,22 +40,23 @@ jobs:
       - name: Install dependencies and newer tools
         run: |
           sudo apt-get update
-          sudo apt-get install ninja-build clang-tidy cmake
-          # Install newer GCC for C++20 modules support
-          sudo apt-get install gcc-12 g++-12
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+          sudo apt-get install ninja-build cmake
+          # Install LLVM 20 for latest C++20/23 modules support
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo add-apt-repository "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-20 main"
+          sudo apt-get update
+          sudo apt-get install clang-tidy-20
       - name: Configure project with CMake and Ninja
         run: |
           mkdir build
           cd build
-          cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ..
+          cmake -GNinja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_SCAN_FOR_MODULES=OFF -DCMAKE_CXX_COMPILER=clang++-20 ..
       - name: Run clang-tidy
         run: |
           cd build
           CPPM_FILES=$(git -C .. ls-files 'modules/**/*.cppm')
           if [ -n "$CPPM_FILES" ]; then
-            clang-tidy -p . $CPPM_FILES
+            clang-tidy-20 -p . $CPPM_FILES
           else
             echo "No .cppm files found to check with clang-tidy."
           fi
@@ -67,14 +68,14 @@ jobs:
       BUILD_TYPE: Release
     strategy:
       matrix:
-        compiler: [gcc-12, clang-15]
+        compiler: [gcc-15, clang-20]
         include:
-          - compiler: gcc-12
-            cc: gcc-12
-            cxx: g++-12
-          - compiler: clang-15
-            cc: clang-15
-            cxx: clang++-15
+          - compiler: gcc-15
+            cc: gcc-15
+            cxx: g++-15
+          - compiler: clang-20
+            cc: clang-20
+            cxx: clang++-20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,10 +84,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install ninja-build cmake
-          if [ "${{ matrix.compiler }}" = "gcc-12" ]; then
-            sudo apt-get install gcc-12 g++-12
+          if [ "${{ matrix.compiler }}" = "gcc-15" ]; then
+            # Install GCC 15 from toolchain PPA
+            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install gcc-15 g++-15
           else
-            sudo apt-get install clang-15
+            # Install LLVM/Clang 20
+            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+            sudo add-apt-repository "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-20 main"
+            sudo apt-get update
+            sudo apt-get install clang-20 clang++-20
           fi
       - name: Configure project
         env:
@@ -95,7 +103,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ..
+          cmake -GNinja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_SCAN_FOR_MODULES=OFF ..
       - name: Build project
         run: |
           cd build
@@ -140,14 +148,17 @@ jobs:
       - name: Install Ninja and tools
         run: |
           sudo apt-get update
-          sudo apt-get install ninja-build cmake gcc-12 g++-12
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+          # Install GCC 15 for benchmark job
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install ninja-build cmake gcc-15 g++-15
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-15 100
       - name: Configure project
         run: |
           mkdir build
           cd build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ..
+          cmake -GNinja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_CXX_SCAN_FOR_MODULES=OFF ..
       - name: Build project
         run: |
           cd build
@@ -184,14 +195,12 @@ jobs:
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/LinkedList/forward_list"; then
             ./bench_forward_list > bench_forward_list_result.txt || echo "Forward list benchmark failed" > bench_forward_list_result.txt
           fi
-          
+
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: |
             build/bench_array_result.txt
-            
             build/bench_list_result.txt
-            
             build/bench_forward_list_result.txt
