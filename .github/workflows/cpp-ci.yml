@@ -19,7 +19,13 @@ jobs:
       - name: Install clang-format
         run: sudo apt-get update && sudo apt-get install clang-format
       - name: Run clang-format check
-        run: clang-format --dry-run --Werror $(git ls-files '*.cpp' '*.cppm')
+        run: |
+          FILES=$(git ls-files '*.cpp' '*.cppm')
+          if [ -n "$FILES" ]; then
+            clang-format --dry-run --Werror $FILES
+          else
+            echo "No C++ files to check."
+          fi
 
   clang-tidy-check:
     runs-on: ubuntu-latest
