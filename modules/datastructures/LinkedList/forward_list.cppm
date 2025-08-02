@@ -9,7 +9,6 @@ module;
 #include <iterator>
 #include <initializer_list>
 #include <ranges>
-#include <vector>
 
 export module j.forward_list;
 
