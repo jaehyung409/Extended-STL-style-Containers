@@ -72,7 +72,7 @@ export template <class T, class Allocator = std::allocator<T>> class forward_lis
     void assign(std::initializer_list<T> il);
     allocator_type get_allocator() const noexcept;
 
-    // iteratos
+    // iterators
     iterator before_begin() noexcept;
     const_iterator before_begin() const noexcept;
     iterator begin() noexcept;
