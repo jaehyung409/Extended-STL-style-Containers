@@ -9,6 +9,7 @@ module;
 #include <iterator>
 #include <initializer_list>
 #include <ranges>
+#include <vector>
 
 export module j.forward_list;
 
@@ -168,29 +169,29 @@ namespace j {
         -> forward_list<std::ranges::range_value_t<R>, Allocator>;
 
     export template<class T, class Allocator>
-    bool operator== (const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs) {
+    constexpr bool operator== (const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs) {
         return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
     }
 
     export template<class T, class Allocator>
-    auto operator<=>(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs) {
+    constexpr auto operator<=>(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs) {
         return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(),
                                                       rhs.begin(), rhs.end(),
                                                       std::compare_three_way{});
     }
 
     export template<class T, class Allocator>
-    void swap(forward_list<T, Allocator>& x, forward_list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
+    constexpr void swap(forward_list<T, Allocator>& x, forward_list<T, Allocator>& y) noexcept(noexcept(x.swap(y))) {
         x.swap(y);
     }
 
     export template<class T, class Allocator, class U>
-    typename forward_list<T, Allocator>::size_type erase(forward_list<T, Allocator>& c, const U& value) {
+    constexpr typename forward_list<T, Allocator>::size_type erase(forward_list<T, Allocator>& c, const U& value) {
         return c.remove(value);
     }
 
     export template<class T, class Allocator, class Predicate>
-    typename forward_list<T, Allocator>::size_type erase_if(forward_list<T, Allocator>& c, Predicate pred) {
+    constexpr typename forward_list<T, Allocator>::size_type erase_if(forward_list<T, Allocator>& c, Predicate pred) {
         return c.remove_if(pred);
     }
 
@@ -211,10 +212,10 @@ namespace j {
 
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
+        using value_type        = typename forward_list::value_type;
+        using difference_type   = typename forward_list::difference_type;
+        using pointer           = typename forward_list::pointer;
+        using reference         = typename forward_list::reference;
 
     private:
         using node_pointer = Node*;
@@ -251,12 +252,12 @@ namespace j {
 
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = const T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
-        using const_pointer = const T*;
-        using const_reference = const T&;
+        using value_type        = const typename forward_list::value_type;
+        using difference_type   = typename forward_list::difference_type;
+        using pointer           = typename forward_list::const_pointer;
+        using reference         = const typename forward_list::const_reference;
+        using const_pointer     = typename forward_list::const_pointer;
+        using const_reference   = typename forward_list::const_reference;
 
     private:
         using node_pointer = Node*;

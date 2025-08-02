@@ -232,10 +232,10 @@ namespace j {
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
+        using value_type        = typename list::value_type;
+        using difference_type   = typename list::difference_type;
+        using pointer           = typename list::pointer;
+        using reference         = typename list::reference
 
     private:
         using node_pointer = Node*;
@@ -284,12 +284,12 @@ namespace j {
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
-        using value_type = const T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = T*;
-        using reference = T&;
-        using const_pointer = const T*;
-        using const_reference = const T&;
+        using value_type        = typename list::value_type;
+        using difference_type   = typename list::difference_type;
+        using pointer           = typename list::const_pointer;
+        using reference         = typename list::const_reference;
+        using const_pointer     = typename list::const_pointer;
+        using const_reference   = typename list::const_reference;
 
     private:
         using node_pointer = Node*;
