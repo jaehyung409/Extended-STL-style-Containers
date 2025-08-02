@@ -133,10 +133,6 @@ jobs:
       - name: Run selective benchmarks
         run: |
           cd build
-          > bench_array_result.txt
-          > bench_list_result.txt
-          > bench_forward_list_result.txt
-          
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Array/"; then
             ./bench_array > bench_array_result.txt || echo "Array benchmark failed" > bench_array_result.txt
           fi
