@@ -40,7 +40,7 @@ namespace j {
 
         // helper function (sort)
         template <class Compare>
-        void merge_sort(forward_list& x, Compare comp);
+        void _sort_impl(forward_list& x, Compare comp);
 
     public:
         // constructor and destructor
@@ -329,8 +329,8 @@ namespace j {
 
     template <class T, class Allocator>
     forward_list<T, Allocator>::forward_list(forward_list&& x)  noexcept
-        : _before_head(x._before_head), _node_alloc(std::move(x._node_alloc)) {
-        x._before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        : _before_head(x._before_head), _node_alloc(x._node_alloc) {
+        x._before_head = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
         std::construct_at(&x._before_head->_value);
         x._before_head->_next = nullptr; // Initialize the next pointer to nullptr
     }
@@ -347,7 +347,7 @@ namespace j {
     forward_list<T, Allocator>::forward_list(forward_list&& x, const std::type_identity_t<Allocator>& alloc)
         : _before_head(x._before_head),
           _node_alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
-        x._before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        x._before_head = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
         std::construct_at(&x._before_head->_value);
         x._before_head->_next = nullptr; // Initialize the next pointer to nullptr
     }
@@ -369,10 +369,10 @@ namespace j {
 
     template <class T, class Allocator>
     forward_list<T, Allocator>& forward_list<T, Allocator>::operator=(const forward_list& x) {
-        if (this != &x) {
+        if (this != std::addressof(x)) {
             clear();
-            auto xit = x.begin();
-            for (auto it = before_begin(); xit != x.end(); ++xit) {
+            auto it = before_begin();
+            for (auto xit = x.begin(); xit != x.end(); ++xit) {
                 it = emplace_after(it, *xit);
             }
         }
@@ -380,32 +380,53 @@ namespace j {
     }
 
     template <class T, class Allocator>
-    forward_list<T, Allocator>& forward_list<T, Allocator>::operator=(forward_list&& x) noexcept {
-        if (this != &x) {
+    forward_list<T, Allocator>& forward_list<T, Allocator>::operator=(forward_list&& x)
+        noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
+        if (this != std::addressof(x)) {
             clear();
-            std::destroy_at(_before_head);
+            std::destroy_at(&_before_head->_value);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, _before_head, 1);
+            _before_head = x._before_head;
+            _node_alloc = x._node_alloc;
 
-            _head = x.get_head();
-            _before_head = x.get_before_head();
-            _node_alloc = std::move(x.get_allocator());
-
-            auto new_before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-            std::construct_at(new_before_head);
-
-            x.set_head(nullptr);
-            x.set_before_head(new_before_head);
-            x._before_head->_next = x._head;
+            x._before_head = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
+            std::construct_at(&x._before_head->_value);
+            x._before_head->_next = nullptr; // Initialize the next pointer to nullptr
         }
         return *this;
     }
 
+    template <class T, class Allocator>
+    forward_list<T, Allocator>& forward_list<T, Allocator>::operator=(std::initializer_list<T> il) {
+        clear();
+        auto it = before_begin();
+        for (const T& t : il) {
+            it = emplace_after(it, t);
+        }
+        return *this;
+    }
+
+    template <class T, class Allocator>
+    template <class InputIt> requires std::input_iterator<InputIt>
+    void forward_list<T, Allocator>::assign(InputIt first, InputIt last) {
+        clear();
+        auto it = before_begin();
+        for (; first != last; ++first) {
+            it = emplace_after(it, *first);
+        }
+    }
+
     template<class T, class Allocator>
-    void forward_list<T, Allocator>::assign(forward_list::size_type count, const T &value) {
+    void forward_list<T, Allocator>::assign(size_type count, const T &value) {
         clear();
         for (int i = 0; i < count; i++) {
             emplace_front(value);
         }
+    }
+
+    template <class T, class Allocator>
+    void forward_list<T, Allocator>::assign(std::initializer_list<T> il) {
+        assign(il.begin(), il.end());
     }
 
     template<class T, class Allocator>
@@ -425,12 +446,12 @@ namespace j {
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::begin() noexcept {
-        return iterator(_head);
+        return iterator(_before_head->_next);
     }
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::const_iterator forward_list<T, Allocator>::begin() const noexcept {
-        return const_iterator(_head);
+        return const_iterator(_before_head->_next);
     }
 
     template <class T, class Allocator>
@@ -445,7 +466,7 @@ namespace j {
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::const_iterator forward_list<T, Allocator>::cbegin() const noexcept {
-        return const_iterator(_head);
+        return const_iterator(_before_head->_next);
     }
 
     template <class T, class Allocator>
@@ -455,115 +476,37 @@ namespace j {
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::const_iterator forward_list<T, Allocator>::cend() const noexcept {
-        return iterator();
+        return iterator(nullptr);
     }
 
     template <class T, class Allocator>
     bool forward_list<T, Allocator>::empty() const noexcept {
-        return _head == nullptr;
+        return _before_head->_next == nullptr;
     }
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::max_size() const noexcept {
-        return std::numeric_limits<size_t>::max() / sizeof(Node) - 1; // -1 for _before_head
+        return std::allocator_traits<node_allocator>::max_size(_node_alloc);
     }
 
     template <class T, class Allocator>
     T& forward_list<T, Allocator>::front() {
-        return _head->_value;
+        return _before_head->_next->_value;
     }
 
     template <class T, class Allocator>
     const T& forward_list<T, Allocator>::front() const {
-        return _head->_value;
-    }
-
-    template<class T, class Allocator>
-    typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::insert_after(forward_list::const_iterator position, const T &value) {
-        if (position == before_begin()) {
-            emplace_front(value);
-            return begin();
-        }
-
-        Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_node, value);
-        new_node->_next = position->_next;
-        position->_next = new_node;
-
-        return iterator(new_node);
-    }
-
-
-    template<class T, class Allocator>
-    typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::insert_after(forward_list::const_iterator position, T &value) {
-        if (position == before_begin()) {
-            emplace_front(value);
-            return begin();
-        }
-
-        Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_node, value);
-
-        new_node->_next = position->_next;
-        position->_next = new_node;
-        return iterator(new_node);
-    }
-
-    template<class T, class Allocator>
-    typename forward_list<T, Allocator>::iterator
-    forward_list<T, Allocator>::insert_after(forward_list::const_iterator position, forward_list::size_type count,
-                                             const T &value) {
-        for (int i = 0; i < count; i++) {
-            position = insert_after(position, value);
-        }
-        return forward_list::iterator(position._ptr);
-    }
-
-    template<class T, class Allocator>
-    template<class... Args>
-    typename forward_list<T, Allocator>::iterator
-    forward_list<T, Allocator>::emplace_after(forward_list::const_iterator position, Args &&... args) {
-        if (position == before_begin()) {
-            emplace_front(args...);
-            return begin();
-        }
-
-        Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
-
-        new_node->_next = position->_next;
-        position->_next = new_node;
-
-        return iterator(new_node);
-    }
-
-    template<class T, class Allocator>
-    typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::erase_after(forward_list::const_iterator position) {
-        if (position == before_begin()) {
-            pop_front();
-            return begin();
-        }
-
-        Node* node_to_delete = position->_next;
-        position->_next = node_to_delete->_next;
-        std::destroy_at(node_to_delete);
-        std::allocator_traits<node_allocator>::deallocate(_node_alloc, node_to_delete, 1);
-        return position->_next;
+        return _before_head->_next->_value;
     }
 
     template <class T, class Allocator>
     template <class ... Args>
     T& forward_list<T, Allocator>::emplace_front(Args&&... args) {
         Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_node, std::forward<Args>(args)...);
-        if (empty()) {
-            new_node->_next = nullptr;
-        } else {
-            new_node->_next = _head;
-        }
-        _head = new_node;
-        _before_head->_next = _head;
-        return _head->_value;
+        std::construct_at(&new_node->_value, std::forward<Args>(args)...);
+        new_node->_next = _before_head->_next;
+        _before_head->_next = new_node;
+        return new_node->_value;
     }
 
     template <class T, class Allocator>
@@ -578,11 +521,103 @@ namespace j {
 
     template <class T, class Allocator>
     void forward_list<T, Allocator>::pop_front() {
-        Node* del_node = _head;
-        _head = _head->_next;
-        _before_head->_next = _head;
-        std::destroy_at(del_node);
+        Node* del_node = _before_head->_next;
+        if (!del_node) return;
+
+        _before_head->_next = del_node->_next;
+        std::destroy_at(&del_node->_value);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, del_node, 1);
+    }
+
+    template<class T, class Allocator>
+    template<class... Args>
+    typename forward_list<T, Allocator>::iterator
+    forward_list<T, Allocator>::emplace_after(const_iterator position, Args &&... args) {
+        Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        std::construct_at(&new_node->_value, std::forward<Args>(args)...);
+
+        new_node->_next = position._ptr->_next;
+        position._ptr->_next = new_node;
+
+        return iterator(new_node);
+    }
+
+    template<class T, class Allocator>
+    typename forward_list<T, Allocator>::iterator
+    forward_list<T, Allocator>::insert_after(const_iterator position, const T &value) {
+        Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        std::construct_at(&new_node->_value, value);
+
+        new_node->_next = position._ptr->_next;
+        position._ptr->_next = new_node;
+
+        return iterator(new_node);
+    }
+
+    template<class T, class Allocator>
+    typename forward_list<T, Allocator>::iterator
+    forward_list<T, Allocator>::insert_after(const_iterator position, T &&value) {
+        Node* new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        std::construct_at(&new_node->_value, value);
+
+        new_node->_next = position._ptr->_next;
+        position._ptr->_next = new_node;
+
+        return iterator(new_node);
+    }
+
+    template<class T, class Allocator>
+    typename forward_list<T, Allocator>::iterator
+    forward_list<T, Allocator>::insert_after(const_iterator position, size_type count, const T &value) {
+        for (int i = 0; i < count; i++) {
+            position = insert_after(position, value);
+        }
+        return iterator(position._ptr);
+    }
+
+    template <class T, class Allocator>
+    template <class InputIter> requires std::input_iterator<InputIter>
+    typename forward_list<T, Allocator>::iterator
+    forward_list<T, Allocator>::insert_after(const_iterator position, InputIter first, InputIter last) {
+        for (; first != last; ++first) {
+            position = emplace_after(position, *first);
+        }
+        return iterator(position._ptr);
+    }
+
+    template <class T, class Allocator>
+    typename forward_list<T, Allocator>::iterator
+    forward_list<T, Allocator>::insert_after(const_iterator position, std::initializer_list<T> il) {
+        return insert_after(position, il.begin(), il.end());
+    }
+
+    template<class T, class Allocator>
+    typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::erase_after(const_iterator position) {
+        Node* del_node = position._ptr->_next;
+        if (!del_node) return end();
+
+        position._ptr->_next = del_node->_next;
+        std::destroy_at(&del_node->_value);
+        std::allocator_traits<node_allocator>::deallocate(_node_alloc, del_node, 1);
+        return iterator(position._ptr->_next);
+    }
+
+    template <class T, class Allocator>
+    typename forward_list<T, Allocator>::iterator
+    forward_list<T, Allocator>::erase_after(const_iterator position, const_iterator last) {
+        const_iterator del_pos = std::next(position);
+        while (del_pos != last) {
+            del_pos = erase_after(position);
+        }
+        return iterator(last._ptr);
+    }
+
+    template <class T, class Allocator>
+    void forward_list<T, Allocator>::swap(
+        forward_list& x) noexcept(noexcept(std::allocator_traits<node_allocator>::is_always_equal::value)) {
+        using std::swap;
+        swap(_before_head, x._before_head);
+        swap(_node_alloc, x._node_alloc);
     }
 
     template <class T, class Allocator>
@@ -595,16 +630,23 @@ namespace j {
         size_type size = 0;
         auto prev = before_begin();
         auto it = begin();
-        for(; it != end() && size < nsz; ++prev, ++it, ++size) {}
+        while (size < nsz && it != end()) {
+            ++prev;
+            ++it;
+            ++size;
+        }
         if (size == nsz){
             if (it == end()) {
                 return;
             }
-            for(; std::next(prev) != end(); erase_after(prev)) {}
+            while (std::next(prev) != end()) {
+                erase_after(prev);
+            }
         }
         else {
-            for(; size < nsz; size++){
-                emplace_after(prev, value);
+            while (size < nsz) {
+                prev = emplace_after(prev, value);
+                ++size;
             }
         }
     }
@@ -617,191 +659,184 @@ namespace j {
             std::destroy_at(temp._ptr);
             std::allocator_traits<node_allocator>::deallocate(_node_alloc, temp._ptr, 1);
         }
-        _head = nullptr;
-        _before_head->_next = _head;
+        _before_head->_next = nullptr;
+    }
+
+    template<class T, class Allocator>
+    void forward_list<T, Allocator>::splice_after(const_iterator position, forward_list &x) {
+        if (!x.empty()) {
+            iterator last = x.before_begin();
+            while (std::next(last) != x.end()) {
+                ++last;
+            }
+            last._ptr->_next = position._ptr->_next;
+            position._ptr->_next = x._before_head->_next;
+            x._before_head->_next = nullptr;
+        }
+    }
+
+    template<class T, class Allocator>
+    void forward_list<T, Allocator>::splice_after(const_iterator position, forward_list &&x) {
+        splice_after(position, x);
+    }
+
+    template <class T, class Allocator>
+    void forward_list<T, Allocator>::splice_after(const_iterator position, forward_list& x, const_iterator i) {
+        Node* moved = i._ptr->_next;
+        if (!moved) return;
+        i._ptr->_next = i._ptr->_next->_next;
+        moved->_next = position._ptr->_next;
+        position._ptr->_next = moved;
+    }
+
+    template <class T, class Allocator>
+    void forward_list<T, Allocator>::splice_after(const_iterator position, forward_list&& x, const_iterator i) {
+        splice_after(position, x, i);
+    }
+
+    template<class T, class Allocator>
+    void forward_list<T, Allocator>::splice_after(const_iterator position, forward_list &x,
+                                                  const_iterator first, const_iterator last) {
+        if (first == last) return;
+        const_iterator last_before = first;
+        while (std::next(last_before) != last) {
+            ++last_before;
+        }
+        last_before._ptr->_next = position._ptr->_next;
+        position._ptr->_next = first._ptr->_next;
+        first._ptr->_next = last._ptr;
+    }
+
+    template<class T, class Allocator>
+    void forward_list<T, Allocator>::splice_after(const_iterator position, forward_list &&other,
+                                                  const_iterator first, const_iterator last) {
+        splice_after(position, other, first, last);
     }
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::remove(const T& value) {
-        if (empty()) {
-            return 0;
-        }
-        size_type size = 0;
+        size_type count = 0;
         auto it = before_begin();
-        auto next = begin();
-        while (next != end()) {
-            if (*next == value) {
+
+        while (std::next(it) != end()) {
+            if (*std::next(it) == value) {
                 erase_after(it);
-                next = std::next(it);
+                ++count;
             } else {
                 ++it;
-                ++next;
-                ++size;
             }
         }
-        return size;
+
+        return count;
+    }
+
+    template <class T, class Allocator>
+    template <class Predicate> requires std::predicate<Predicate, T>
+    typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::remove_if(Predicate pred) {
+        size_type count = 0;
+
+        auto it = before_begin();
+
+        while (std::next(it) != end()) {
+            if (pred(*std::next(it))) {
+                erase_after(it);
+                ++count;
+            } else {
+                ++it;
+            }
+        }
+
+        return count;
     }
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::unique() {
-        if (empty()) {
-            return 0;
-        }
-        size_type size = 1;
-        auto it = begin();
-        auto next = std::next(begin());
-        while (next != end()) {
-            if (*next == *it) {
+        return unique(std::equal_to<T>());
+    }
+
+    template <class T, class Allocator>
+    template <class BinaryPredicate> requires std::predicate<BinaryPredicate, T, T>
+    typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::unique(BinaryPredicate binary_pred) {
+        size_type count = 0;
+
+        auto it = before_begin();
+
+        while (std::next(it) != end()) {
+            if (binary_pred(*it, *std::next(it))) {
                 erase_after(it);
-                next = std::next(it);
+                ++count;
             } else {
                 ++it;
-                ++next;
-                ++size;
             }
         }
-        return std::distance(begin(), end());
+        return count;
     }
 
     template <class T, class Allocator>
     void forward_list<T, Allocator>::merge(forward_list& x) {
-        auto it = before_begin();
-        auto next_it = begin();
-        auto xit = x.before_begin();
-        auto next_xit = x.begin();
-        while (next_xit != x.end()){
-            if (next_it == end() || std::less<>{}(*next_xit, *next_it)) {
-                it = emplace_after(it, *next_xit);
-                next_it = std::next(it);
-                x.erase_after(xit);
-                next_xit = std::next(xit);
-            } else {
-                ++it;
-                ++next_it;
-            }
-        }
+        merge(x, std::less<T>());
     }
 
     template <class T, class Allocator>
     void forward_list<T, Allocator>::merge(forward_list&& x) {
-        auto it = before_begin();
-        auto next_it = begin();
-        auto xit = x.before_begin();
-        auto next_xit = x.begin();
-        while (next_xit != x.end()){
-            if (next_it == end() || std::less<>{}(*next_xit, *next_it)) {
-                it = emplace_after(it, std::move(*next_xit));
-                next_it = std::next(it);
-                x.erase_after(xit);
-                next_xit = std::next(xit);
-            } else {
-                ++it;
-                ++next_it;
-            }
-        }
+        merge(x, std::less<T>());
     }
 
     template <class T, class Allocator>
     template <class Compare>
     void forward_list<T, Allocator>::merge(forward_list& x, Compare comp) {
-        auto it = before_begin();
-        auto next_it = begin();
-        auto xit = x.before_begin();
-        auto next_xit = x.begin();
-        while (next_xit != x.end()){
-            if (next_it == end() || comp(*next_xit, *next_it)) {
-                it = emplace_after(it, *next_xit);
-                next_it = std::next(it);
-                x.erase_after(xit);
-                next_xit = std::next(xit);
-            } else {
+        if (this == std::addressof(x) || x.empty()) return;
+
+        iterator it = before_begin();
+        iterator xit = x.before_begin();
+        while (std::next(it) != end() && std::next(xit) != x.end()) {
+            if (!comp(*std::next(xit), *std::next(it))) {
                 ++it;
-                ++next_it;
+            } else {
+                splice_after(it, x, xit);
+                ++it;
             }
+        }
+        if (std::next(xit) != x.end()) {
+            splice_after(it, x, xit, x.end());
         }
     }
 
     template <class T, class Allocator>
     template <class Compare>
     void forward_list<T, Allocator>::merge(forward_list&& x, Compare comp) {
-        auto it = before_begin();
-        auto next_it = begin();
-        auto xit = x.before_begin();
-        auto next_xit = x.begin();
-        while (next_xit != x.end()){
-            if (next_it == end() || comp(*next_xit, *next_it)) {
-                it = emplace_after(it, std::move(*next_xit));
-                next_it = std::next(it);
-                x.erase_after(xit);
-                next_xit = std::next(xit);
-            } else {
-                ++it;
-                ++next_it;
-            }
-        }
+        merge(static_cast<forward_list&>(x), comp);
     }
 
-    template<class T, class Allocator>
-    void forward_list<T, Allocator>::splice_after(forward_list::const_iterator position, forward_list &other) {
-        if (!other.empty()) {
-            auto last = other.before_begin();
-            while (std::next(last) != other.end()) {
-                ++last;
-            }
-            last->_next = position->_next;
-            if (position == before_begin()) {
-                _head = other.get_head();
-                _before_head->_next = _head;
-            } else {
-                position->_next = other.get_head();
-            }
-            other.set_head(nullptr);
-        }
+    template <class T, class Allocator>
+    void forward_list<T, Allocator>::sort() {
+        _sort_impl(*this, std::less<T>());
     }
 
-    template<class T, class Allocator>
-    void forward_list<T, Allocator>::splice_after(forward_list::const_iterator position, forward_list &&other) {
-        splice_after(position, other);
+    template <class T, class Allocator>
+    template <class Compare>
+    requires std::strict_weak_order<Compare, T, T>
+    void forward_list<T, Allocator>::sort(Compare comp) {
+        _sort_impl(*this, comp);
     }
 
-    template<class T, class Allocator>
-    void forward_list<T, Allocator>::splice_after(forward_list::const_iterator position, forward_list &other,
-                                                  forward_list::const_iterator first,
-                                                  forward_list::const_iterator last) {
-        if (first == last) {
-            return;
+    template <class T, class Allocator>
+    void forward_list<T, Allocator>::reverse() noexcept {
+        if (empty()) return;
+        Node *prev = nullptr;
+        Node *current = _before_head->_next;
+        while (current != nullptr) {
+            Node *next = current->_next;
+            current->_next = prev;
+            prev = current;
+            current = next;
         }
-        auto before_last = first;
-        while (std::next(before_last) != last) {
-            ++before_last;
-        }
-        auto move_first = first->_next;
-        if (first == other.before_begin()) {
-            other.set_head(before_last->_next);
-            other.get_before_head()->_next = other.get_head();
-        } else {
-            first->_next = before_last->_next;
-        }
-        before_last->_next = position->_next;
-        if (position == before_begin()) {
-            _head = move_first;
-            _before_head->_next = _head;
-        } else {
-            position->_next = move_first;
-        }
+        _before_head->_next = prev;
     }
-
-    template<class T, class Allocator>
-    void forward_list<T, Allocator>::splice_after(forward_list::const_iterator position, forward_list &&other,
-                                                  forward_list::const_iterator first,
-                                                  forward_list::const_iterator last) {
-        splice_after(position, other, first, last);
-    }
-
 
     template<class T, class Allocator>
     template<class Compare>
-    void forward_list<T, Allocator>::merge_sort(forward_list &x, Compare comp) {
+    void forward_list<T, Allocator>::_sort_impl(forward_list &x, Compare comp) {
         if (x.empty() || std::next(x.begin()) == x.end()) {
             return;
         }
@@ -811,56 +846,11 @@ namespace j {
             std::advance(slow, 1);
             std::advance(fast, 2);
         }
-        forward_list<T> second;
-        second.splice_after(second.before_begin(), x, slow, x.end());
-        merge_sort(x, comp);
-        merge_sort(second, comp);
-        x.merge(second, comp);
-    }
 
-    template <class T, class Allocator>
-    void forward_list<T, Allocator>::sort() {
-        merge_sort(*this, std::less<T>());
+        forward_list<T, Allocator> temp;
+        temp.splice_after(temp.before_begin(), x, slow, x.end());
+        _sort_impl(x, comp);
+        _sort_impl(temp, comp);
+        x.merge(temp, comp);
     }
-
-    template <class T, class Allocator>
-    template <class Compare>
-    void forward_list<T, Allocator>::sort(Compare comp) {
-        merge_sort(*this, comp);
-    }
-
-    template <class T, class Allocator>
-    void forward_list<T, Allocator>::reverse() noexcept {
-        if (empty()) {
-            return;
-        }
-        Node* prev = nullptr;
-        Node* current = _head;
-        Node* next = nullptr;
-        while (current != nullptr) {
-            next = current->_next;
-            current->_next = prev;
-            prev = current;
-            current = next;
-        }
-        _head = prev;
-        _before_head->_next = _head;
-    }
-
-    template <class T, class Allocator, class U>
-    typename forward_list<T, Allocator>::size_type erase(forward_list<T, Allocator>& c, const U& value) {
-        auto it = c.before_begin();
-        while (std::next(it) != c.end()) {
-            if (*std::next(it) == value) {
-                it = erase_after(it);
-            } else {
-                ++it;
-            }
-        }
-        return std::distance(c.begin(), c.end());
-    }
-/*
-    template <class T, class Allocator, class Predicate>
-    typename forward_list<T, Allocator>::size_type erase_if(forward_list<T, Allocator>& c, Predicate pred) {
-    } */
 }
