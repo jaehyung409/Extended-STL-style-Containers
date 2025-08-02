@@ -15,6 +15,9 @@
 import j.list;
 
 constexpr size_t N = 1000;
+std::random_device rd;
+std::mt19937 gen(42); // Fixed seed for reproducibility
+std::uniform_int_distribution<> dis(1, 10000);
 
 TEST_CASE("List Benchmarks: Push Operations") {
     SECTION("Push back comparison") {
@@ -272,9 +275,6 @@ TEST_CASE("List Benchmarks: Sort Operations") {
     SECTION("Sort random data") {
         BENCHMARK("j::list sort random") {
             j::list<int> lst1;
-            std::random_device rd;
-            std::mt19937 gen(42); // Fixed seed for reproducibility
-            std::uniform_int_distribution<> dis(1, 10000);
             for (size_t i = 0; i < N; ++i) {
                 lst1.push_back(dis(gen));
             }
@@ -284,9 +284,6 @@ TEST_CASE("List Benchmarks: Sort Operations") {
 
         BENCHMARK("std::list sort random") {
             std::list<int> lst2;
-            std::random_device rd;
-            std::mt19937 gen(42); // Fixed seed for reproducibility
-            std::uniform_int_distribution<> dis(1, 10000);
             for (size_t i = 0; i < N; ++i) {
                 lst2.push_back(dis(gen));
             }
