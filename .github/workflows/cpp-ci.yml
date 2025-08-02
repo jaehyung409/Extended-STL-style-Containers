@@ -44,7 +44,12 @@ jobs:
       - name: Run clang-tidy
         run: |
           cd build
-          clang-tidy -p . $(git ls-files '../modules/**/*.cppm')
+          CPPM_FILES=$(git -C .. ls-files 'modules/**/*.cppm')
+          if [ -n "$CPPM_FILES" ]; then
+            clang-tidy -p . $CPPM_FILES
+          else
+            echo "No .cppm files found to check with clang-tidy."
+          fi
 
   build-and-test:
     runs-on: ubuntu-latest
