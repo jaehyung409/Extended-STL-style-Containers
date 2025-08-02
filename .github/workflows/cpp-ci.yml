@@ -159,18 +159,19 @@ jobs:
       - name: Determine changed files
         id: determine_changed_files
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          git config --global --add safe.directory /__w/Extended-STL-style-Containers/Extended-STL-style-Containers || true
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="${{ github.event.pull_request.base.sha }}"
             HEAD="${{ github.event.pull_request.head.sha }}"
           else
-            if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+            if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
               BASE="HEAD~1"
             else
               BASE="${{ github.event.before }}"
             fi
             HEAD="${{ github.sha }}"
           fi
-          CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD" || git show --name-only "$HEAD")
+          CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD" 2>/dev/null || echo "modules/")
           echo "changed_files<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
