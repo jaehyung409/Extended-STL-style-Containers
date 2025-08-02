@@ -15,6 +15,9 @@ concept container_compatible_range =
     std::convertible_to<std::ranges::range_reference_t<R>, T>;
 
 namespace std::ranges {
-    export struct from_range_t { explicit from_range_t() = default; };
-    export inline constexpr from_range_t from_range{};
+export struct from_range_t {
+    explicit from_range_t() = default;
+};
+
+export inline constexpr from_range_t from_range{};
 }
