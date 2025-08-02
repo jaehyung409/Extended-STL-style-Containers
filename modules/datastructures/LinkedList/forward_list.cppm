@@ -1,6 +1,6 @@
 /*
  * @ Created by jaehyung409 on 25. 1. 23.
- * @ Copyright (c) 2025 jaehyung409 All rights reserved.
+ * @ Copyright (c) 2025 jaehyung409.
  * This software is licensed under the MIT License. 
  */
 
@@ -12,7 +12,6 @@ module;
 
 export module j.forward_list;
 
-import j.basics;
 import j.range_basics;
 
 namespace j {
@@ -243,7 +242,7 @@ namespace j {
         }
 
         bool operator==(const iterator& other) const { return _ptr == other._ptr; }
-        operator const_iterator() const { return _constiterator(_ptr); }
+        operator const_iterator() const { return const_iterator(_ptr); }
     };
 
     template <class T, class Allocator>
@@ -271,8 +270,8 @@ namespace j {
             return *this;
         }
 
-        const_reference operator*() const { return **_ptr; }
-        const_pointer operator->() const { return &(**_ptr); }
+        const_reference operator*() const { return _ptr->_value; }
+        const_pointer operator->() const { return &(_ptr->_value); }
 
         const_iterator& operator++() {
             _ptr = _ptr->_next;
@@ -291,44 +290,80 @@ namespace j {
 
 namespace j {
     template <class T, class Allocator>
-    forward_list<T, Allocator>::forward_list(const Allocator& alloc) : _node_alloc(alloc), _head(nullptr) {
+    forward_list<T, Allocator>::forward_list(const Allocator& alloc)
+        : _node_alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
         _before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(_before_head);
-        _before_head->_next = _head;
+        std::construct_at(&_before_head->_value);
+        _before_head->_next = nullptr; // Initialize the next pointer to nullptr
     }
 
     template <class T, class Allocator>
-    forward_list<T, Allocator>::forward_list(const size_type n, const Allocator& alloc) : forward_list(n, T(), alloc) {}
+    forward_list<T, Allocator>::forward_list(const size_type n, const Allocator& alloc)
+        : forward_list(n, T(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
     template <class T, class Allocator>
-    forward_list<T, Allocator>::forward_list(const size_type n, const T& value, const Allocator& alloc) : forward_list(alloc) {
+    forward_list<T, Allocator>::forward_list(const size_type n, const T& value, const Allocator& alloc)
+        : forward_list(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
         for (size_type i = 0; i < n; ++i) {
             emplace_front(value);
         }
     }
 
     template <class T, class Allocator>
-    forward_list<T, Allocator>::forward_list(const forward_list& x) : forward_list(std::allocator_traits<node_allocator>::select_on_container_copy_construction(x.get_allocator())) {
-        auto xit = x.begin();
-        for (auto it = before_begin(); xit != x.end(); ++xit) {
-            it = emplace_after(it, *xit);
+    template <class InputIter> requires std::input_iterator<InputIter>
+    forward_list<T, Allocator>::forward_list(InputIter first, InputIter last, const Allocator& alloc)
+        : forward_list(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
+        auto it = before_begin();
+        for (; first != last; ++first) {
+            it = emplace_after(it, *first);
         }
     }
 
     template <class T, class Allocator>
+    forward_list<T, Allocator>::forward_list(const forward_list& x)
+        : forward_list(
+            x.begin(),
+            x.end(),
+            std::allocator_traits<Allocator>::select_on_container_copy_construction(x._node_alloc)
+          ) {}
+
+    template <class T, class Allocator>
     forward_list<T, Allocator>::forward_list(forward_list&& x)  noexcept
-        : _before_head(x.get_before_head()), _head(x.get_head()), _node_alloc(std::move(x.get_allocator())) {
-        auto new_before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
-        std::construct_at(new_before_head);
-        x.set_head(nullptr);
-        x.set_before_head(new_before_head);
-        x._before_head->_next = x._head;
+        : _before_head(x._before_head), _node_alloc(std::move(x._node_alloc)) {
+        x._before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        std::construct_at(&x._before_head->_value);
+        x._before_head->_next = nullptr; // Initialize the next pointer to nullptr
     }
+
+    template <class T, class Allocator>
+    forward_list<T, Allocator>::forward_list(const forward_list& x, const std::type_identity_t<Allocator>& alloc)
+        : forward_list(
+            x.begin(),
+            x.end(),
+            std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)
+          ) {}
+
+    template <class T, class Allocator>
+    forward_list<T, Allocator>::forward_list(forward_list&& x, const std::type_identity_t<Allocator>& alloc)
+        : _before_head(x._before_head),
+          _node_alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
+        x._before_head = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
+        std::construct_at(&x._before_head->_value);
+        x._before_head->_next = nullptr; // Initialize the next pointer to nullptr
+    }
+
+    template <class T, class Allocator>
+    forward_list<T, Allocator>::forward_list(std::initializer_list<T> il, const Allocator& alloc)
+        : forward_list(
+            il.begin(),
+            il.end(),
+            std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)
+          ) {}
 
     template <class T, class Allocator>
     forward_list<T, Allocator>::~forward_list() {
         clear();
-        std::destroy_at(_before_head);
+        std::destroy_at(&_before_head->_value);
         std::allocator_traits<node_allocator>::deallocate(_node_alloc, _before_head, 1);
     }
 
