@@ -1,13 +1,13 @@
 /*
  * @ Created by jaehyung409 on 25. 1. 24.
  * @ Copyright (c) 2025 jaehyung409.
- * This software is licensed under the MIT License. 
+ * This software is licensed under the MIT License.
  */
 
 module;
-#include <memory>
-#include <iterator>
 #include <initializer_list>
+#include <iterator>
+#include <memory>
 #include <ranges>
 
 export module j.list;
@@ -15,9 +15,8 @@ export module j.list;
 import j.range_basics;
 
 namespace j {
-export template <class T, class Allocator = std::allocator<T>>
-class list {
-public:
+export template <class T, class Allocator = std::allocator<T>> class list {
+  public:
     using value_type = T;
     using allocator_type = std::allocator<T>;
     using pointer = value_type *;
@@ -31,7 +30,7 @@ public:
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-private:
+  private:
     struct _list_node;
     using Node = _list_node;
 
@@ -41,13 +40,11 @@ private:
     size_type _size;
 
     // helper function (sort)
-    template <class Compare>
-    void _sort_impl(list &x, Compare comp);
+    template <class Compare> void _sort_impl(list &x, Compare comp);
 
-public:
+  public:
     // constructor and destructor
-    list() : list(Allocator()) {
-    }
+    list() : list(Allocator()) {}
 
     explicit list(const Allocator &alloc);
     explicit list(size_type n, const Allocator &alloc = Allocator());
@@ -73,8 +70,7 @@ public:
     template <class InputIter>
         requires std::input_iterator<InputIter>
     void assign(InputIter first, InputIter last);
-    template <container_compatible_range<T> R>
-    void assign_range(R &&rg) = delete;
+    template <container_compatible_range<T> R> void assign_range(R &&rg) = delete;
     void assign(size_type n, const T &t);
     void assign(std::initializer_list<T> il);
     allocator_type get_allocator() const noexcept;
@@ -108,31 +104,25 @@ public:
     const_reference back() const;
 
     // modifiers
-    template <class... Args>
-    reference emplace_front(Args &&... args);
-    template <class... Args>
-    reference emplace_back(Args &&... args);
+    template <class... Args> reference emplace_front(Args &&...args);
+    template <class... Args> reference emplace_back(Args &&...args);
     void push_front(const T &x);
     void push_front(T &&x);
-    template <container_compatible_range<T> R>
-    void prepend_range(R &&rg) = delete;
+    template <container_compatible_range<T> R> void prepend_range(R &&rg) = delete;
     void pop_front();
     void push_back(const T &x);
     void push_back(T &&x);
-    template <container_compatible_range<T> R>
-    void append_range(R &&rg) = delete;
+    template <container_compatible_range<T> R> void append_range(R &&rg) = delete;
     void pop_back();
 
-    template <class... Args>
-    iterator emplace(const_iterator position, Args &&... args);
+    template <class... Args> iterator emplace(const_iterator position, Args &&...args);
     iterator insert(const_iterator position, const T &x);
     iterator insert(const_iterator position, T &&x);
     iterator insert(const_iterator position, size_type n, const T &x);
     template <class InputIter>
         requires std::input_iterator<InputIter>
     iterator insert(const_iterator position, InputIter first, InputIter last);
-    template <container_compatible_range<T> R>
-    iterator insert_range(const_iterator position, R &&rg) = delete;
+    template <container_compatible_range<T> R> iterator insert_range(const_iterator position, R &&rg) = delete;
     iterator insert(const_iterator position, std::initializer_list<T> il);
 
     iterator erase(const_iterator position);
@@ -160,10 +150,8 @@ public:
 
     void merge(list &x);
     void merge(list &&x);
-    template <class Compare>
-    void merge(list &x, Compare comp);
-    template <class Compare>
-    void merge(list &&x, Compare comp);
+    template <class Compare> void merge(list &x, Compare comp);
+    template <class Compare> void merge(list &&x, Compare comp);
 
     void sort();
     template <class Compare>
@@ -175,12 +163,11 @@ public:
 
 template <class InputIter, class Allocator = std::allocator<typename std::iterator_traits<InputIter>::value_type>>
     requires std::input_iterator<InputIter>
-list(InputIter, InputIter, Allocator = Allocator())
-    -> list<typename std::iterator_traits<InputIter>::value_type, Allocator>;
+list(InputIter, InputIter,
+     Allocator = Allocator()) -> list<typename std::iterator_traits<InputIter>::value_type, Allocator>;
 
 template <std::ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
-list(std::ranges::from_range_t, R &&, Allocator = Allocator())
-    -> list<std::ranges::range_value_t<R>, Allocator>;
+list(std::ranges::from_range_t, R &&, Allocator = Allocator()) -> list<std::ranges::range_value_t<R>, Allocator>;
 
 export template <class T, class Allocator>
 bool operator==(const list<T, Allocator> &lhs, const list<T, Allocator> &rhs) {
@@ -208,37 +195,33 @@ typename list<T, Allocator>::size_type erase_if(list<T, Allocator> &c, Predicate
     return c.remove_if(pred);
 }
 
-
-template <class T, class Allocator>
-struct list<T, Allocator>::_list_node {
+template <class T, class Allocator> struct list<T, Allocator>::_list_node {
     friend list;
     friend iterator;
     friend const_iterator;
 
-private:
+  private:
     value_type _value;
     _list_node *_next;
     _list_node *_prev;
 };
 
-template <class T, class Allocator>
-class list<T, Allocator>::iterator {
+template <class T, class Allocator> class list<T, Allocator>::iterator {
     friend list;
 
-public:
+  public:
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = T;
     using difference_type = std::ptrdiff_t;
     using pointer = T *;
     using reference = T &;
 
-private:
+  private:
     using node_pointer = Node *;
     node_pointer _ptr;
 
-public:
-    explicit iterator(node_pointer ptr = nullptr) : _ptr(ptr) {
-    }
+  public:
+    explicit iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
 
     iterator &operator=(const const_iterator &other) {
         _ptr = other._ptr;
@@ -285,11 +268,10 @@ public:
     }
 };
 
-template <class T, class Allocator>
-class list<T, Allocator>::const_iterator {
+template <class T, class Allocator> class list<T, Allocator>::const_iterator {
     friend list;
 
-public:
+  public:
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = const T;
     using difference_type = std::ptrdiff_t;
@@ -298,16 +280,14 @@ public:
     using const_pointer = const T *;
     using const_reference = const T &;
 
-private:
+  private:
     using node_pointer = Node *;
     node_pointer _ptr;
 
-public:
-    explicit const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {
-    }
+  public:
+    explicit const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
 
-    explicit const_iterator(const iterator &other) : _ptr(other._ptr) {
-    }
+    explicit const_iterator(const iterator &other) : _ptr(other._ptr) {}
 
     const_iterator &operator=(const const_iterator &other) {
         _ptr = other._ptr;
@@ -349,7 +329,7 @@ public:
         return _ptr == other._ptr;
     }
 };
-}
+} // namespace j
 
 namespace j {
 template <class T, class Allocator>
@@ -363,8 +343,7 @@ list<T, Allocator>::list(const Allocator &alloc)
 
 template <class T, class Allocator>
 list<T, Allocator>::list(size_type n, const Allocator &alloc)
-    : list(n, T(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
-}
+    : list(n, T(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
 template <class T, class Allocator>
 list<T, Allocator>::list(size_type n, const T &value, const Allocator &alloc)
@@ -397,8 +376,7 @@ list<T, Allocator>::list(const list &x)
 }
 
 template <class T, class Allocator>
-list<T, Allocator>::list(list &&x) noexcept
-    : _sentinel(x._sentinel), _node_alloc(x._node_alloc), _size(x._size) {
+list<T, Allocator>::list(list &&x) noexcept : _sentinel(x._sentinel), _node_alloc(x._node_alloc), _size(x._size) {
     x._sentinel = std::allocator_traits<node_allocator>::allocate(x._node_alloc, 1);
     std::construct_at(&x._sentinel->_value);
     x._sentinel->_next = x._sentinel;
@@ -408,8 +386,7 @@ list<T, Allocator>::list(list &&x) noexcept
 
 template <class T, class Allocator>
 list<T, Allocator>::list(const list &x, const std::type_identity_t<Allocator> &alloc)
-    : list(x.begin(), x.end(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
-}
+    : list(x.begin(), x.end(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
 template <class T, class Allocator>
 list<T, Allocator>::list(list &&x, const std::type_identity_t<Allocator> &alloc)
@@ -424,18 +401,15 @@ list<T, Allocator>::list(list &&x, const std::type_identity_t<Allocator> &alloc)
 
 template <class T, class Allocator>
 list<T, Allocator>::list(std::initializer_list<T> il, const Allocator &alloc)
-    : list(il.begin(), il.end(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
-}
+    : list(il.begin(), il.end(), std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {}
 
-template <class T, class Allocator>
-list<T, Allocator>::~list() {
+template <class T, class Allocator> list<T, Allocator>::~list() {
     clear();
     std::destroy_at(&_sentinel->_value);
     std::allocator_traits<node_allocator>::deallocate(_node_alloc, _sentinel, 1);
 }
 
-template <class T, class Allocator>
-list<T, Allocator> &list<T, Allocator>::operator=(const list &x) {
+template <class T, class Allocator> list<T, Allocator> &list<T, Allocator>::operator=(const list &x) {
     if (this != std::addressof(x)) {
         clear();
         for (const T &t : x) {
@@ -446,8 +420,8 @@ list<T, Allocator> &list<T, Allocator>::operator=(const list &x) {
 }
 
 template <class T, class Allocator>
-list<T, Allocator> &list<T, Allocator>::operator=(list &&x)
-    noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
+list<T, Allocator> &
+list<T, Allocator>::operator=(list &&x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value) {
     if (this != std::addressof(x)) {
         clear();
         std::destroy_at(&_sentinel->_value);
@@ -465,8 +439,7 @@ list<T, Allocator> &list<T, Allocator>::operator=(list &&x)
     return *this;
 }
 
-template <class T, class Allocator>
-list<T, Allocator> &list<T, Allocator>::operator=(std::initializer_list<T> il) {
+template <class T, class Allocator> list<T, Allocator> &list<T, Allocator>::operator=(std::initializer_list<T> il) {
     clear();
     for (const T &t : il) {
         emplace_back(t);
@@ -484,26 +457,22 @@ void list<T, Allocator>::assign(InputIter first, InputIter last) {
     }
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::assign(size_type n, const T &t) {
+template <class T, class Allocator> void list<T, Allocator>::assign(size_type n, const T &t) {
     clear();
     for (size_type i = 0; i < n; ++i) {
         emplace_back(t);
     }
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::assign(std::initializer_list<T> il) {
+template <class T, class Allocator> void list<T, Allocator>::assign(std::initializer_list<T> il) {
     assign(il.begin(), il.end());
 }
 
-template <class T, class Allocator>
-std::allocator<T> list<T, Allocator>::get_allocator() const noexcept {
+template <class T, class Allocator> std::allocator<T> list<T, Allocator>::get_allocator() const noexcept {
     return std::allocator<T>(_node_alloc);
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::iterator list<T, Allocator>::begin() noexcept {
+template <class T, class Allocator> typename list<T, Allocator>::iterator list<T, Allocator>::begin() noexcept {
     return iterator(_sentinel->_next);
 }
 
@@ -512,8 +481,7 @@ typename list<T, Allocator>::const_iterator list<T, Allocator>::begin() const no
     return const_iterator(_sentinel->_next);
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::iterator list<T, Allocator>::end() noexcept {
+template <class T, class Allocator> typename list<T, Allocator>::iterator list<T, Allocator>::end() noexcept {
     return iterator(_sentinel);
 }
 
@@ -532,8 +500,7 @@ typename list<T, Allocator>::const_reverse_iterator list<T, Allocator>::rbegin()
     return const_reverse_iterator(end());
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::reverse_iterator list<T, Allocator>::rend() noexcept {
+template <class T, class Allocator> typename list<T, Allocator>::reverse_iterator list<T, Allocator>::rend() noexcept {
     return reverse_iterator(begin());
 }
 
@@ -562,13 +529,11 @@ typename list<T, Allocator>::const_reverse_iterator list<T, Allocator>::crend() 
     return const_reverse_iterator(begin());
 }
 
-template <class T, class Allocator>
-bool list<T, Allocator>::empty() const noexcept {
+template <class T, class Allocator> bool list<T, Allocator>::empty() const noexcept {
     return _size == 0;
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::size_type list<T, Allocator>::size() const noexcept {
+template <class T, class Allocator> typename list<T, Allocator>::size_type list<T, Allocator>::size() const noexcept {
     return _size;
 }
 
@@ -577,13 +542,11 @@ typename list<T, Allocator>::size_type list<T, Allocator>::max_size() const noex
     return std::allocator_traits<Allocator>::max_size(_node_alloc);
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::resize(size_type sz) {
+template <class T, class Allocator> void list<T, Allocator>::resize(size_type sz) {
     resize(sz, T());
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::resize(size_type sz, const T &c) {
+template <class T, class Allocator> void list<T, Allocator>::resize(size_type sz, const T &c) {
     if (sz < _size) {
         while (_size != sz) {
             pop_back();
@@ -595,29 +558,25 @@ void list<T, Allocator>::resize(size_type sz, const T &c) {
     }
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::reference list<T, Allocator>::front() {
+template <class T, class Allocator> typename list<T, Allocator>::reference list<T, Allocator>::front() {
     return _sentinel->_next->_value;
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::const_reference list<T, Allocator>::front() const {
+template <class T, class Allocator> typename list<T, Allocator>::const_reference list<T, Allocator>::front() const {
     return _sentinel->_next->_value;
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::reference list<T, Allocator>::back() {
+template <class T, class Allocator> typename list<T, Allocator>::reference list<T, Allocator>::back() {
     return _sentinel->_prev->_value;
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::const_reference list<T, Allocator>::back() const {
+template <class T, class Allocator> typename list<T, Allocator>::const_reference list<T, Allocator>::back() const {
     return _sentinel->_prev->_value;
 }
 
 template <class T, class Allocator>
 template <class... Args>
-typename list<T, Allocator>::reference list<T, Allocator>::emplace_front(Args &&... args) {
+typename list<T, Allocator>::reference list<T, Allocator>::emplace_front(Args &&...args) {
     Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
     std::construct_at(&new_node->_value, std::forward<Args>(args)...);
     new_node->_next = _sentinel->_next;
@@ -630,7 +589,7 @@ typename list<T, Allocator>::reference list<T, Allocator>::emplace_front(Args &&
 
 template <class T, class Allocator>
 template <class... Args>
-typename list<T, Allocator>::reference list<T, Allocator>::emplace_back(Args &&... args) {
+typename list<T, Allocator>::reference list<T, Allocator>::emplace_back(Args &&...args) {
     Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
     std::construct_at(&new_node->_value, std::forward<Args>(args)...);
     new_node->_next = _sentinel;
@@ -641,40 +600,33 @@ typename list<T, Allocator>::reference list<T, Allocator>::emplace_back(Args &&.
     return new_node->_value;
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::push_front(const T &x) {
+template <class T, class Allocator> void list<T, Allocator>::push_front(const T &x) {
     emplace_front(x);
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::push_front(T &&x) {
+template <class T, class Allocator> void list<T, Allocator>::push_front(T &&x) {
     emplace_front(std::move(x));
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::pop_front() {
+template <class T, class Allocator> void list<T, Allocator>::pop_front() {
     erase(begin());
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::push_back(const T &x) {
+template <class T, class Allocator> void list<T, Allocator>::push_back(const T &x) {
     emplace_back(x);
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::push_back(T &&x) {
+template <class T, class Allocator> void list<T, Allocator>::push_back(T &&x) {
     emplace_back(std::move(x));
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::pop_back() {
+template <class T, class Allocator> void list<T, Allocator>::pop_back() {
     erase(std::prev(end()));
 }
 
 template <class T, class Allocator>
 template <class... Args>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::emplace(const_iterator position, Args &&... args) {
+typename list<T, Allocator>::iterator list<T, Allocator>::emplace(const_iterator position, Args &&...args) {
     Node *new_node = std::allocator_traits<node_allocator>::allocate(_node_alloc, 1);
     std::construct_at(&new_node->_value, std::forward<Args>(args)...);
     new_node->_prev = position._ptr->_prev;
@@ -686,20 +638,17 @@ list<T, Allocator>::emplace(const_iterator position, Args &&... args) {
 }
 
 template <class T, class Allocator>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::insert(const_iterator position, const T &x) {
+typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position, const T &x) {
     return emplace(position, x);
 }
 
 template <class T, class Allocator>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::insert(const_iterator position, T &&x) {
+typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position, T &&x) {
     return emplace(position, std::move(x));
 }
 
 template <class T, class Allocator>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::insert(const_iterator position, size_type n, const T &x) {
+typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position, size_type n, const T &x) {
     for (size_type i = 0; i < n; ++i) {
         position = emplace(position, x);
     }
@@ -709,8 +658,8 @@ list<T, Allocator>::insert(const_iterator position, size_type n, const T &x) {
 template <class T, class Allocator>
 template <class InputIter>
     requires std::input_iterator<InputIter>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::insert(const_iterator position, InputIter first, InputIter last) {
+typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position, InputIter first,
+                                                                 InputIter last) {
     for (; first != last; ++first) {
         position = emplace(position, *first);
     }
@@ -726,14 +675,12 @@ typename list<T, Allocator>::iterator list<T, Allocator>::insert_range(const_ite
 */
 
 template <class T, class Allocator>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::insert(const_iterator position, std::initializer_list<T> il) {
+typename list<T, Allocator>::iterator list<T, Allocator>::insert(const_iterator position, std::initializer_list<T> il) {
     return insert(position, il.begin(), il.end());
 }
 
 template <class T, class Allocator>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::erase(const_iterator position) {
+typename list<T, Allocator>::iterator list<T, Allocator>::erase(const_iterator position) {
     Node *del_node = position._ptr;
     position._ptr->_prev->_next = position._ptr->_next;
     position._ptr->_next->_prev = position._ptr->_prev;
@@ -745,8 +692,7 @@ list<T, Allocator>::erase(const_iterator position) {
 }
 
 template <class T, class Allocator>
-typename list<T, Allocator>::iterator
-list<T, Allocator>::erase(const_iterator first, const_iterator last) {
+typename list<T, Allocator>::iterator list<T, Allocator>::erase(const_iterator first, const_iterator last) {
     while (first != last) {
         first = erase(first);
     }
@@ -760,8 +706,7 @@ void list<T, Allocator>::swap(list &x) noexcept(std::allocator_traits<Allocator>
     std::swap(_size, x._size);
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::clear() noexcept {
+template <class T, class Allocator> void list<T, Allocator>::clear() noexcept {
     for (auto it = begin(); it != end();) {
         auto temp = it;
         ++it;
@@ -773,8 +718,7 @@ void list<T, Allocator>::clear() noexcept {
     _size = 0;
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::splice(const_iterator position, list &x) {
+template <class T, class Allocator> void list<T, Allocator>::splice(const_iterator position, list &x) {
     if (!x.empty()) {
         x._sentinel->_next->_prev = position._ptr->_prev;
         position._ptr->_prev->_next = x._sentinel->_next;
@@ -788,8 +732,7 @@ void list<T, Allocator>::splice(const_iterator position, list &x) {
     }
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::splice(const_iterator position, list &&x) {
+template <class T, class Allocator> void list<T, Allocator>::splice(const_iterator position, list &&x) {
     splice(position, x);
 }
 
@@ -834,8 +777,7 @@ void list<T, Allocator>::splice(const_iterator position, list &&x, const_iterato
     splice(position, x, first, last);
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::size_type list<T, Allocator>::remove(const T &value) {
+template <class T, class Allocator> typename list<T, Allocator>::size_type list<T, Allocator>::remove(const T &value) {
     size_type original_size = size();
     for (auto it = begin(); it != end();) {
         if (*it == value) {
@@ -862,8 +804,7 @@ typename list<T, Allocator>::size_type list<T, Allocator>::remove_if(Predicate p
     return original_size - size();
 }
 
-template <class T, class Allocator>
-typename list<T, Allocator>::size_type list<T, Allocator>::unique() {
+template <class T, class Allocator> typename list<T, Allocator>::size_type list<T, Allocator>::unique() {
     return unique(std::equal_to<T>());
 }
 
@@ -888,19 +829,15 @@ typename list<T, Allocator>::size_type list<T, Allocator>::unique(BinaryPredicat
     return original_size - size();
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::merge(list &x) {
+template <class T, class Allocator> void list<T, Allocator>::merge(list &x) {
     merge(x, std::less<T>());
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::merge(list &&x) {
+template <class T, class Allocator> void list<T, Allocator>::merge(list &&x) {
     merge(x, std::less<T>());
 }
 
-template <class T, class Allocator>
-template <class Compare>
-void list<T, Allocator>::merge(list &x, Compare comp) {
+template <class T, class Allocator> template <class Compare> void list<T, Allocator>::merge(list &x, Compare comp) {
     if (this == std::addressof(x) || x.empty())
         return;
 
@@ -920,9 +857,7 @@ void list<T, Allocator>::merge(list &x, Compare comp) {
     }
 }
 
-template <class T, class Allocator>
-template <class Compare>
-void list<T, Allocator>::merge(list &&x, Compare comp) {
+template <class T, class Allocator> template <class Compare> void list<T, Allocator>::merge(list &&x, Compare comp) {
     merge(static_cast<list &>(x), comp);
 }
 
@@ -943,8 +878,7 @@ void list<T, Allocator>::_sort_impl(list &x, Compare comp) {
     x.merge(temp, comp);
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::sort() {
+template <class T, class Allocator> void list<T, Allocator>::sort() {
     _sort_impl(*this, std::less<T>());
 }
 
@@ -955,8 +889,7 @@ void list<T, Allocator>::sort(Compare comp) {
     _sort_impl(*this, comp);
 }
 
-template <class T, class Allocator>
-void list<T, Allocator>::reverse() noexcept {
+template <class T, class Allocator> void list<T, Allocator>::reverse() noexcept {
     if (empty()) {
         return;
     }
@@ -967,4 +900,4 @@ void list<T, Allocator>::reverse() noexcept {
         splice(begin(), *this, temp);
     }
 }
-}
+} // namespace j
