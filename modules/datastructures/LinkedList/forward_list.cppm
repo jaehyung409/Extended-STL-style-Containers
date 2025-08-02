@@ -476,7 +476,7 @@ namespace j {
 
     template <class T, class Allocator>
     typename forward_list<T, Allocator>::const_iterator forward_list<T, Allocator>::cend() const noexcept {
-        return iterator(nullptr);
+        return const_iterator(nullptr);
     }
 
     template <class T, class Allocator>
