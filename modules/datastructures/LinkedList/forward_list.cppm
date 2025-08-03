@@ -19,8 +19,8 @@ export template <class T, class Allocator = std::allocator<T>> class forward_lis
   public:
     using value_type = T;
     using allocator_type = std::allocator<T>;
-    using pointer = value_type *;
-    using const_pointer = const value_type *;
+    using pointer = typename std::allocator_traits<Allocator>::pointer;
+    using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
     using reference = value_type &;
     using const_reference = const value_type &;
     using size_type = std::size_t;
@@ -35,6 +35,7 @@ export template <class T, class Allocator = std::allocator<T>> class forward_lis
     using node_allocator = typename std::allocator_traits<Allocator>::template rebind_alloc<Node>;
     Node *_before_head;
     node_allocator _node_alloc;
+    // size_type size; didn't use for faster performance
 
     // helper function (sort)
     template <class Compare> void _sort_impl(forward_list &x, Compare comp);
@@ -42,10 +43,10 @@ export template <class T, class Allocator = std::allocator<T>> class forward_lis
   public:
     // constructor and destructor
     forward_list() : forward_list(Allocator()) {}
-
     explicit forward_list(const Allocator &alloc);
-    explicit forward_list(size_type n, const Allocator &alloc = Allocator());
-    forward_list(size_type n, const T &value, const Allocator &alloc = Allocator());
+    explicit forward_list(size_type n,
+                          const Allocator &alloc = Allocator()); // n size forward_list with default value of T.
+    forward_list(size_type n, const T &value, const Allocator &alloc = Allocator()); // n size forward_list with value.
     template <class InputIter>
         requires std::input_iterator<InputIter>
     forward_list(InputIter first, InputIter last, const Allocator &alloc = Allocator());
@@ -67,12 +68,12 @@ export template <class T, class Allocator = std::allocator<T>> class forward_lis
     template <class InputIt>
         requires std::input_iterator<InputIt>
     void assign(InputIt first, InputIt last);
-    template <container_compatible_range<T> R> void assign_range(R &&rg) = delete;
+    template <container_compatible_range<T> R> void assign_range(R &&rg) = delete; // not implemented yet
     void assign(size_type n, const T &t);
     void assign(std::initializer_list<T> il);
     allocator_type get_allocator() const noexcept;
 
-    // iterators
+    // iteratos
     iterator before_begin() noexcept;
     const_iterator before_begin() const noexcept;
     iterator begin() noexcept;
@@ -92,7 +93,7 @@ export template <class T, class Allocator = std::allocator<T>> class forward_lis
     reference front();
     const_reference front() const;
 
-    // modifiers
+    // modifiers -> need to modify method impl order
     template <class... Args> reference emplace_front(Args &&...args);
     void push_front(const T &value);
     void push_front(T &&value);
@@ -108,7 +109,8 @@ export template <class T, class Allocator = std::allocator<T>> class forward_lis
         requires std::input_iterator<InputIter>
     iterator insert_after(const_iterator position, InputIter first, InputIter last);
     iterator insert_after(const_iterator position, std::initializer_list<T> il);
-    template <container_compatible_range<T> R> iterator insert_range_after(const_iterator position, R &&rg) = delete;
+    template <container_compatible_range<T> R>
+    iterator insert_range_after(const_iterator position, R &&rg) = delete; // not implemented yet
 
     iterator erase_after(const_iterator position);
     iterator erase_after(const_iterator position, const_iterator last);
@@ -158,28 +160,28 @@ forward_list(std::ranges::from_range_t, R &&range, const Allocator & = Allocator
     -> forward_list<std::ranges::range_value_t<R>, Allocator>;
 
 export template <class T, class Allocator>
-bool operator==(const forward_list<T, Allocator> &lhs, const forward_list<T, Allocator> &rhs) {
+constexpr bool operator==(const forward_list<T, Allocator> &lhs, const forward_list<T, Allocator> &rhs) {
     return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 export template <class T, class Allocator>
-auto operator<=>(const forward_list<T, Allocator> &lhs, const forward_list<T, Allocator> &rhs) {
+constexpr auto operator<=>(const forward_list<T, Allocator> &lhs, const forward_list<T, Allocator> &rhs) {
     return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
                                                   std::compare_three_way{});
 }
 
 export template <class T, class Allocator>
-void swap(forward_list<T, Allocator> &x, forward_list<T, Allocator> &y) noexcept(noexcept(x.swap(y))) {
+constexpr void swap(forward_list<T, Allocator> &x, forward_list<T, Allocator> &y) noexcept(noexcept(x.swap(y))) {
     x.swap(y);
 }
 
 export template <class T, class Allocator, class U>
-typename forward_list<T, Allocator>::size_type erase(forward_list<T, Allocator> &c, const U &value) {
+constexpr typename forward_list<T, Allocator>::size_type erase(forward_list<T, Allocator> &c, const U &value) {
     return c.remove(value);
 }
 
 export template <class T, class Allocator, class Predicate>
-typename forward_list<T, Allocator>::size_type erase_if(forward_list<T, Allocator> &c, Predicate pred) {
+constexpr typename forward_list<T, Allocator>::size_type erase_if(forward_list<T, Allocator> &c, Predicate pred) {
     return c.remove_if(pred);
 }
 
@@ -198,10 +200,10 @@ template <class T, class Allocator> class forward_list<T, Allocator>::iterator {
 
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = T;
-    using difference_type = std::ptrdiff_t;
-    using pointer = T *;
-    using reference = T &;
+    using value_type = typename forward_list::value_type;
+    using difference_type = typename forward_list::difference_type;
+    using pointer = typename forward_list::pointer;
+    using reference = typename forward_list::reference;
 
   private:
     using node_pointer = Node *;
@@ -209,7 +211,6 @@ template <class T, class Allocator> class forward_list<T, Allocator>::iterator {
 
   public:
     explicit iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-
     iterator operator=(const const_iterator &other) {
         _ptr = other._ptr;
         return *this;
@@ -246,12 +247,12 @@ template <class T, class Allocator> class forward_list<T, Allocator>::const_iter
 
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const T;
-    using difference_type = std::ptrdiff_t;
-    using pointer = T *;
-    using reference = T &;
-    using const_pointer = const T *;
-    using const_reference = const T &;
+    using value_type = const typename forward_list::value_type;
+    using difference_type = typename forward_list::difference_type;
+    using pointer = typename forward_list::const_pointer;
+    using reference = typename forward_list::const_reference;
+    using const_pointer = typename forward_list::const_pointer;
+    using const_reference = typename forward_list::const_reference;
 
   private:
     using node_pointer = Node *;
@@ -259,9 +260,7 @@ template <class T, class Allocator> class forward_list<T, Allocator>::const_iter
 
   public:
     explicit const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-
     explicit const_iterator(const iterator &other) : _ptr(other._ptr) {}
-
     const_iterator operator=(const iterator &other) {
         _ptr = other._ptr;
         return *this;

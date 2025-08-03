@@ -19,8 +19,8 @@ export template <class T, class Allocator = std::allocator<T>> class list {
   public:
     using value_type = T;
     using allocator_type = std::allocator<T>;
-    using pointer = value_type *;
-    using const_pointer = const value_type *;
+    using pointer = typename std::allocator_traits<Allocator>::pointer;
+    using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
     using reference = value_type &;
     using const_reference = const value_type &;
     using size_type = std::size_t;
@@ -45,7 +45,6 @@ export template <class T, class Allocator = std::allocator<T>> class list {
   public:
     // constructor and destructor
     list() : list(Allocator()) {}
-
     explicit list(const Allocator &alloc);
     explicit list(size_type n, const Allocator &alloc = Allocator());
     list(size_type n, const T &value, const Allocator &alloc = Allocator());
@@ -211,10 +210,10 @@ template <class T, class Allocator> class list<T, Allocator>::iterator {
 
   public:
     using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = T;
-    using difference_type = std::ptrdiff_t;
-    using pointer = T *;
-    using reference = T &;
+    using value_type = typename list::value_type;
+    using difference_type = typename list::difference_type;
+    using pointer = typename list::pointer;
+    using reference = typename list::reference;
 
   private:
     using node_pointer = Node *;
@@ -222,7 +221,6 @@ template <class T, class Allocator> class list<T, Allocator>::iterator {
 
   public:
     explicit iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-
     iterator &operator=(const const_iterator &other) {
         _ptr = other._ptr;
         return *this;
@@ -231,7 +229,6 @@ template <class T, class Allocator> class list<T, Allocator>::iterator {
     reference operator*() {
         return _ptr->_value;
     }
-
     pointer operator->() {
         return &(_ptr->_value);
     }
@@ -262,7 +259,6 @@ template <class T, class Allocator> class list<T, Allocator>::iterator {
     bool operator==(const iterator &other) const {
         return _ptr == other._ptr;
     }
-
     operator const_iterator() const {
         return const_iterator(_ptr);
     }
@@ -273,12 +269,12 @@ template <class T, class Allocator> class list<T, Allocator>::const_iterator {
 
   public:
     using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = const T;
-    using difference_type = std::ptrdiff_t;
-    using pointer = T *;
-    using reference = T &;
-    using const_pointer = const T *;
-    using const_reference = const T &;
+    using value_type = typename list::value_type;
+    using difference_type = typename list::difference_type;
+    using pointer = typename list::const_pointer;
+    using reference = typename list::const_reference;
+    using const_pointer = typename list::const_pointer;
+    using const_reference = typename list::const_reference;
 
   private:
     using node_pointer = Node *;
@@ -286,9 +282,7 @@ template <class T, class Allocator> class list<T, Allocator>::const_iterator {
 
   public:
     explicit const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-
     explicit const_iterator(const iterator &other) : _ptr(other._ptr) {}
-
     const_iterator &operator=(const const_iterator &other) {
         _ptr = other._ptr;
         return *this;
@@ -297,7 +291,6 @@ template <class T, class Allocator> class list<T, Allocator>::const_iterator {
     const_reference operator*() const {
         return _ptr->_value;
     }
-
     const_pointer operator->() const {
         return &(_ptr->_value);
     }
@@ -863,8 +856,7 @@ template <class T, class Allocator> template <class Compare> void list<T, Alloca
 
 template <class T, class Allocator>
 template <class Compare>
-void list<T, Allocator>::_sort_impl(list &x, Compare comp) {
-    // merge sort
+void list<T, Allocator>::_sort_impl(list &x, Compare comp) { // merge sort
     if (x.size() <= 1) {
         return;
     }
