@@ -1,0 +1,202 @@
+# The workflow is triggered on pushes to the main branch and pull requests.
+# It checks code formatting, runs clang-tidy, builds the project, runs tests, and benchmarks the code
+# supports multiple compilers (GCC and Clang) and runs on Ubuntu.
+# The Docker image used in this workflow is maintained at: package in this repository
+
+# When the module is added, the workflow files need to be updated to include the new module.
+# clang-tidy is currently commented out due to this tool does not support C++20 modules well.
+# In this problem, we test the code both with Clang and GCC.
+
+name: CI using Docker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run clang-format check
+        run: |
+          FILES= |
+            modules/datastructures/Array/array.cppm 
+            modules/datastructures/LinkedList/list.cppm 
+            modules/datastructures/LinkedList/forward_list.cppm
+            modules/datastructures/Vector/vector.cppm
+          for file in $FILES; do
+            if [ -f "$file" ]; then
+              echo "Checking format for $file"
+              clang-format --dry-run --Werror "$file"
+            else
+              echo "Warning: $file not found"
+            fi
+          done
+
+  # clang-tidy-check:
+  #   runs-on: ubuntu-latest
+  #   needs: format-check
+  #   strategy:
+  #     matrix:
+  #       compiler: [gcc-15, clang-20]
+  #       include:
+  #         - compiler: gcc-15
+  #           cc: gcc-15
+  #           cxx: g++-15
+  #         - compiler: clang-20
+  #           cc: clang-20
+  #           cxx: clang++-20
+  #   container:
+  #     image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+  #     credentials:
+  #       username: ${{ github.actor }}
+  #       password: ${{ secrets.GITHUB_TOKEN }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - name: Configure project with ${{ matrix.compiler }}
+  #       env:
+  #         CC: ${{ matrix.cc }}
+  #         CXX: ${{ matrix.cxx }}
+  #       run: |
+  #         mkdir build-${{ matrix.compiler }}
+  #         cd build-${{ matrix.compiler }}
+  #         cmake -GNinja \
+  #           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  #           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+  #           -DCMAKE_CXX_SCAN_FOR_MODULES=OFF \
+  #           ..
+  #     - name: Run clang-tidy with ${{ matrix.compiler }}
+  #       run: |
+  #         cd build-${{ matrix.compiler }}
+  #         CPPM_FILES="modules/datastructures/Array/array.cppm modules/datastructures/LinkedList/list.cppm modules/datastructures/LinkedList/forward_list.cppm"
+  #         for file in $CPPM_FILES; do
+  #           if [ -f "../$file" ]; then
+  #             echo "Running clang-tidy on $file with ${{ matrix.compiler }}"
+  #             clang-tidy -p . "../$file"
+  #           else
+  #             echo "Warning: $file not found"
+  #           fi
+  #         done
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: format-check # clang-tidy-check
+    strategy:
+      matrix:
+        compiler: [gcc-15, clang-20]
+        include:
+          - compiler: gcc-15
+            cc: gcc-15
+            cxx: g++-15
+          - compiler: clang-20
+            cc: clang-20
+            cxx: clang++-20
+    container:
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure project with ${{ matrix.compiler }}
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          mkdir build-${{ matrix.compiler }}
+          cd build-${{ matrix.compiler }}
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            ..
+      - name: Build project with ${{ matrix.compiler }}
+        run: |
+          cd build-${{ matrix.compiler }}
+          ninja
+      - name: Run tests with ${{ matrix.compiler }}
+        run: |
+          cd build-${{ matrix.compiler }}
+          echo "Running all tests with ${{ matrix.compiler }}..."
+          ctest --output-on-failure
+
+  benchmark:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    container:
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure project with GCC for performance benchmarking
+        env:
+          CC: gcc-15
+          CXX: g++-15
+        run: |
+          mkdir build-benchmark
+          cd build-benchmark
+          cmake -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            ..
+      - name: Build project with GCC for benchmarking
+        run: |
+          cd build-benchmark
+          ninja
+      - name: Determine changed files
+        id: determine_changed_files
+        run: |
+          git config --global --add safe.directory /__w/Extended-STL-style-Containers/Extended-STL-style-Containers || true
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+              BASE="HEAD~1"
+            else
+              BASE="${{ github.event.before }}"
+            fi
+            HEAD="${{ github.sha }}"
+          fi
+          CHANGED_FILES=$(git diff --name-only "$BASE" "$HEAD" 2>/dev/null || echo "modules/")
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Run selective benchmarks with GCC
+        run: |
+          cd build-benchmark
+          echo "Running benchmarks with GCC 15 for consistent performance measurement..."
+          if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Array/"; then
+            ./bench_array > bench_array_result.txt || echo "Array benchmark failed" > bench_array_result.txt
+          fi
+          if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/LinkedList/list"; then
+            ./bench_list > bench_list_result.txt || echo "List benchmark failed" > bench_list_result.txt
+          fi
+          if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/LinkedList/forward_list"; then
+            ./bench_forward_list > bench_forward_list_result.txt || echo "Forward list benchmark failed" > bench_forward_list_result.txt
+          fi
+          if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Vector/vector"; then
+            ./bench_vector > bench_vector_result.txt || echo "Vector benchmark failed" > bench_vector_result.txt
+          fi
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: build-benchmark/*_result.txt
