@@ -73,9 +73,28 @@ add_executable(bench_forward_list
 )
 target_link_libraries(bench_forward_list PRIVATE j_forward_list Catch2::Catch2WithMain)
 
+add_library(j_vector)
+target_sources(j_vector
+        PUBLIC
+        FILE_SET modules TYPE CXX_MODULES FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Vector/vector.cppm
+)
+target_link_libraries(j_vector PRIVATE j_range_basics)
+
+add_executable(test_vector
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_vector.cpp
+)
+target_link_libraries(test_vector PRIVATE j_vector Catch2::Catch2WithMain)
+
+add_executable(bench_vector
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/bench_vector.cpp
+)
+target_link_libraries(bench_vector PRIVATE j_vector Catch2::Catch2WithMain)
+
 
 # --------------- Add CTest ---------------
 enable_testing()
 add_test(NAME test_array COMMAND test_array)
 add_test(NAME test_list COMMAND test_list)
 add_test(NAME test_forward_list COMMAND test_forward_list)
+add_test(NAME test_vector COMMAND test_vector)
