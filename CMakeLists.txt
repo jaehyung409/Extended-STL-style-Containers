@@ -91,7 +91,6 @@ add_executable(bench_vector
 )
 target_link_libraries(bench_vector PRIVATE j_vector Catch2::Catch2WithMain)
 
-
 # --------------- Add CTest ---------------
 enable_testing()
 add_test(NAME test_array COMMAND test_array)
