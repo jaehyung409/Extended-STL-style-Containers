@@ -737,88 +737,80 @@ template <class T, class Allocator> constexpr void vector<T, Allocator>::shrink_
     }
 }
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::reference vector<T, Allocator>::operator[](vector::size_type n) {
-        return _data[n];
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::reference vector<T, Allocator>::operator[](size_type n) {
+    return _data[n];
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reference
-    vector<T, Allocator>::operator[](vector::size_type n) const {
-        return _data[n];
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_reference vector<T, Allocator>::operator[](size_type n) const {
+    return _data[n];
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::reference vector<T, Allocator>::at(vector::size_type n) {
-        if (n >= _size) {
-            throw std::out_of_range("vector::at() : index is out of range");
-        }
-        return _data[n];
+template <class T, class Allocator> constexpr vector<T, Allocator>::reference vector<T, Allocator>::at(size_type n) {
+    if (n >= _size) {
+        throw std::out_of_range("vector::at() : index is out of range");
     }
+    return _data[n];
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reference vector<T, Allocator>::at(vector::size_type n) const {
-        if (n >= _size) {
-            throw std::out_of_range("vector::at() : index is out of range");
-        }
-        return _data[n];
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_reference vector<T, Allocator>::at(size_type n) const {
+    if (n >= _size) {
+        throw std::out_of_range("vector::at() : index is out of range");
     }
+    return _data[n];
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::reference vector<T, Allocator>::front() {
-        return _data[0];
+template <class T, class Allocator> constexpr vector<T, Allocator>::reference vector<T, Allocator>::front() {
+    return _data[0];
+}
+
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_reference vector<T, Allocator>::front() const {
+    return _data[0];
+}
+
+template <class T, class Allocator> constexpr vector<T, Allocator>::reference vector<T, Allocator>::back() {
+    return _data[_size - 1];
+}
+
+template <class T, class Allocator> constexpr vector<T, Allocator>::const_reference vector<T, Allocator>::back() const {
+    return _data[_size - 1];
+}
+
+template <class T, class Allocator> constexpr T *vector<T, Allocator>::data() noexcept {
+    return _data;
+}
+
+template <class T, class Allocator> constexpr const T *vector<T, Allocator>::data() const noexcept {
+    return _data;
+}
+
+template <class T, class Allocator>
+template <class... Args>
+constexpr vector<T, Allocator>::reference vector<T, Allocator>::emplace_back(Args &&...args) {
+    if (_size == _capacity) {
+        reserve(_capacity == 0 ? 1 : _capacity * 2);
     }
+    std::construct_at(std::addressof(_data[_size]), std::forward<Args>(args)...);
+    return _data[_size++];
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reference vector<T, Allocator>::front() const {
-        return _data[0];
-    }
+template <class T, class Allocator> constexpr void vector<T, Allocator>::push_back(const T &x) {
+    emplace_back(x);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::reference vector<T, Allocator>::back() {
-        return _data[_size - 1];
-    }
+template <class T, class Allocator> constexpr void vector<T, Allocator>::push_back(T &&x) {
+    emplace_back(std::move(x));
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reference vector<T, Allocator>::back() const {
-        return _data[_size - 1];
-    }
-
-    template<class T, class Allocator>
-    constexpr T *vector<T, Allocator>::data() noexcept {
-        return _data;
-    }
-
-    template<class T, class Allocator>
-    constexpr const T *vector<T, Allocator>::data() const noexcept {
-        return _data;
-    }
-
-    template<class T, class Allocator>
-    template<class... Args>
-    constexpr typename vector<T, Allocator>::reference vector<T, Allocator>::emplace_back(Args &&... args) {
-        if (_size == _capacity) {
-            reserve(_capacity == 0 ? 1 : _capacity * 2);
-        }
-        std::construct_at(std::addressof(_data[_size]), std::forward<Args>(args)...);
-        return _data[_size++];
-    }
-
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::push_back(const T &x) {
-        emplace_back(x);
-    }
-
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::push_back(T &&x) {
-        emplace_back(std::forward<T>(x));
-    }
-
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::pop_back() {
-        --_size;
+template <class T, class Allocator> constexpr void vector<T, Allocator>::pop_back() {
+    --_size;
+    if constexpr (!std::is_trivially_destructible_v<T>) {
         std::destroy_at(std::addressof(_data[_size]));
     }
+}
 
     template<class T, class Allocator>
     template<class... Args>
@@ -842,17 +834,15 @@ template <class T, class Allocator> constexpr void vector<T, Allocator>::shrink_
         return iterator(_data + offset);
     }
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::iterator
-    vector<T, Allocator>::insert(vector::const_iterator position, const T &x) {
-        return emplace(position, x);
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iterator position, const T &x) {
+    return emplace(position, x);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::iterator
-    vector<T, Allocator>::insert(vector::const_iterator position, T &&x) {
-        return emplace(position, std::forward<T>(x));
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iterator position, T &&x) {
+    return emplace(position, std::move(x));
+}
 
     template<class T, class Allocator>
     constexpr typename vector<T, Allocator>::iterator
@@ -909,11 +899,11 @@ template <class T, class Allocator> constexpr void vector<T, Allocator>::shrink_
         return iterator(_data + offset);
     }
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::iterator
-    vector<T, Allocator>::insert(vector::const_iterator position, std::initializer_list<T> il) {
-        return insert(position, il.begin(), il.end());
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iterator position,
+                                                                      std::initializer_list<T> il) {
+    return insert(position, il.begin(), il.end());
+}
 
     template<class T, class Allocator>
     constexpr typename vector<T, Allocator>::iterator
@@ -936,16 +926,16 @@ template <class T, class Allocator> constexpr void vector<T, Allocator>::shrink_
         return iterator(_data + offset);
     }
 
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::swap(vector &x) noexcept(
-    std::allocator_traits<Allocator>::propagate_on_container_swap::value ||
-    std::allocator_traits<Allocator>::is_always_equal::value) {
-        using std::swap;
-        swap(_data, x._data);
-        swap(_size, x._size);
-        swap(_capacity, x._capacity);
-        swap(_alloc, x._alloc);
-    }
+template <class T, class Allocator>
+constexpr void
+vector<T, Allocator>::swap(vector &x) noexcept(std::allocator_traits<Allocator>::propagate_on_container_swap::value ||
+                                               std::allocator_traits<Allocator>::is_always_equal::value) {
+    using std::swap;
+    swap(_data, x._data);
+    swap(_size, x._size);
+    swap(_capacity, x._capacity);
+    swap(_alloc, x._alloc);
+}
 
     template<class T, class Allocator>
     constexpr void vector<T, Allocator>::clear() noexcept {
