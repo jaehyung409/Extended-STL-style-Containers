@@ -385,7 +385,7 @@ constexpr vector<T, Allocator>::vector(InputIter first, InputIter last, const Al
         _capacity = dist;
         try {
             if constexpr (std::is_trivially_copy_constructible_v<T> && std::contiguous_iterator<InputIter>) {
-                std::memcpy(_data, &(*first), dist * sizeof(T));
+                std::memcpy(_data, std::to_address(first), dist * sizeof(T));
             } else {
                 std::uninitialized_copy(first, last, _data);
             }
@@ -554,7 +554,7 @@ constexpr void vector<T, Allocator>::assign(InputIter first, InputIter last) {
             _size = _capacity = dist;
         } else {
             if constexpr (std::is_trivially_copyable_v<T>) {
-                std::memcpy(_data, &(*first), dist * sizeof(T));
+                std::memcpy(_data, std::to_address(first), dist * sizeof(T));
             } else {
                 if (!std::is_trivially_destructible_v<T>) {
                     std::destroy(_data, _data + _size);
@@ -947,7 +947,7 @@ constexpr vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iter
         if constexpr (std::is_trivially_copyable_v<T>) {
             std::memmove(_data + offset + dist, _data + offset, (_size - offset) * sizeof(T));
             if constexpr (std::contiguous_iterator<InputIter>) {
-                std::memcpy(_data + offset, first, dist * sizeof(T));
+                std::memcpy(_data + offset, std::to_address(first), dist * sizeof(T));
             } else {
                 std::copy(first, last, _data + offset);
             }
