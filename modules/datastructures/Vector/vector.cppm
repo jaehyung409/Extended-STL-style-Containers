@@ -384,7 +384,7 @@ constexpr vector<T, Allocator>::vector(InputIter first, InputIter last, const Al
         _data = std::allocator_traits<Allocator>::allocate(_alloc, dist);
         _capacity = dist;
         try {
-            if constexpr (std::is_trivially_copy_constructible_v<T>) {
+            if constexpr (std::is_trivially_copy_constructible_v<T> && std::contiguous_iterator<InputIter>) {
                 std::memcpy(_data, &(*first), dist * sizeof(T));
             } else {
                 std::uninitialized_copy(first, last, _data);
