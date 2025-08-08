@@ -593,70 +593,68 @@ template <class T, class Allocator> constexpr void vector<T, Allocator>::assign(
     assign(il.begin(), il.end());
 }
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::allocator_type vector<T, Allocator>::get_allocator() const noexcept {
-        return _alloc;
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::allocator_type vector<T, Allocator>::get_allocator() const noexcept {
+    return _alloc;
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::iterator vector<T, Allocator>::begin() noexcept {
-        return iterator(_data);
-    }
+template <class T, class Allocator> constexpr vector<T, Allocator>::iterator vector<T, Allocator>::begin() noexcept {
+    return iterator(_data);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::begin() const noexcept {
-        return const_iterator(_data);
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::begin() const noexcept {
+    return const_iterator(_data);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::iterator vector<T, Allocator>::end() noexcept {
-        return iterator(_data + _size);
-    }
+template <class T, class Allocator> constexpr vector<T, Allocator>::iterator vector<T, Allocator>::end() noexcept {
+    return iterator(_data + _size);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::end() const noexcept {
-        return const_iterator(_data + _size);
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::end() const noexcept {
+    return const_iterator(_data + _size);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rbegin() noexcept {
-        return reverse_iterator(end());
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rbegin() noexcept {
+    return reverse_iterator(end());
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rbegin() const noexcept {
-        return const_reverse_iterator(end());
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rbegin() const noexcept {
+    return const_reverse_iterator(end());
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rend() noexcept {
-        return reverse_iterator(begin());
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::reverse_iterator vector<T, Allocator>::rend() noexcept {
+    return reverse_iterator(begin());
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rend() const noexcept {
-        return const_reverse_iterator(begin());
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::rend() const noexcept {
+    return const_reverse_iterator(begin());
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::cbegin() const noexcept {
-        return const_iterator(_data);
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::cbegin() const noexcept {
+    return const_iterator(_data);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_iterator vector<T, Allocator>::cend() const noexcept {
-        return const_iterator(_data + _size);
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_iterator vector<T, Allocator>::cend() const noexcept {
+    return const_iterator(_data + _size);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crbegin() const noexcept {
-        return const_reverse_iterator(cend());
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crend() const noexcept {
-        return const_reverse_iterator(cbegin());
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+}
 
     template<class T, class Allocator>
     constexpr bool vector<T, Allocator>::empty() const noexcept {
