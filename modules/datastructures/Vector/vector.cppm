@@ -719,7 +719,7 @@ template <class T, class Allocator> constexpr void vector<T, Allocator>::shrink_
     if (_size < _capacity) {
         pointer new_data = std::allocator_traits<Allocator>::allocate(_alloc, _size);
         try {
-            if constexpr (std::is_trivially_copy_assignable_v<T>) {
+            if constexpr (std::is_trivially_copyable_v<T>) {
                 std::memmove(new_data, _data, _size * sizeof(T));
             } else {
                 std::uninitialized_move(_data, _data + _size, new_data);
