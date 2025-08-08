@@ -31,8 +31,12 @@ jobs:
           fetch-depth: 0
       - name: Run clang-format check
         run: |
-          FILES="modules/datastructures/Array/array.cppm modules/datastructures/LinkedList/list.cppm modules/datastructures/LinkedList/forward_list.cppm"
-          for file in $FILES; do
+          for file in \
+            modules/datastructures/Array/array.cppm \
+            modules/datastructures/LinkedList/list.cppm \
+            modules/datastructures/LinkedList/forward_list.cppm \
+            modules/datastructures/Vector/vector.cppm
+          do
             if [ -f "$file" ]; then
               echo "Checking format for $file"
               clang-format --dry-run --Werror "$file"
@@ -187,6 +191,9 @@ jobs:
           fi
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/LinkedList/forward_list"; then
             ./bench_forward_list > bench_forward_list_result.txt || echo "Forward list benchmark failed" > bench_forward_list_result.txt
+          fi
+          if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Vector/vector"; then
+            ./bench_vector > bench_vector_result.txt || echo "Vector benchmark failed" > bench_vector_result.txt
           fi
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
