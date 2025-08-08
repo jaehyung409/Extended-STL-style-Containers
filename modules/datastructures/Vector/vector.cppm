@@ -656,75 +656,86 @@ constexpr vector<T, Allocator>::const_reverse_iterator vector<T, Allocator>::cre
     return const_reverse_iterator(cbegin());
 }
 
-    template<class T, class Allocator>
-    constexpr bool vector<T, Allocator>::empty() const noexcept {
-        return _size == 0;
-    }
+template <class T, class Allocator> constexpr bool vector<T, Allocator>::empty() const noexcept {
+    return _size == 0;
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::size_type vector<T, Allocator>::size() const noexcept {
-        return _size;
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::size_type vector<T, Allocator>::size() const noexcept {
+    return _size;
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::size_type vector<T, Allocator>::max_size() const noexcept {
-        return std::numeric_limits<size_type>::max() / sizeof(T);
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::size_type vector<T, Allocator>::max_size() const noexcept {
+    return std::allocator_traits<Allocator>::max_size(_alloc);
+}
 
-    template<class T, class Allocator>
-    constexpr typename vector<T, Allocator>::size_type vector<T, Allocator>::capacity() const noexcept {
-        return _capacity;
-    }
+template <class T, class Allocator>
+constexpr vector<T, Allocator>::size_type vector<T, Allocator>::capacity() const noexcept {
+    return _capacity;
+}
 
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::resize(vector::size_type sz) {
-        resize(sz, T());
-    }
+template <class T, class Allocator> constexpr void vector<T, Allocator>::resize(size_type sz) {
+    resize(sz, T());
+}
 
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::resize(vector::size_type sz, const T &c) {
-        if (sz < _size) {
-            for (size_type i = sz; i < _size; ++i) {
-                std::destroy_at(std::addressof(_data[i]));
+template <class T, class Allocator> constexpr void vector<T, Allocator>::resize(size_type sz, const T &c) {
+    if (sz < _size) {
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            std::destroy(_data + sz, _data + _size);
+        }
+    } else if (sz > _size) {
+        if (sz > _capacity) {
+            reserve(std::max(sz, _capacity * 2));
+        }
+        std::uninitialized_fill_n(_data + _size, sz - _size, c);
+    }
+    _size = sz;
+}
+
+template <class T, class Allocator> constexpr void vector<T, Allocator>::reserve(size_type n) {
+    if (n > _capacity) {
+        pointer new_data = std::allocator_traits<Allocator>::allocate(_alloc, n);
+        try {
+            if constexpr (std::is_trivially_copy_assignable_v<T>) {
+                std::memmove(new_data, _data, _size * sizeof(T));
+            } else {
+                std::uninitialized_move(_data, _data + _size, new_data);
             }
-            _size = sz;
-        } else if (sz > _size) {
-            if (sz > _capacity) {
-                reserve(sz);
-            }
-            for (size_type i = _size; i < sz; ++i) {
-                std::construct_at(std::addressof(_data[i]), c);
-            }
-            _size = sz;
+        } catch (...) {
+            std::allocator_traits<Allocator>::deallocate(_alloc, new_data, _capacity);
+            throw;
         }
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            std::destroy(_data, _data + _size);
+        }
+        std::allocator_traits<Allocator>::deallocate(_alloc, _data, _capacity);
+        _data = new_data;
+        _capacity = n;
     }
+}
 
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::reserve(vector::size_type n) {
-        if (n > max_size()) {
-            throw std::length_error("vector::reserve() : requested size is too large");
+template <class T, class Allocator> constexpr void vector<T, Allocator>::shrink_to_fit() {
+    if (_size < _capacity) {
+        pointer new_data = std::allocator_traits<Allocator>::allocate(_alloc, _size);
+        try {
+            if constexpr (std::is_trivially_copy_assignable_v<T>) {
+                std::memmove(new_data, _data, _size * sizeof(T));
+            } else {
+                std::uninitialized_move(_data, _data + _size, new_data);
+            }
+        } catch (...) {
+            std::allocator_traits<Allocator>::deallocate(_alloc, new_data, _size);
+            throw;
         }
-        if (n > _capacity) {
-            pointer new_data = std::allocator_traits<Allocator>::allocate(_alloc, n);
-            std::uninitialized_move(begin(), end(), new_data);
-            std::destroy(begin(), end());
-            std::allocator_traits<Allocator>::deallocate(_alloc, _data, _capacity);
-            _data = new_data;
-            _capacity = n;
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            std::destroy(_data, _data + _size);
         }
+        std::allocator_traits<Allocator>::deallocate(_alloc, _data, _capacity);
+        _data = new_data;
+        _capacity = _size;
     }
-
-    template<class T, class Allocator>
-    constexpr void vector<T, Allocator>::shrink_to_fit() {
-        if (_size < _capacity) {
-            pointer new_data = std::allocator_traits<Allocator>::allocate(_alloc, _size);
-            std::uninitialized_move(begin(), end(), new_data);
-            std::destroy(begin(), end());
-            std::allocator_traits<Allocator>::deallocate(_alloc, _data, _capacity);
-            _data = new_data;
-            _capacity = _size;
-        }
-    }
+}
 
     template<class T, class Allocator>
     constexpr typename vector<T, Allocator>::reference vector<T, Allocator>::operator[](vector::size_type n) {
