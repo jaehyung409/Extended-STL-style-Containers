@@ -946,7 +946,7 @@ constexpr vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iter
     } else {
         if constexpr (std::is_trivially_copyable_v<T>) {
             std::memmove(_data + offset + dist, _data + offset, (_size - offset) * sizeof(T));
-            if constexpr ( std::contiguous_iterator<InputIter>) {
+            if constexpr (std::contiguous_iterator<InputIter>) {
                 std::memcpy(_data + offset, first, dist * sizeof(T));
             } else {
                 std::copy(first, last, _data + offset);
