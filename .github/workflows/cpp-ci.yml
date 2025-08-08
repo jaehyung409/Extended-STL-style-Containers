@@ -33,9 +33,9 @@ jobs:
         run: |
           for file in \
             modules/datastructures/Array/array.cppm \
-            modules/datastructures/LinkedList/list.cppm \ 
+            modules/datastructures/LinkedList/list.cppm \
             modules/datastructures/LinkedList/forward_list.cppm \
-            modules/datastructures/Vector/vector.cppm; \
+            modules/datastructures/Vector/vector.cppm
           do
             if [ -f "$file" ]; then
               echo "Checking format for $file"
