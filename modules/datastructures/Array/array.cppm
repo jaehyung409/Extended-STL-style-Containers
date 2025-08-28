@@ -7,7 +7,7 @@
 module;
 #include <stdexcept>
 
-export module j.array;
+export module j:array;
 
 namespace j {
 export template <class T, std::size_t N> class array {

@@ -128,11 +128,11 @@ jobs:
         run: |
           cd build-${{ matrix.compiler }}
           ninja
-      - name: Run tests with ${{ matrix.compiler }}
+      - name: Run tests and memory check with ${{ matrix.compiler }}
         run: |
           cd build-${{ matrix.compiler }}
-          echo "Running all tests with ${{ matrix.compiler }}..."
-          ctest --output-on-failure
+          echo "Running all tests with Valgrind under ${{ matrix.compiler }}..."
+          ctest --output-on-failure -T MemCheck
 
   benchmark:
     runs-on: ubuntu-latest

@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <random>
 #include <vector>
-import j.forward_list;
+import j;
 
 TEST_CASE("Forward List Basic") {
     j::forward_list<int> flist = {1, 2, 3, 4, 5};

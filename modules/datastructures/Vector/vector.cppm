@@ -10,11 +10,8 @@ module;
 #include <initializer_list>
 #include <iterator>
 #include <memory>
-#include <ranges>
 
-export module j.vector;
-
-import j.range_basics;
+export module j:vector;
 
 namespace j {
 // not-yet specialization for bool ...
@@ -48,8 +45,6 @@ export template <class T, class Allocator = std::allocator<T>> class vector {
     template <class InputIter>
         requires std::input_iterator<InputIter>
     constexpr vector(InputIter first, InputIter last, const Allocator &alloc = Allocator());
-    template <container_compatible_range<T> R>
-    constexpr vector(std::ranges::from_range_t, R &&range, const Allocator & = Allocator()) = delete;
     constexpr vector(const vector &x);
     constexpr vector(vector &&x) noexcept;
     constexpr vector(const vector &x, const std::type_identity_t<Allocator> &alloc);
@@ -65,7 +60,6 @@ export template <class T, class Allocator = std::allocator<T>> class vector {
     template <class InputIter>
         requires std::input_iterator<InputIter>
     constexpr void assign(InputIter first, InputIter last);
-    template <container_compatible_range<T> R> constexpr void assign_range(R &&rg) = delete;
     constexpr void assign(size_type n, const T &u);
     constexpr void assign(std::initializer_list<T> il);
     constexpr allocator_type get_allocator() const noexcept;
@@ -113,7 +107,6 @@ export template <class T, class Allocator = std::allocator<T>> class vector {
     template <class... Args> constexpr reference emplace_back(Args &&...args);
     constexpr void push_back(const T &x);
     constexpr void push_back(T &&x);
-    template <container_compatible_range<T> R> constexpr void append_range(R &&rg) = delete;
     constexpr void pop_back();
 
     template <class... Args> constexpr iterator emplace(const_iterator position, Args &&...args);
@@ -123,7 +116,6 @@ export template <class T, class Allocator = std::allocator<T>> class vector {
     template <class InputIter>
         requires std::input_iterator<InputIter>
     constexpr iterator insert(const_iterator position, InputIter first, InputIter last);
-    template <container_compatible_range<T> R> constexpr void insert_range(const_iterator position, R &&rg) = delete;
     constexpr iterator insert(const_iterator position, std::initializer_list<T> il);
     constexpr iterator erase(const_iterator position);
     constexpr iterator erase(const_iterator first, const_iterator last);
@@ -135,9 +127,6 @@ export template <class T, class Allocator = std::allocator<T>> class vector {
 template <class InputIter, class Allocator = std::allocator<typename std::iterator_traits<InputIter>::value_type>>
 vector(InputIter, InputIter, Allocator = Allocator())
     -> vector<typename std::iterator_traits<InputIter>::value_type, Allocator>;
-
-template <std::ranges::input_range R, class Allocator = std::allocator<std::ranges::range_value_t<R>>>
-vector(std::ranges::from_range_t, R &&, Allocator = Allocator()) -> vector<std::ranges::range_value_t<R>, Allocator>;
 
 export template <class T, class Allocator>
 constexpr bool operator==(const vector<T, Allocator> &lhs, const vector<T, Allocator> &rhs) {

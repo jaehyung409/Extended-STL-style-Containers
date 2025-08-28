@@ -12,7 +12,7 @@
 #include <iterator>
 #include <vector>
 #include <random>
-import j.vector;
+import j;
 
 constexpr size_t N = 1000;
 std::random_device rd;
