@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <random>
 #include <vector>
-import j.list;
+import j;
 
 TEST_CASE("List Basic") {
     j::list<int> lst = {1, 2, 3, 4, 5};

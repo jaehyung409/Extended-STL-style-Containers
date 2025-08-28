@@ -10,7 +10,7 @@
 #include <catch2/catch_all.hpp>
 #include <array>
 #include <algorithm>
-import j.array;
+import j;
 
 TEST_CASE("Array Basic") {
     j::array<int, 5> arr = {1, 2, 3, 4, 5};

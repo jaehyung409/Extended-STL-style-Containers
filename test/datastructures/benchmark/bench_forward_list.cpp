@@ -12,7 +12,7 @@
 #include <random>
 #include <vector>
 #include <catch2/catch_all.hpp>
-import j.forward_list;
+import j;
 
 constexpr size_t N = 1000;
 std::random_device rd;

@@ -9,7 +9,8 @@
 #include <catch2/catch_all.hpp>
 #include <array>
 #include <algorithm>
-import j.array;
+
+import j;
 
 constexpr size_t N = 500'000;
 

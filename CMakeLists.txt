@@ -13,87 +13,106 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(catch2)
 
-add_library(j_range_basics)
-target_sources(j_range_basics
-        PUBLIC
-        FILE_SET modules TYPE CXX_MODULES FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/range_basics.cppm
-)
+include(CTest)
 
-add_library(j_array)
-target_sources(j_array
+# file(GLOB_RECURSE MODULE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/modules/*.cppm")
+# FILES -> ${MODULE_FILES}
+
+add_library(j STATIC)
+target_sources(j
         PUBLIC
-        FILE_SET modules TYPE CXX_MODULES FILES
+        FILE_SET modules TYPE CXX_MODULES
+        BASE_DIRS
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules
+        FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/j.cppm
+        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/algorithm.cppm
+        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/heap_algo.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Array/array.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/list.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/forward_list.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Vector/vector.cppm
+        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/deque.cppm
+        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/stack.cppm
+        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/queue.cppm
 )
 
+# --------------- Add Tests and Benchmarks ---------------
 add_executable(test_array
         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_array.cpp
 )
-target_link_libraries(test_array PRIVATE j_array Catch2::Catch2WithMain)
+target_link_libraries(test_array PRIVATE j Catch2::Catch2WithMain)
 
 add_executable(bench_array
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/bench_array.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_array.cpp
 )
-target_link_libraries(bench_array PRIVATE j_array Catch2::Catch2WithMain)
-
-add_library(j_list)
-target_sources(j_list
-        PUBLIC
-        FILE_SET modules TYPE CXX_MODULES FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/list.cppm
-)
-target_link_libraries(j_list PRIVATE j_range_basics)
+target_link_libraries(bench_array PRIVATE j Catch2::Catch2WithMain)
 
 add_executable(test_list
         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_list.cpp
 )
-target_link_libraries(test_list PRIVATE j_list Catch2::Catch2WithMain)
+target_link_libraries(test_list PRIVATE j Catch2::Catch2WithMain)
 
 add_executable(bench_list
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/bench_list.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_list.cpp
 )
-target_link_libraries(bench_list PRIVATE j_list Catch2::Catch2WithMain)
-
-add_library(j_forward_list)
-target_sources(j_forward_list
-        PUBLIC
-        FILE_SET modules TYPE CXX_MODULES FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/forward_list.cppm
-)
-target_link_libraries(j_forward_list PRIVATE j_range_basics)
+target_link_libraries(bench_list PRIVATE j Catch2::Catch2WithMain)
 
 add_executable(test_forward_list
         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_forward_list.cpp
 )
-target_link_libraries(test_forward_list PRIVATE j_forward_list Catch2::Catch2WithMain)
+target_link_libraries(test_forward_list PRIVATE j Catch2::Catch2WithMain)
 
 add_executable(bench_forward_list
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/bench_forward_list.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_forward_list.cpp
 )
-target_link_libraries(bench_forward_list PRIVATE j_forward_list Catch2::Catch2WithMain)
-
-add_library(j_vector)
-target_sources(j_vector
-        PUBLIC
-        FILE_SET modules TYPE CXX_MODULES FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Vector/vector.cppm
-)
-target_link_libraries(j_vector PRIVATE j_range_basics)
+target_link_libraries(bench_forward_list PRIVATE j Catch2::Catch2WithMain)
 
 add_executable(test_vector
         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_vector.cpp
 )
-target_link_libraries(test_vector PRIVATE j_vector Catch2::Catch2WithMain)
+target_link_libraries(test_vector PRIVATE j Catch2::Catch2WithMain)
 
 add_executable(bench_vector
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/bench_vector.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_vector.cpp
 )
-target_link_libraries(bench_vector PRIVATE j_vector Catch2::Catch2WithMain)
+target_link_libraries(bench_vector PRIVATE j Catch2::Catch2WithMain)
+
+# add_executable(test_deque
+#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_deque.cpp
+# )
+# target_link_libraries(test_deque PRIVATE j Catch2::Catch2WithMain)
+
+# add_executable(bench_deque
+#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_deque.cpp
+# )
+# target_link_libraries(bench_deque PRIVATE j Catch2::Catch2WithMain)
+
+# add_executable(test_stack
+#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_stack.cpp
+# )
+# target_link_libraries(test_stack PRIVATE j Catch2::Catch2WithMain)
+#
+# add_executable(bench_stack
+#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_stack.cpp
+# )
+# target_link_libraries(bench_stack PRIVATE j Catch2::Catch2WithMain)
+
+add_executable(main
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
+)
+target_link_libraries(main PRIVATE j)
 
 # --------------- Add CTest ---------------
 enable_testing()
+
+set(CTEST_MEMORYCHECK_COMMAND "/usr/bin/valgrindc")
+set(CTEST_MEMORYCHECK_COMMAND_OPTIONS
+    "--leak-check=full;--show-leak-kinds=all;--error-exitcode=1;--track-origins=yes"
+)
+
 add_test(NAME test_array COMMAND test_array)
 add_test(NAME test_list COMMAND test_list)
 add_test(NAME test_forward_list COMMAND test_forward_list)
 add_test(NAME test_vector COMMAND test_vector)
+# add_test(NAME test_deque COMMAND test_deque)
