@@ -195,6 +195,9 @@ jobs:
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Vector/vector"; then
             ./bench_vector > bench_vector_result.txt || echo "Vector benchmark failed" > bench_vector_result.txt
           fi
+          if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Deque/deque"; then
+            ./bench_deque > bench_deque_result.txt || echo "Deque benchmark failed" > bench_deque_result.txt
+          fi
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
