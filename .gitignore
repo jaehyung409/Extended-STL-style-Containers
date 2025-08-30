@@ -4,4 +4,4 @@
 trash/
 cmake-build-debug*/
 /test/main.cpp
-/build-*/
+build-*/
