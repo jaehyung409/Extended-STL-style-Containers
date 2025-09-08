@@ -100,10 +100,10 @@ target_link_libraries(bench_deque PRIVATE j Catch2::Catch2WithMain)
 # )
 # target_link_libraries(bench_stack PRIVATE j Catch2::Catch2WithMain)
 
-add_executable(main
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
-)
-target_link_libraries(main PRIVATE j Catch2::Catch2WithMain)
+# add_executable(main
+#         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
+# )
+# target_link_libraries(main PRIVATE j Catch2::Catch2WithMain)
 
 # --------------- Add CTest ---------------
 enable_testing()
