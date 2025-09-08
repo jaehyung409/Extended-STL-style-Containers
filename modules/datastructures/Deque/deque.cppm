@@ -6,12 +6,16 @@
 
 module;
 #include <algorithm>
-#include <cstddef>
+#include <stdexcept>
 #include <initializer_list>
 #include <iterator>
 #include <memory>
 
 export module j:deque;
+
+import :unique_ptr;
+import :memory;
+import :vector;
 
 namespace j {
 export template <class T, class Allocator = std::allocator<T>> class deque {
@@ -48,10 +52,10 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     map_allocator _map_alloc;
     buf_allocator _buf_alloc;
 
-    // helper functions (change private variables)
-    [[nodiscard]] map _create_map(size_type n) {
+    // helper functions (create and delete)
+    [[nodiscard]] map _allocate_map(size_type n) {
         map new_map = std::allocator_traits<map_allocator>::allocate(_map_alloc, n); // T* is trivial type
-        std::uninitialized_fill_n(new_map, n, nullptr); // initialize all pointers to nullptr (empty)
+        std::fill_n(new_map, n, nullptr); // initialize all pointers to nullptr (empty)
         return new_map;
     }
 
@@ -60,10 +64,8 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         deallocate_map = nullptr;
     }
 
-    void _create_buf(buf &node) {
-        if (node == nullptr) {
-            node = std::allocator_traits<buf_allocator>::allocate(_buf_alloc, _buffer_size());
-        }
+    [[nodiscard]] buf _allocate_buf() {
+        return std::allocator_traits<buf_allocator>::allocate(_buf_alloc, _buffer_size());
     }
 
     void _deallocate_buf(buf &node) noexcept {
@@ -74,67 +76,114 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     }
 
     void _destroy_elements_and_buffer() {
-        std::destroy(begin(), end());
-        // for (auto it = begin(); it != end(); ++it) {
-        //     std::allocator_traits<allocator_type>::destroy(get_allocator(), std::to_address(it));
-        // }
-
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            for (auto it = begin(); it != end(); ++it) {
+                std::allocator_traits<buf_allocator>::destroy(_buf_alloc, std::to_address(it));
+            }
+        }
         for (buf *node = _start._node; node <= _finish._node; ++node) {
             _deallocate_buf(*node);
             *node = nullptr;
         }
     }
 
-    void _initialize_map(size_type capacity) {
-        _map = _create_map(capacity);
-        _map_capacity = capacity;
-        try {
-            buf *start_node = _map + capacity / 2;
-            _create_buf(*start_node);
+    // helper class (guard)
+    class buffer_guard {
+    private:
+        buf _buffer;
+        buf_allocator _buf_alloc;
+        size_type _constructed_count;
 
-            pointer start_pos = *start_node + _buffer_size() / 2;
-            _start = iterator(start_node, start_pos);
-            _finish = _start;
-        } catch (...) {
-            _deallocate_map(_map, _map_capacity);
-            throw;
+    public:
+        buffer_guard() : _buffer(nullptr), _constructed_count(0) {}
+        buffer_guard(buf buffer, const buf_allocator& allocator)
+            : _buffer(buffer), _buf_alloc(allocator), _constructed_count(0) {}
+        ~buffer_guard() {
+            if (_buffer) {
+                if constexpr (!std::is_trivially_destructible_v<T>) {
+                    for (size_type i = 0; i < _constructed_count; ++i) {
+                        std::allocator_traits<buf_allocator>::destroy(_buf_alloc, _buffer + i);
+                    }
+                }
+                std::allocator_traits<buf_allocator>::deallocate(_buf_alloc, _buffer, _buffer_size());
+                _buffer = nullptr;
+            }
         }
+        buffer_guard(const buffer_guard&) = delete;
+        buffer_guard& operator=(const buffer_guard&) = delete;
+        buffer_guard(buffer_guard&& other) noexcept
+        : _buffer(other._buffer), _buf_alloc(other._buf_alloc), _constructed_count(other._constructed_count)
+        {
+            other._buffer = nullptr;
+            other._constructed_count = 0;
+        }
+        buffer_guard& operator=(buffer_guard&& other) noexcept {
+            if (this != &other) {
+                if (_buffer) {
+                    if constexpr (!std::is_trivially_destructible_v<T>) {
+                        for (size_type i = 0; i < _constructed_count; ++i) {
+                            std::allocator_traits<buf_allocator>::destroy(_buf_alloc, _buffer + i);
+                        }
+                    }
+                    std::allocator_traits<buf_allocator>::deallocate(_buf_alloc, _buffer, _buffer_size());
+                }
+                _buffer = other._buffer;
+                _constructed_count = other._constructed_count;
+                _buf_alloc = std::move(other._buf_alloc);
+                other._buffer = nullptr;
+                other._constructed_count = 0;
+            }
+            return *this;
+        }
+
+        void set_constructed_count(size_type count) {
+            _constructed_count = count;
+        }
+
+        buf release() {
+            buf temp = _buffer;
+            _buffer = nullptr;
+            return temp;
+        }
+
+        buf get() const { return _buffer; }
+    };
+
+    // helper functions
+    void _initialize_map(size_type capacity) {
+        unique_ptr map_guard(_allocate_map(capacity), _map_alloc, capacity);
+        unique_ptr buf_guard(_allocate_buf(), _buf_alloc, _buffer_size());
+
+        buf *start_node = map_guard.get() + capacity / 2;
+
+        _map = map_guard.release();
+        _map_capacity = capacity;
+        *start_node = buf_guard.release();
+        pointer start_pos = *start_node + _buffer_size() / 2;
+        _start = iterator(start_node, start_pos);
+        _finish = _start;
     }
 
-    void _reallocate_map(size_type nodes_to_add, bool add_at_front) {
+    void _reallocate_map(size_type nodes_to_add, bool add_at_front){
         const size_type old_num_nodes = _finish._node - _start._node + 1;
         const size_type new_num_nodes = old_num_nodes + nodes_to_add;
+        const size_type new_map_capacity =
+            (_map_capacity > 2 * new_num_nodes)
+                ? _map_capacity
+                : _map_capacity + std::max(_map_capacity, nodes_to_add) + 2;
 
-        if (_map_capacity > 2 * new_num_nodes) {
-            buf *new_start_node = _map + (_map_capacity - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
-            if (new_start_node < _start._node) {
-                std::copy(_start._node, _finish._node + 1, new_start_node);
-                std::fill(new_start_node + old_num_nodes, _finish._node + 1, nullptr);
-            } else {
-                std::copy_backward(_start._node, _finish._node + 1, new_start_node + old_num_nodes);
-                std::fill(_start._node, new_start_node, nullptr);
-            }
-            difference_type start_node_diff = new_start_node - _start._node;
-            _start._node += start_node_diff;
-            _finish._node += start_node_diff;
-        } else {
-            const size_type new_map_capacity = _map_capacity + std::max(_map_capacity, nodes_to_add) + 2;
-            map new_map = _create_map(new_map_capacity);
-            buf *new_begin = new_map + (new_map_capacity - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
-            try {
-                std::copy(_start._node, _finish._node + 1, new_begin);
-            } catch (...) {
-                _deallocate_map(new_map, new_map_capacity);
-            }
-            _deallocate_map(_map, _map_capacity);
-            _map = new_map;
-            _map_capacity = new_map_capacity;
-            _start._set_node(new_begin);
-            _finish._set_node(new_begin + old_num_nodes - 1);
-        }
+        unique_ptr new_map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
+
+        buf* new_start_node = new_map_guard.get() + (new_map_capacity - old_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+        std::copy(_start._node, _finish._node + 1, new_start_node);
+
+        _deallocate_map(_map, _map_capacity);
+        _map = new_map_guard.release();
+        _map_capacity = new_map_capacity;
+        _start._set_node(new_start_node);
+        _finish._set_node(new_start_node + (old_num_nodes - 1));
     }
 
-    // helper function
     void _move_state(deque &&x) noexcept {
         _map = x._map;
         _map_capacity = x._map_capacity;
@@ -144,65 +193,62 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         x._initialize_map(x._initial_map_size);
     }
 
-    // buffer space must be capable
-    template <class Generator>
-    void _uninitialized_append_impl(size_type n, const size_type space_in_last_buffer, Generator &gen) {
-        const iterator old_finish = _finish;
-        try {
-            size_type space_in_current_buffer = space_in_last_buffer;
-            while (n > 0) {
-                const size_type to_fill = std::min(n, space_in_current_buffer);
-                gen(_finish._current, to_fill);
-                n -= to_fill;
-                _finish += to_fill;
-
-                if (n > 0) {
-                    _create_buf(*_finish._node);
-                    _finish._set_node(_finish._node);
-                    _finish._current = _finish._first;
-                }
-                space_in_current_buffer = _buffer_size();
-            }
-        } catch (...) {
-            std::destroy(old_finish, _finish);
-
-            if (old_finish._node != _finish._node) {
-                for (buf *temp = old_finish._node + 1; temp != _finish._node; ++temp) {
-                    _deallocate_buf(*temp);
-                }
-            }
-            throw;
+    // pre-require : _start._current == _start._first
+    void _ensure_front_map_space() {
+        if (_start._node == _map) {
+            _reallocate_map(1, true);
         }
     }
 
-    template <class FwdIter>
-        requires std::forward_iterator<FwdIter>
-    void _range_construct(FwdIter first, FwdIter last) {
-        auto dist = std::distance(first, last);
-        if (dist == 0) {
-            return;
-        }
-        const size_type num_nodes = (dist + _buffer_size() - 1) / _buffer_size();
-        _map_capacity = std::max(_initial_map_size, num_nodes + 2);
-        _map = _create_map(_map_capacity);
-        buf *start_node = _map + (_map_capacity - num_nodes) / 2;
-        try {
-            const size_type offset = ((num_nodes * _buffer_size()) - dist) / 2;
-            _create_buf(*start_node);
-            _start = iterator(start_node, *start_node + offset);
-            _finish = _start;
-            auto copy_generator = [&](pointer dest, size_type count) {
-                std::uninitialized_copy_n(first, count, dest);
-                std::advance(first, count);
-            };
-            _uninitialized_append_impl(dist, _buffer_size() - offset, copy_generator);
-        } catch (...) {
-            _deallocate_map(_map, _map_capacity);
-            _map = nullptr;
-            _map_capacity = 0;
-            throw;
+    // pre-require : _finish._current == _finish._last - 1
+    void _ensure_back_map_space() {
+        if (_finish._node == _map + _map_capacity - 1) {
+            _reallocate_map(1, false);
         }
     }
+
+    template <class ... Args>
+    void _shift_left_and_emplace(const difference_type distance_from_begin, iterator emplace_pos, Args &&...args);
+
+    template <class ... Args>
+    void _shift_right_and_emplace(const difference_type distance_from_end, iterator emplace_pos, Args &&...args);
+
+    void _shift_left_and_insert(const T &value, const difference_type distance_from_begin, iterator emplace_pos);
+
+    void _shift_right_and_insert(const T &value, const difference_type distance_from_end, iterator emplace_pos);
+
+    iterator _insert_impl(const_iterator position, const T &value);
+
+    template <class InputIter>
+    requires std::forward_iterator<InputIter>
+    size_type calc_move_now(InputIter first, size_type count, iterator dest);
+    template <class InputIter>
+    requires std::forward_iterator<InputIter>
+    size_type calc_move_backward_now(InputIter last, size_type count, iterator dest);
+
+    void _uninitialized_fill_n(Allocator alloc, iterator first, size_type count, const T& value);
+
+    void _fill_n(iterator first, size_type count, const T& value);
+
+    template <class InputIter>
+        requires std::forward_iterator<InputIter>
+    iterator _uninitialized_move_n(Allocator alloc, InputIter first, size_type count, iterator dest);
+
+    template <class InputIter>
+        requires std::forward_iterator<InputIter>
+    iterator _move_n(InputIter first, size_type count, iterator dest);
+
+    template <class InputIter>
+    requires std::forward_iterator<InputIter>
+    iterator _move_backward_n(InputIter first, size_type count, iterator dest);
+
+    template <class InputIter>
+requires std::forward_iterator<InputIter>
+    iterator _uninitialized_copy_n(Allocator alloc, InputIter first, size_type count, iterator dest);
+
+    template <class InputIter>
+requires std::forward_iterator<InputIter>
+    iterator _copy_n(InputIter first, size_type count, iterator dest);
 
   public:
     deque() : deque(Allocator()) {}
@@ -301,7 +347,7 @@ bool operator==(const deque<T, Allocator> &lhs, const deque<T, Allocator> &rhs) 
 }
 
 export template <class T, class Allocator>
-auto operator<=>(const deque<T, Allocator> &lhs, const deque<T, Allocator> &rhs) {
+auto operator<=>(const deque<T, Allocator> &lhs, const deque<T, Allocator> &rhs) -> std::strong_ordering {
     return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
                                                   std::compare_three_way{});
 }
@@ -434,7 +480,7 @@ template <class T, class Allocator> class deque<T, Allocator>::iterator {
     bool operator==(const iterator &other) const noexcept {
         return _current == other._current;
     }
-    auto operator<=>(const iterator &other) const noexcept {
+    auto operator<=>(const iterator &other) const noexcept -> std::strong_ordering {
         if (auto cmp = _node <=> other._node; cmp != 0) {
             return cmp;
         }
@@ -556,7 +602,7 @@ template <class T, class Allocator> class deque<T, Allocator>::const_iterator {
     bool operator==(const const_iterator &other) const noexcept {
         return _current == other._current;
     }
-    auto operator<=>(const const_iterator &other) const noexcept {
+    auto operator<=>(const const_iterator &other) const noexcept -> std::strong_ordering {
         if (auto cmp = _node <=> other._node; cmp != 0) {
             return cmp;
         }
