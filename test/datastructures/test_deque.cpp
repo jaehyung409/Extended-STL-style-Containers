@@ -288,6 +288,96 @@ TEST_CASE("Deque Large Dataset") {
             REQUIRE(*iter == v);
         }
     }
+    SECTION("N insert + emplace middle + verify") {
+        j::deque<int> d;
+        for (int i = 1; i <= N; ++i) d.push_back(i);
+
+        // emplace at middle position
+        auto mid_pos = d.begin() + N/2;
+        d.emplace(mid_pos, -999);
+
+        REQUIRE(d.size() == N + 1);
+        REQUIRE(d[N/2] == -999);
+
+        // verify elements before middle
+        for (int i = 0; i < N/2; ++i) {
+            REQUIRE(d[i] == i + 1);
+        }
+        // verify elements after middle
+        for (int i = N/2 + 1; i < N + 1; ++i) {
+            REQUIRE(d[i] == i);  // shifted by one due to emplace
+        }
+    }
+    SECTION("N insert + insert range + verify") {
+        j::deque<int> d;
+        for (int i = 1; i <= N; ++i) d.push_back(i);
+
+        // prepare range to insert
+        std::vector<int> range_to_insert;
+        for (int i = 2000; i < 2000 + N; ++i) {
+            range_to_insert.push_back(i);
+        }
+
+        // insert range at position N/3
+        auto insert_pos = d.begin() + N/3;
+        d.insert(insert_pos, range_to_insert.begin(), range_to_insert.end());
+
+        REQUIRE(d.size() == N + N);
+
+        // verify elements before insertion point (1 to N/3)
+        for (int i = 0; i < N/3; ++i) {
+            REQUIRE(d[i] == i + 1);
+        }
+        // verify inserted range
+        for (int i = N/3; i < N/3 + N; ++i) {
+            REQUIRE(d[i] == 2000 + (i - N/3));
+        }
+        // verify elements after insertion point
+        for (int i = N/3 + N; i < 2*N; ++i) {
+            REQUIRE(d[i] == (i - N) + 1);
+        }
+    }
+    SECTION("N insert + erase middle N/2 + verify") {
+        j::deque<int> d;
+        for (int i = 1; i <= N; ++i) d.push_back(i);
+
+        // erase N/2 elements from middle
+        size_t start_erase = N/4;
+        size_t end_erase = start_erase + N/2;
+        d.erase(d.begin() + start_erase, d.begin() + end_erase);
+
+        REQUIRE(d.size() == N - N/2);
+
+        // verify elements before erased range
+        for (size_t i = 0; i < start_erase; ++i) {
+            REQUIRE(d[i] == static_cast<int>(i + 1));
+        }
+        // verify elements after erased range (shifted)
+        for (size_t i = start_erase; i < d.size(); ++i) {
+            REQUIRE(d[i] == static_cast<int>(i + N/2 + 1));
+        }
+    }
+    SECTION("N insert + erase single element + verify") {
+        j::deque<int> d;
+        for (int i = 1; i <= N; ++i) d.push_back(i);
+
+        // erase single element at position N/2
+        size_t erase_pos = N/2;
+        int erased_value = d[erase_pos];
+        d.erase(d.begin() + erase_pos);
+
+        REQUIRE(d.size() == N - 1);
+        REQUIRE(erased_value == static_cast<int>(erase_pos + 1));
+
+        // verify elements before erased position
+        for (size_t i = 0; i < erase_pos; ++i) {
+            REQUIRE(d[i] == static_cast<int>(i + 1));
+        }
+        // verify elements after erased position (shifted)
+        for (size_t i = erase_pos; i < d.size(); ++i) {
+            REQUIRE(d[i] == static_cast<int>(i + 2));
+        }
+    }
 }
 
 TEST_CASE("Deque Interface Coverage") {
