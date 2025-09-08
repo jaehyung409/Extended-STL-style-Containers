@@ -26,13 +26,15 @@ target_sources(j
         ${CMAKE_CURRENT_SOURCE_DIR}/modules
         FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/j.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/unique_ptr.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/memory.cppm
         # ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/algorithm.cppm
         # ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/heap_algo.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Array/array.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/list.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/forward_list.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Vector/vector.cppm
-        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/deque.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/deque.cppm
         # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/stack.cppm
         # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/queue.cppm
 )
@@ -78,15 +80,15 @@ add_executable(bench_vector
 )
 target_link_libraries(bench_vector PRIVATE j Catch2::Catch2WithMain)
 
-# add_executable(test_deque
-#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_deque.cpp
-# )
-# target_link_libraries(test_deque PRIVATE j Catch2::Catch2WithMain)
+add_executable(test_deque
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_deque.cpp
+)
+target_link_libraries(test_deque PRIVATE j Catch2::Catch2WithMain)
 
-# add_executable(bench_deque
-#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_deque.cpp
-# )
-# target_link_libraries(bench_deque PRIVATE j Catch2::Catch2WithMain)
+add_executable(bench_deque
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_deque.cpp
+)
+target_link_libraries(bench_deque PRIVATE j Catch2::Catch2WithMain)
 
 # add_executable(test_stack
 #         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_stack.cpp
@@ -101,12 +103,12 @@ target_link_libraries(bench_vector PRIVATE j Catch2::Catch2WithMain)
 # add_executable(main
 #         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
 # )
-# target_link_libraries(main PRIVATE j)
+# target_link_libraries(main PRIVATE j Catch2::Catch2WithMain)
 
 # --------------- Add CTest ---------------
 enable_testing()
 
-set(CTEST_MEMORYCHECK_COMMAND "/usr/bin/valgrindc")
+set(CTEST_MEMORYCHECK_COMMAND "/usr/bin/valgrind")
 set(CTEST_MEMORYCHECK_COMMAND_OPTIONS
     "--leak-check=full;--show-leak-kinds=all;--error-exitcode=1;--track-origins=yes"
 )
