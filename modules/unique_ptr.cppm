@@ -1,7 +1,7 @@
 /*
  * @ Created by jaehyung409 on 25. 8. 30..
- * @ Copyright (c) 2025 jaehyung409 
- * This software is licensed under the MIT License. 
+ * @ Copyright (c) 2025 jaehyung409
+ * This software is licensed under the MIT License.
  */
 
 module;
@@ -14,22 +14,21 @@ module j:unique_ptr;
 #endif
 
 namespace j {
-template <class T, class Allocator>
-class unique_ptr {
-public:
+template <class T, class Allocator> class unique_ptr {
+  public:
     using value_type = T;
     using allocator_type = Allocator;
     using pointer = typename std::allocator_traits<Allocator>::pointer;
     using reference = value_type &;
     using size_type = std::size_t;
 
-private:
+  private:
     pointer _ptr;
     allocator_type _alloc;
     size_type _size;
 
-public:
-    explicit constexpr unique_ptr(pointer ptr, allocator_type& alloc, size_type size) noexcept
+  public:
+    explicit constexpr unique_ptr(pointer ptr, allocator_type &alloc, size_type size) noexcept
         : _ptr(ptr), _alloc(alloc), _size(size) {}
 
     ~unique_ptr() {
@@ -38,14 +37,13 @@ public:
         }
     }
 
-    unique_ptr(const unique_ptr& other) = delete;
-    unique_ptr& operator=(const unique_ptr& other) = delete;
+    unique_ptr(const unique_ptr &other) = delete;
+    unique_ptr &operator=(const unique_ptr &other) = delete;
 
-    unique_ptr(unique_ptr&& other) noexcept
-    : _ptr(other._ptr), _alloc(std::move(other._alloc)), _size(other._size) {
+    unique_ptr(unique_ptr &&other) noexcept : _ptr(other._ptr), _alloc(std::move(other._alloc)), _size(other._size) {
         other._ptr = nullptr;
     }
-    unique_ptr& operator=(unique_ptr&& other) noexcept {
+    unique_ptr &operator=(unique_ptr &&other) noexcept {
         if (this != &other) {
             if (_ptr) {
                 std::allocator_traits<allocator_type>::deallocate(_alloc, _ptr, _size);
@@ -58,9 +56,15 @@ public:
         return *this;
     }
 
-    pointer get() const noexcept { return _ptr; }
-    reference operator*() const noexcept { return *_ptr; }
-    pointer operator->() const noexcept { return _ptr; }
+    pointer get() const noexcept {
+        return _ptr;
+    }
+    reference operator*() const noexcept {
+        return *_ptr;
+    }
+    pointer operator->() const noexcept {
+        return _ptr;
+    }
 
     pointer release() noexcept {
         pointer tmp = _ptr;
@@ -69,6 +73,6 @@ public:
     }
 };
 template <class Pointer, class Allocator>
-unique_ptr(Pointer p, Allocator& alloc, std::size_t size)
+unique_ptr(Pointer p, Allocator &alloc, std::size_t size)
     -> unique_ptr<typename std::pointer_traits<Pointer>::element_type, Allocator>;
-}
+} // namespace j

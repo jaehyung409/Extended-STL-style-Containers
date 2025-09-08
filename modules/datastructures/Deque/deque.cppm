@@ -6,10 +6,10 @@
 
 module;
 #include <algorithm>
-#include <stdexcept>
 #include <initializer_list>
 #include <iterator>
 #include <memory>
+#include <stdexcept>
 
 export module j:deque;
 
@@ -89,14 +89,14 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
 
     // helper class (guard)
     class buffer_guard {
-    private:
+      private:
         buf _buffer;
         buf_allocator _buf_alloc;
         size_type _constructed_count;
 
-    public:
+      public:
         buffer_guard() : _buffer(nullptr), _constructed_count(0) {}
-        buffer_guard(buf buffer, const buf_allocator& allocator)
+        buffer_guard(buf buffer, const buf_allocator &allocator)
             : _buffer(buffer), _buf_alloc(allocator), _constructed_count(0) {}
         ~buffer_guard() {
             if (_buffer) {
@@ -109,15 +109,14 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
                 _buffer = nullptr;
             }
         }
-        buffer_guard(const buffer_guard&) = delete;
-        buffer_guard& operator=(const buffer_guard&) = delete;
-        buffer_guard(buffer_guard&& other) noexcept
-        : _buffer(other._buffer), _buf_alloc(other._buf_alloc), _constructed_count(other._constructed_count)
-        {
+        buffer_guard(const buffer_guard &) = delete;
+        buffer_guard &operator=(const buffer_guard &) = delete;
+        buffer_guard(buffer_guard &&other) noexcept
+            : _buffer(other._buffer), _buf_alloc(other._buf_alloc), _constructed_count(other._constructed_count) {
             other._buffer = nullptr;
             other._constructed_count = 0;
         }
-        buffer_guard& operator=(buffer_guard&& other) noexcept {
+        buffer_guard &operator=(buffer_guard &&other) noexcept {
             if (this != &other) {
                 if (_buffer) {
                     if constexpr (!std::is_trivially_destructible_v<T>) {
@@ -146,7 +145,9 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
             return temp;
         }
 
-        buf get() const { return _buffer; }
+        buf get() const {
+            return _buffer;
+        }
     };
 
     // helper functions
@@ -164,17 +165,17 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         _finish = _start;
     }
 
-    void _reallocate_map(size_type nodes_to_add, bool add_at_front){
+    void _reallocate_map(size_type nodes_to_add, bool add_at_front) {
         const size_type old_num_nodes = _finish._node - _start._node + 1;
         const size_type new_num_nodes = old_num_nodes + nodes_to_add;
-        const size_type new_map_capacity =
-            (_map_capacity > 2 * new_num_nodes)
-                ? _map_capacity
-                : _map_capacity + std::max(_map_capacity, nodes_to_add) + 2;
+        const size_type new_map_capacity = (_map_capacity > 2 * new_num_nodes)
+                                               ? _map_capacity
+                                               : _map_capacity + std::max(_map_capacity, nodes_to_add) + 2;
 
         unique_ptr new_map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
 
-        buf* new_start_node = new_map_guard.get() + (new_map_capacity - old_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+        buf *new_start_node =
+            new_map_guard.get() + (new_map_capacity - old_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
         std::copy(_start._node, _finish._node + 1, new_start_node);
 
         _deallocate_map(_map, _map_capacity);
@@ -207,10 +208,10 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         }
     }
 
-    template <class ... Args>
+    template <class... Args>
     void _shift_left_and_emplace(const difference_type distance_from_begin, iterator emplace_pos, Args &&...args);
 
-    template <class ... Args>
+    template <class... Args>
     void _shift_right_and_emplace(const difference_type distance_from_end, iterator emplace_pos, Args &&...args);
 
     void _shift_left_and_insert(const T &value, const difference_type distance_from_begin, iterator emplace_pos);
@@ -220,15 +221,15 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     iterator _insert_impl(const_iterator position, const T &value);
 
     template <class InputIter>
-    requires std::forward_iterator<InputIter>
+        requires std::forward_iterator<InputIter>
     size_type calc_move_now(InputIter first, size_type count, iterator dest);
     template <class InputIter>
-    requires std::forward_iterator<InputIter>
+        requires std::forward_iterator<InputIter>
     size_type calc_move_backward_now(InputIter last, size_type count, iterator dest);
 
-    void _uninitialized_fill_n(Allocator alloc, iterator first, size_type count, const T& value);
+    void _uninitialized_fill_n(Allocator alloc, iterator first, size_type count, const T &value);
 
-    void _fill_n(iterator first, size_type count, const T& value);
+    void _fill_n(iterator first, size_type count, const T &value);
 
     template <class InputIter>
         requires std::forward_iterator<InputIter>
@@ -239,15 +240,15 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     iterator _move_n(InputIter first, size_type count, iterator dest);
 
     template <class InputIter>
-    requires std::forward_iterator<InputIter>
+        requires std::forward_iterator<InputIter>
     iterator _move_backward_n(InputIter first, size_type count, iterator dest);
 
     template <class InputIter>
-requires std::forward_iterator<InputIter>
+        requires std::forward_iterator<InputIter>
     iterator _uninitialized_copy_n(Allocator alloc, InputIter first, size_type count, iterator dest);
 
     template <class InputIter>
-requires std::forward_iterator<InputIter>
+        requires std::forward_iterator<InputIter>
     iterator _copy_n(InputIter first, size_type count, iterator dest);
 
   public:
@@ -388,8 +389,8 @@ template <class T, class Allocator> class deque<T, Allocator>::iterator {
     pointer _current; // pointer to current element
     pointer _first;   // pointer to first element of current chunk(buf)
     pointer _last;    // pointer to last element of current chunk(buf)
-    buf* _node;        // pointer to current chunk(buf)
-    void _set_node(buf* new_node) noexcept {
+    buf *_node;       // pointer to current chunk(buf)
+    void _set_node(buf *new_node) noexcept {
         _node = new_node;
         _first = *new_node;
         _last = *new_node + _buffer_size();
@@ -397,7 +398,7 @@ template <class T, class Allocator> class deque<T, Allocator>::iterator {
 
   public:
     iterator() noexcept : _current(nullptr), _first(nullptr), _last(nullptr), _node(nullptr) {}
-    iterator(buf* node, pointer current) noexcept : _current(current) {
+    iterator(buf *node, pointer current) noexcept : _current(current) {
         _set_node(node);
     }
     iterator(const iterator &other) noexcept = default;
@@ -509,9 +510,9 @@ template <class T, class Allocator> class deque<T, Allocator>::const_iterator {
     pointer _current; // pointer to current element
     pointer _first;   // pointer to first element of current chunk(buf)
     pointer _last;    // pointer to last element of current chunk(buf)
-    buf* _node;        // pointer to current chunk(buf)
+    buf *_node;       // pointer to current chunk(buf)
 
-    void _set_node(buf* new_node) noexcept {
+    void _set_node(buf *new_node) noexcept {
         _node = new_node;
         _first = *new_node;
         _last = *new_node + _buffer_size();
@@ -519,7 +520,7 @@ template <class T, class Allocator> class deque<T, Allocator>::const_iterator {
 
   public:
     const_iterator() noexcept : _current(nullptr), _first(nullptr), _last(nullptr), _node(nullptr) {}
-    const_iterator(buf* node, pointer current) noexcept : _current(current) {
+    const_iterator(buf *node, pointer current) noexcept : _current(current) {
         _set_node(node);
     }
     const_iterator(const const_iterator &other) noexcept = default;
@@ -613,9 +614,9 @@ template <class T, class Allocator> class deque<T, Allocator>::const_iterator {
 
 namespace j {
 template <class T, class Allocator>
-template <class ... Args>
+template <class... Args>
 void deque<T, Allocator>::_shift_left_and_emplace(const difference_type distance_from_begin, iterator emplace_pos,
-    Args &&...args) {
+                                                  Args &&...args) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, (_start - 1)._current, std::move(*_start._current));
     _move_n(_start + 1, distance_from_begin - 1, _start);
     std::allocator_traits<buf_allocator>::destroy(_buf_alloc, emplace_pos._current);
@@ -623,9 +624,9 @@ void deque<T, Allocator>::_shift_left_and_emplace(const difference_type distance
 }
 
 template <class T, class Allocator>
-template <class ... Args>
+template <class... Args>
 void deque<T, Allocator>::_shift_right_and_emplace(const difference_type distance_from_end, iterator emplace_pos,
-    Args &&...args) {
+                                                   Args &&...args) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, _finish._current, std::move(*(_finish - 1)._current));
     _move_backward_n(emplace_pos, distance_from_end - 1, _finish);
     std::allocator_traits<buf_allocator>::destroy(_buf_alloc, emplace_pos._current);
@@ -634,18 +635,18 @@ void deque<T, Allocator>::_shift_right_and_emplace(const difference_type distanc
 
 template <class T, class Allocator>
 void deque<T, Allocator>::_shift_left_and_insert(const T &value, const difference_type distance_from_begin,
-    iterator emplace_pos) {
+                                                 iterator emplace_pos) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, (_start - 1)._current, std::move(*_start._current));
     _move_n(_start + 1, distance_from_begin - 1, _start);
-    *emplace_pos= value;
+    *emplace_pos = value;
 }
 
 template <class T, class Allocator>
 void deque<T, Allocator>::_shift_right_and_insert(const T &value, const difference_type distance_from_end,
-    iterator emplace_pos) {
+                                                  iterator emplace_pos) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, _finish._current, std::move(*(_finish - 1)._current));
     _move_backward_n(emplace_pos, distance_from_end - 1, _finish);
-    *emplace_pos= value;
+    *emplace_pos = value;
 }
 
 template <class T, class Allocator>
@@ -688,9 +689,9 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_insert_impl(const_iterator p
 }
 
 template <class T, class Allocator>
-template <class InputIter> requires std::forward_iterator<InputIter>
-deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(InputIter first, size_type count,
-    iterator dest) {
+template <class InputIter>
+    requires std::forward_iterator<InputIter>
+deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(InputIter first, size_type count, iterator dest) {
     const size_type dest_buffer_remaining = _buffer_size() - (dest._current - dest._first);
 
     if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
@@ -702,23 +703,26 @@ deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(InputIter firs
 }
 
 template <class T, class Allocator>
-template <class InputIter> requires std::forward_iterator<InputIter>
+template <class InputIter>
+    requires std::forward_iterator<InputIter>
 deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_backward_now(InputIter last, size_type count,
-    iterator dest) {
-    const size_type dest_buffer_remaining = (dest._current - dest._first) ? dest._current - dest._first : _buffer_size();
+                                                                           iterator dest) {
+    const size_type dest_buffer_remaining =
+        (dest._current - dest._first) ? dest._current - dest._first : _buffer_size();
 
     if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
-        const size_type source_buffer_remaining = (last._current - last._first) ? last._current - last._first : _buffer_size();
+        const size_type source_buffer_remaining =
+            (last._current - last._first) ? last._current - last._first : _buffer_size();
         return std::min({count, source_buffer_remaining, dest_buffer_remaining});
     } else {
         return std::min(count, dest_buffer_remaining);
     }
 }
 
-
 template <class T, class Allocator>
 void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, iterator first, size_type count, const T &value) {
-    if (count == 0) return;
+    if (count == 0)
+        return;
 
     iterator original_first = first;
     try {
@@ -732,8 +736,7 @@ void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, iterator first,
             first += fill_now;
             count -= fill_now;
         }
-    }
-    catch (...) {
+    } catch (...) {
         for (iterator it = original_first; it != first; ++it) {
             std::allocator_traits<Allocator>::destroy(alloc, std::addressof(*it));
         }
@@ -741,9 +744,9 @@ void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, iterator first,
     }
 }
 
-template <class T, class Allocator>
-void deque<T, Allocator>::_fill_n(iterator first, size_type count, const T &value) {
-    if (count == 0) return;
+template <class T, class Allocator> void deque<T, Allocator>::_fill_n(iterator first, size_type count, const T &value) {
+    if (count == 0)
+        return;
 
     while (count > 0) {
         const size_type buffer_remaining = _buffer_size() - (first._current - first._first);
@@ -758,10 +761,12 @@ void deque<T, Allocator>::_fill_n(iterator first, size_type count, const T &valu
 }
 
 template <class T, class Allocator>
-template <class InputIter> requires std::forward_iterator<InputIter>
+template <class InputIter>
+    requires std::forward_iterator<InputIter>
 deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_move_n(Allocator alloc, InputIter first,
-    size_type count, iterator dest) {
-    if (count == 0) return dest;
+                                                                         size_type count, iterator dest) {
+    if (count == 0)
+        return dest;
 
     iterator original_dest = dest;
 
@@ -769,9 +774,9 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_move_n(Allocat
         while (count > 0) {
             const size_type move_now = calc_move_now(first, count, dest);
             if constexpr (std::is_same_v<InputIter, iterator>) {
-                uninitialized_move_n_contiguous(alloc, first._current, move_now,  dest._current);
+                uninitialized_move_n_contiguous(alloc, first._current, move_now, dest._current);
             } else {
-                uninitialized_move_n_contiguous(alloc, first, move_now,  dest._current);
+                uninitialized_move_n_contiguous(alloc, first, move_now, dest._current);
             }
 
             first += move_now;
@@ -788,18 +793,20 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_move_n(Allocat
 }
 
 template <class T, class Allocator>
-template <class InputIter> requires std::forward_iterator<InputIter>
+template <class InputIter>
+    requires std::forward_iterator<InputIter>
 deque<T, Allocator>::iterator deque<T, Allocator>::_move_n(InputIter first, size_type count, iterator dest) {
-    if (count == 0) return dest;
+    if (count == 0)
+        return dest;
 
     iterator original_dest = dest;
 
     while (count > 0) {
         const size_type move_now = calc_move_now(first, count, dest);
         if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
-            move_n_contiguous(first._current, move_now,  dest._current);
+            move_n_contiguous(first._current, move_now, dest._current);
         } else {
-            move_n_contiguous(first, move_now,  dest._current);
+            move_n_contiguous(first, move_now, dest._current);
         }
 
         first += move_now;
@@ -807,14 +814,14 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_move_n(InputIter first, size
         count -= move_now;
     }
     return dest;
-
 }
 
 template <class T, class Allocator>
-template <class InputIter> requires std::forward_iterator<InputIter>
-deque<T, Allocator>::iterator deque<T, Allocator>::_move_backward_n(InputIter first, size_type count,
-    iterator dest) {
-    if (count == 0) return dest;
+template <class InputIter>
+    requires std::forward_iterator<InputIter>
+deque<T, Allocator>::iterator deque<T, Allocator>::_move_backward_n(InputIter first, size_type count, iterator dest) {
+    if (count == 0)
+        return dest;
 
     InputIter last = first + count;
 
@@ -822,7 +829,7 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_move_backward_n(InputIter fi
         const size_type move_now = calc_move_backward_now(last, count, dest);
 
         last -= move_now;
-        pointer destination =  (dest._current == dest._first) ? (dest - 1)._last : dest._current;
+        pointer destination = (dest._current == dest._first) ? (dest - 1)._last : dest._current;
         if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
             move_backward_n_contiguous(last._current, move_now, destination);
         } else {
@@ -836,10 +843,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_move_backward_n(InputIter fi
 }
 
 template <class T, class Allocator>
-template <class InputIter> requires std::forward_iterator<InputIter>
+template <class InputIter>
+    requires std::forward_iterator<InputIter>
 deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_copy_n(Allocator alloc, InputIter first,
-    size_type count, iterator dest) {
-    if (count == 0) return dest;
+                                                                         size_type count, iterator dest) {
+    if (count == 0)
+        return dest;
 
     iterator original_dest = dest;
 
@@ -847,9 +856,9 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_copy_n(Allocat
         while (count > 0) {
             const size_type move_now = calc_move_now(first, count, dest);
             if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
-                uninitialized_copy_n_contiguous(alloc, first._current, move_now,  dest._current);
+                uninitialized_copy_n_contiguous(alloc, first._current, move_now, dest._current);
             } else {
-                uninitialized_copy_n_contiguous(alloc, first, move_now,  dest._current);
+                uninitialized_copy_n_contiguous(alloc, first, move_now, dest._current);
             }
 
             first += move_now;
@@ -866,18 +875,20 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_copy_n(Allocat
 }
 
 template <class T, class Allocator>
-template <class InputIter> requires std::forward_iterator<InputIter>
+template <class InputIter>
+    requires std::forward_iterator<InputIter>
 deque<T, Allocator>::iterator deque<T, Allocator>::_copy_n(InputIter first, size_type count, iterator dest) {
-    if (count == 0) return dest;
+    if (count == 0)
+        return dest;
 
     iterator original_dest = dest;
 
     while (count > 0) {
         const size_type move_now = calc_move_now(first, count, dest);
         if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
-            copy_n_contiguous(first._current, move_now,  dest._current);
+            copy_n_contiguous(first._current, move_now, dest._current);
         } else {
-            copy_n_contiguous(first, move_now,  dest._current);
+            copy_n_contiguous(first, move_now, dest._current);
         }
 
         first += move_now;
@@ -931,7 +942,7 @@ deque<T, Allocator>::deque(size_type n, const T &value, const Allocator &alloc)
 
     _map = map_guard.release();
     _map_capacity = new_map_capacity;
-    for (auto& buf_ptr : bufs_guard) {
+    for (auto &buf_ptr : bufs_guard) {
         buf_ptr.release();
     }
     _start = new_start;
@@ -980,7 +991,7 @@ deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &all
 
         _map = map_guard.release();
         _map_capacity = new_map_capacity;
-        for (auto& buf_ptr : bufs_guard) {
+        for (auto &buf_ptr : bufs_guard) {
             buf_ptr.release();
         }
         _start = new_start;
@@ -1045,7 +1056,7 @@ deque<T, Allocator>::deque(deque &&x, const std::type_identity_t<Allocator> &all
 
         _map = map_guard.release();
         _map_capacity = new_map_capacity;
-        for (auto& buf_ptr : bufs_guard) {
+        for (auto &buf_ptr : bufs_guard) {
             buf_ptr.release();
         }
         _start = new_start;
@@ -1296,7 +1307,7 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
         _uninitialized_fill_n(_buf_alloc, _finish + fill_in_last_buffer, diff - fill_in_last_buffer, value);
         _uninitialized_fill_n(_buf_alloc, _finish, fill_in_last_buffer, value);
 
-        for (auto& guard : bufs_guard) {
+        for (auto &guard : bufs_guard) {
             guard.release();
         }
 
@@ -1510,10 +1521,10 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
             iterator final_new_start = _start - count;
             _uninitialized_move_n(_buf_alloc, _start, distance_from_begin, final_new_start);
             _fill_n(_start, distance_from_begin, value);
-            _uninitialized_fill_n(_buf_alloc, final_new_start + distance_from_begin, count - distance_from_begin, value);
+            _uninitialized_fill_n(_buf_alloc, final_new_start + distance_from_begin, count - distance_from_begin,
+                                  value);
 
-
-            for (auto& guard : bufs_guard) {
+            for (auto &guard : bufs_guard) {
                 guard.release();
             }
             _start = final_new_start;
@@ -1557,8 +1568,7 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
             _fill_n(insert_pos, distance_from_end, value);
             _uninitialized_fill_n(_buf_alloc, _finish, count - distance_from_end, value);
 
-
-            for (auto& guard : bufs_guard) {
+            for (auto &guard : bufs_guard) {
                 guard.release();
             }
             _finish += count;
@@ -1617,10 +1627,10 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
                 iterator final_new_start = _start - count;
                 _uninitialized_move_n(_buf_alloc, _start, distance_from_begin, final_new_start);
                 _copy_n(first + count - distance_from_begin, distance_from_begin, _start);
-                _uninitialized_copy_n(_buf_alloc, first, count - distance_from_begin, final_new_start + distance_from_begin);
+                _uninitialized_copy_n(_buf_alloc, first, count - distance_from_begin,
+                                      final_new_start + distance_from_begin);
 
-
-                for (auto& guard : bufs_guard) {
+                for (auto &guard : bufs_guard) {
                     guard.release();
                 }
                 _start = final_new_start;
@@ -1664,8 +1674,7 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
                 _copy_n(first, distance_from_end, insert_pos);
                 _uninitialized_copy_n(_buf_alloc, first + distance_from_end, count - distance_from_end, _finish);
 
-
-                for (auto& guard : bufs_guard) {
+                for (auto &guard : bufs_guard) {
                     guard.release();
                 }
                 _finish += count;
