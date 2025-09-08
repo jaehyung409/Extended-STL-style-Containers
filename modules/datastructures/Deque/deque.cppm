@@ -902,50 +902,40 @@ deque<T, Allocator>::deque(size_type n, const T &value, const Allocator &alloc)
     if (n == 0)
         return;
     const size_type num_nodes = (n + _buffer_size() - 1) / _buffer_size();
-    _map_capacity = std::max(_initial_map_size, num_nodes + 2);
-    _map = _create_map(_map_capacity);
-    buf *start_node = _map + (_map_capacity - num_nodes) / 2;
-    buf *allocated_until = nullptr;
-    size_type constructed = 0;
-    try {
-        _create_buf(*start_node);
-        const size_type offset = ((num_nodes * _buffer_size()) - n) / 2;
-        pointer start_pos = *start_node + offset;
-        _start = iterator(start_node, start_pos);
+    const size_type new_map_capacity = std::max(_initial_map_size, num_nodes + 2);
 
-        buf *current_node = start_node;
-        allocated_until = start_node;
+    unique_ptr map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
+    buf *start_node = map_guard.get() + (new_map_capacity - num_nodes) / 2;
 
-        pointer current_pos = start_pos;
-        size_type remaining = n;
+#if defined(__GNUC__)
+    buffer_guard bufs_guard[num_nodes];
 
-        while (remaining > 0) {
-            const size_type space = _buffer_size() - (current_pos - *current_node);
-            const size_type to_fill = std::min(space, remaining);
-            std::uninitialized_fill_n(current_pos, to_fill, value);
-            remaining -= to_fill;
-            current_pos += to_fill;
-            constructed += to_fill;
-
-            if (current_pos == *current_node + _buffer_size() && remaining > 0) {
-                ++current_node;
-                _create_buf(*current_node);
-                current_pos = *current_node;
-                allocated_until = current_node;
-            }
-        }
-        _finish = _start + n;
-    } catch (...) {
-        std::destroy(_start, _start + constructed);
-
-        if (allocated_until) {
-            for (buf *temp = start_node; temp <= allocated_until; ++temp) {
-                _deallocate_buf(*temp);
-            }
-        }
-        _deallocate_map(_map, _map_capacity);
-        throw;
+    for (size_type i = 0; i < num_nodes; ++i) {
+        bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
     }
+#else
+    vector<buffer_guard> bufs_guard;
+
+    bufs_guard.reserve(num_nodes);
+    for (size_type i = 0; i < num_nodes; ++i) {
+        bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+    }
+#endif
+
+    for (size_type i = 0; i < num_nodes; ++i) {
+        *(start_node + i) = bufs_guard[i].get();
+    }
+
+    iterator new_start(start_node, *start_node + ((num_nodes * _buffer_size()) - n) / 2);
+    auto new_finish = std::uninitialized_fill_n(new_start, n, value);
+
+    _map = map_guard.release();
+    _map_capacity = new_map_capacity;
+    for (auto& buf_ptr : bufs_guard) {
+        buf_ptr.release();
+    }
+    _start = new_start;
+    _finish = new_finish;
 }
 
 template <class T, class Allocator>
@@ -953,8 +943,48 @@ template <class InputIter>
     requires std::input_iterator<InputIter>
 deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &alloc)
     : _map(nullptr), _map_capacity(0), _start(), _finish(), _map_alloc(alloc), _buf_alloc(alloc) {
-    if constexpr (std::forward_iterator<InputIter>) {
-        _range_construct(first, last);
+    if constexpr (std::random_access_iterator<InputIter>) { // BENCHMARK !! list, linked-list
+        auto dist = std::distance(first, last);
+        if (dist == 0) {
+            return;
+        }
+        const size_type num_nodes = (dist + _buffer_size() - 1) / _buffer_size();
+        const size_type new_map_capacity = std::max(_initial_map_size, num_nodes + 2);
+
+        unique_ptr map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
+        buf *start_node = map_guard.get() + (new_map_capacity - num_nodes) / 2;
+
+#if defined(__GNUC__)
+        buffer_guard bufs_guard[num_nodes];
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+        }
+#else
+        vector<buffer_guard> bufs_guard;
+
+        bufs_guard.reserve(num_nodes);
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+        }
+#endif
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            *(start_node + i) = bufs_guard[i].get();
+        }
+
+        const size_type offset = ((num_nodes * _buffer_size()) - dist) / 2;
+        iterator new_start(start_node, *start_node + offset);
+
+        auto new_finish = _uninitialized_copy_n(_buf_alloc, first, dist, new_start);
+
+        _map = map_guard.release();
+        _map_capacity = new_map_capacity;
+        for (auto& buf_ptr : bufs_guard) {
+            buf_ptr.release();
+        }
+        _start = new_start;
+        _finish = new_finish;
     } else {
         for (auto it = first; it != last; ++it) {
             emplace_back(*it);
@@ -977,14 +1007,50 @@ template <class T, class Allocator>
 deque<T, Allocator>::deque(deque &&x, const std::type_identity_t<Allocator> &alloc)
     : _map(nullptr), _map_capacity(0), _start(), _finish(), _map_alloc(alloc), _buf_alloc(alloc) {
     if (get_allocator() == x.get_allocator()) {
-        _map = x._map;
-        _map_capacity = x._map_capacity;
-        _start = x._start;
-        _finish = x._finish;
-
-        x._initialize_map(x._initial_map_size);
+        _move_state(std::move(x));
     } else {
-        _range_construct(std::make_move_iterator(x.begin()), std::make_move_iterator(x.end()));
+        auto dist = x.size();
+        if (dist == 0) {
+            return;
+        }
+        const size_type num_nodes = (dist + _buffer_size() - 1) / _buffer_size();
+        const size_type new_map_capacity = std::max(_initial_map_size, num_nodes + 2);
+
+        unique_ptr map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
+        buf *start_node = map_guard.get() + (new_map_capacity - num_nodes) / 2;
+
+#if defined(__GNUC__)
+        buffer_guard bufs_guard[num_nodes];
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+        }
+#else
+        vector<buffer_guard> bufs_guard;
+
+        bufs_guard.reserve(num_nodes);
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+        }
+#endif
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            *(start_node + i) = bufs_guard[i].get();
+        }
+
+        const size_type offset = ((num_nodes * _buffer_size()) - dist) / 2;
+        iterator new_start(start_node, *start_node + offset);
+
+        auto new_finish = _uninitialized_move_n(_buf_alloc, x.begin(), dist, new_start);
+
+        _map = map_guard.release();
+        _map_capacity = new_map_capacity;
+        for (auto& buf_ptr : bufs_guard) {
+            buf_ptr.release();
+        }
+        _start = new_start;
+        _finish = new_finish;
+
         x.clear();
     }
 }
@@ -1034,9 +1100,8 @@ deque<T, Allocator> &deque<T, Allocator>::operator=(deque &&x) noexcept(
                 _deallocate_map(_map, _map_capacity);
                 _move_state(std::move(x));
             } else {
-                _destroy_elements_and_buffer();
-                _deallocate_map(_map, _map_capacity);
-                _range_construct(std::make_move_iterator(x.begin()), std::make_move_iterator(x.end()));
+                deque temp(std::make_move_iterator(x.begin()), std::make_move_iterator(x.end()), get_allocator());
+                swap(temp);
                 x.clear();
             }
         }
@@ -1062,7 +1127,7 @@ void deque<T, Allocator>::assign(InputIter first, InputIter last) {
     }
 }
 
-template <class T, class Allocator> void deque<T, Allocator>::assign(deque::size_type n, const T &value) {
+template <class T, class Allocator> void deque<T, Allocator>::assign(size_type n, const T &value) {
     clear();
     for (size_type i = 0; i < n; ++i) {
         emplace_back(value);
@@ -1146,7 +1211,53 @@ template <class T, class Allocator> deque<T, Allocator>::size_type deque<T, Allo
 }
 
 template <class T, class Allocator> void deque<T, Allocator>::resize(size_type sz) {
-    resize(sz, T());
+    const size_type current_size = size();
+    if (sz < current_size) {
+        erase(begin() + sz, end());
+    } else if (sz > current_size) {
+        const size_type diff = sz - current_size;
+        const size_type space_in_last_buffer = _finish._first + _buffer_size() - _finish._current;
+        const size_type fill_in_last_buffer = std::min(space_in_last_buffer, diff);
+        const size_type num_nodes = (diff - fill_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+
+        if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
+            _reallocate_map(num_nodes, false);
+        }
+
+#if defined(__GNUC__)
+        buffer_guard bufs_guard[num_nodes];
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+        }
+#else
+        vector<buffer_guard> bufs_guard;
+
+        bufs_guard.reserve(num_nodes);
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+        }
+#endif
+
+        size_type remain = diff - fill_in_last_buffer;
+        for (size_type i = 0; i < num_nodes; ++i) {
+            const size_type fill_now = std::min(remain, _buffer_size());
+            uninitialized_default_construct_n(get_allocator(), bufs_guard[i].get(), fill_now);
+
+            bufs_guard[i].set_constructed_count(fill_now);
+            remain -= fill_now;
+        }
+
+        if (space_in_last_buffer) {
+            uninitialized_default_construct_n(get_allocator(), _finish._current, fill_in_last_buffer);
+        }
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            *(_finish._node + 1) = bufs_guard[i].release();
+        }
+
+        _finish += diff;
+    }
 }
 
 template <class T, class Allocator> void deque<T, Allocator>::resize(size_type sz, const T &value) {
@@ -1155,14 +1266,41 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
         erase(begin() + sz, end());
     } else if (sz > current_size) {
         const size_type diff = sz - current_size;
-        const size_type space_in_last_buffer = (*_finish._node) + _buffer_size() - _finish._current;
+        const size_type space_in_last_buffer = _finish._first + _buffer_size() - _finish._current;
         const size_type fill_in_last_buffer = std::min(space_in_last_buffer, diff);
         const size_type num_nodes = (diff - fill_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+
         if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
             _reallocate_map(num_nodes, false);
         }
-        auto fill_generator = [&](pointer dest, size_type count) { std::uninitialized_fill_n(dest, count, value); };
-        _uninitialized_append_impl(diff, fill_in_last_buffer, fill_generator);
+
+#if defined(__GNUC__)
+        buffer_guard bufs_guard[num_nodes];
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+        }
+#else
+        vector<buffer_guard> bufs_guard;
+
+        bufs_guard.reserve(num_nodes);
+        for (size_type i = 0; i < num_nodes; ++i) {
+            bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+        }
+#endif
+
+        for (size_type i = 0; i < num_nodes; ++i) {
+            *(_finish._node + 1 + i) = bufs_guard[i].get();
+        }
+
+        _uninitialized_fill_n(_buf_alloc, _finish + fill_in_last_buffer, diff - fill_in_last_buffer, value);
+        _uninitialized_fill_n(_buf_alloc, _finish, fill_in_last_buffer, value);
+
+        for (auto& guard : bufs_guard) {
+            guard.release();
+        }
+
+        _finish += diff;
     }
 }
 
@@ -1170,15 +1308,11 @@ template <class T, class Allocator> void deque<T, Allocator>::shrink_to_fit() {
     const size_type old_num_nodes = _finish._node - _start._node + 1;
     const size_type new_capacity = std::max(old_num_nodes + 2, _initial_map_size);
     if (_map_capacity != new_capacity) {
-        map new_map = _create_map(new_capacity);
-        try {
-            std::copy(_start._node, _finish._node + 1, new_map + (new_capacity - old_num_nodes) / 2);
-        } catch (...) {
-            _deallocate_map(new_map, new_capacity);
-            throw;
-        }
+        unique_ptr map_guard(_allocate_map(new_capacity), _map_alloc, new_capacity);
+        std::copy(_start._node, _finish._node + 1, map_guard.get() + (new_capacity - old_num_nodes) / 2);
+
         _deallocate_map(_map, _map_capacity);
-        _map = new_map;
+        _map = map_guard.release();
         _map_capacity = new_capacity;
         _start._set_node(_map + (new_capacity - old_num_nodes) / 2);
         _finish._set_node(_start._node + old_num_nodes - 1);
@@ -1233,31 +1367,32 @@ template <class T, class Allocator>
 template <class... Args>
 deque<T, Allocator>::reference deque<T, Allocator>::emplace_front(Args &&...args) {
     if (_start._current == _start._first) {
-        if (_start._node == _map) {
-            _reallocate_map(1, true);
-        }
-        if (*(_start._node - 1) == nullptr) {
-            _create_buf(*(_start._node - 1));
-        }
+        _ensure_front_map_space();
+        buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
+        *(_start._node - 1) = buf_guard.get();
+        std::allocator_traits<buf_allocator>::construct(_buf_alloc, (_start - 1)._current, std::forward<Args>(args)...);
+        buf_guard.release();
+    } else {
+        std::allocator_traits<buf_allocator>::construct(_buf_alloc, _start._current - 1, std::forward<Args>(args)...);
     }
     --_start;
-    std::allocator_traits<buf_allocator>::construct(_buf_alloc, _start._current, std::forward<Args>(args)...);
     return *_start;
 }
 
 template <class T, class Allocator>
 template <class... Args>
 deque<T, Allocator>::reference deque<T, Allocator>::emplace_back(Args &&...args) {
-    if (_finish._current == _finish._last - 1) {
-        if (_finish._node == _map + _map_capacity - 1) {
-            _reallocate_map(1, false);
-        }
-        if (*(_finish._node + 1) == nullptr) {
-            _create_buf(*(_finish._node + 1));
-        }
-    }
     pointer old_finish = _finish._current;
-    std::allocator_traits<buf_allocator>::construct(_buf_alloc, old_finish, std::forward<Args>(args)...);
+    if (_finish._current == _finish._last - 1) {
+        _ensure_back_map_space();
+        old_finish = _finish._current;
+        buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
+        *(_finish._node + 1) = buf_guard.get();
+        std::allocator_traits<buf_allocator>::construct(_buf_alloc, old_finish, std::forward<Args>(args)...);
+        buf_guard.release();
+    } else {
+        std::allocator_traits<buf_allocator>::construct(_buf_alloc, old_finish, std::forward<Args>(args)...);
+    }
     ++_finish;
     return *old_finish;
 }
@@ -1278,34 +1413,26 @@ deque<T, Allocator>::iterator deque<T, Allocator>::emplace(const_iterator positi
     iterator emplace_pos = _start + distance_from_begin;
     if (distance_from_begin < distance_from_end) {
         if (_start._current == _start._first) {
-            if (_start._node == _map) {
-                _reallocate_map(1, true);
-            }
-            if (*(_start._node - 1) == nullptr) {
-                _create_buf(*(_start._node - 1));
-            }
+            _ensure_front_map_space();
+            buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
+            *(_start._node - 1) = buf_guard.get();
+            _shift_left_and_emplace(distance_from_begin, emplace_pos, std::forward<Args>(args)...);
+            buf_guard.release();
+        } else {
+            _shift_left_and_emplace(distance_from_begin, emplace_pos, std::forward<Args>(args)...);
         }
         --_start;
-        std::allocator_traits<buf_allocator>::construct(_buf_alloc, _start._current, std::move(*(_start + 1)));
-        std::move(begin() + 2, emplace_pos + 1, begin() + 1);
-        std::allocator_traits<buf_allocator>::destroy(_buf_alloc, emplace_pos._current);
-
-        std::allocator_traits<buf_allocator>::construct(_buf_alloc, emplace_pos._current, std::forward<Args>(args)...);
     } else {
         if (_finish._current == _finish._last - 1) {
-            if (_finish._node == _map + _map_capacity - 1) {
-                _reallocate_map(1, false);
-            }
-            if (*(_finish._node + 1) == nullptr) {
-                _create_buf(*(_finish._node + 1));
-            }
+            _ensure_back_map_space();
+            buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
+            *(_finish._node + 1) = buf_guard.get();
+            _shift_right_and_emplace(distance_from_end, emplace_pos, std::forward<Args>(args)...);
+            buf_guard.release();
+        } else {
+            _shift_right_and_emplace(distance_from_end, emplace_pos, std::forward<Args>(args)...);
         }
-        std::allocator_traits<buf_allocator>::construct(_buf_alloc, _finish._current, std::move(*(_finish - 1)));
         ++_finish;
-        std::move_backward(emplace_pos, end() - 2, end() - 1);
-        std::allocator_traits<buf_allocator>::destroy(_buf_alloc, emplace_pos._current);
-
-        std::allocator_traits<buf_allocator>::construct(_buf_alloc, emplace_pos._current, std::forward<Args>(args)...);
     }
     return emplace_pos;
 }
@@ -1328,61 +1455,114 @@ template <class T, class Allocator> void deque<T, Allocator>::push_back(T &&valu
 
 template <class T, class Allocator>
 deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator position, const T &value) {
-    return emplace(position, value);
+    return _insert_impl(position, value);
 }
 
 template <class T, class Allocator>
 deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator position, T &&value) {
-    return emplace(position, std::move(value));
+    return _insert_impl(position, std::move(value));
 }
 
 template <class T, class Allocator>
 deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator position, size_type count, const T &value) {
     if (count == 0)
         return iterator(position._node, const_cast<pointer>(position._current));
+
     const difference_type distance_from_begin = std::distance(cbegin(), position);
     const difference_type distance_from_end = std::distance(position, cend());
-    iterator insert_pos = _start + distance_from_begin;
+    iterator insert_pos;
+
     if (distance_from_begin < distance_from_end) {
-        const size_type nodes_to_add =
-            (count - (_start._current - _start._first + 1) + _buffer_size()) / _buffer_size();
-        if (nodes_to_add > 0) {
-            _reallocate_map(nodes_to_add, true);
-            insert_pos = _start + distance_from_begin;
-            for (size_type i = 1; i <= nodes_to_add; ++i) {
-                _create_buf(*(_start._node - i));
-            }
-        }
         if (distance_from_begin >= count) {
-            std::uninitialized_move(_start, _start + count, _start - count);
-            std::move(_start + count, insert_pos, _start);
-            std::fill(insert_pos - count, insert_pos, value);
-        } else {
-            std::uninitialized_move(_start, insert_pos, _start - count);
-            std::uninitialized_fill_n(_start - count + distance_from_begin, count - distance_from_begin, value);
-            std::fill(_start, insert_pos, value);
-        }
-        _start -= count;
-    } else {
-        const size_type nodes_to_add =
-            (count - (_finish._last - _finish._current + 1) + _buffer_size()) / _buffer_size();
-        if (nodes_to_add > 0) {
-            _reallocate_map(nodes_to_add, false);
             insert_pos = _start + distance_from_begin;
-            for (size_type i = 1; i <= nodes_to_add; ++i) {
-                _create_buf(*(_finish._node + i));
-            }
-        }
-        if (distance_from_end >= count) {
-            std::uninitialized_copy_n(_finish - count, count, _finish);
-            std::move_backward(insert_pos, _finish - count, _finish);
-            std::fill(insert_pos, insert_pos + count, value);
+            _uninitialized_move_n(_buf_alloc, _start, count, _start - count);
+            _move_n(_start + count, distance_from_begin - count, _start);
+            std::fill(insert_pos - count, insert_pos, value);
+            _start -= count;
         } else {
-            std::uninitialized_move(insert_pos, _finish, insert_pos + count);
-            std::fill(insert_pos, _finish, value);
-            std::uninitialized_fill_n(_finish, count - distance_from_end, value);
+            const size_type space_in_first_buffer = _start._current - _start._first;
+            const size_type num_nodes = (count - space_in_first_buffer + _buffer_size() - 1) / _buffer_size();
+
+            if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
+                _reallocate_map(num_nodes, false);
+            }
+            insert_pos = _start + distance_from_begin;
+
+#if defined(__GNUC__)
+            buffer_guard bufs_guard[num_nodes];
+
+            for (size_type i = 0; i < num_nodes; ++i) {
+                bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+            }
+#else
+            vector<buffer_guard> bufs_guard;
+
+            bufs_guard.reserve(num_nodes);
+            for (size_type i = 0; i < num_nodes; ++i) {
+                bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+            }
+#endif
+
+            for (size_type i = 0; i < num_nodes; ++i) {
+                *(_start._node - 1 - i) = bufs_guard[i].get();
+            }
+
+            iterator final_new_start = _start - count;
+            _uninitialized_move_n(_buf_alloc, _start, distance_from_begin, final_new_start);
+            _fill_n(_start, distance_from_begin, value);
+            _uninitialized_fill_n(_buf_alloc, final_new_start + distance_from_begin, count - distance_from_begin, value);
+
+
+            for (auto& guard : bufs_guard) {
+                guard.release();
+            }
+            _start = final_new_start;
         }
-        _finish += count;
+    } else {
+        if (distance_from_end >= count) {
+            insert_pos = _start + distance_from_begin;
+            _uninitialized_move_n(_buf_alloc, _finish - count, count, _finish);
+            _move_backward_n(insert_pos, distance_from_end - count, _finish);
+            std::fill(insert_pos, insert_pos + count, value);
+            _finish += count;
+        } else {
+            const size_type space_in_last_buffer = _finish._last - _finish._current;
+            const size_type num_nodes = (count - space_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+
+            if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
+                _reallocate_map(num_nodes, true);
+            }
+            insert_pos = _start + distance_from_begin;
+
+#if defined(__GNUC__)
+            buffer_guard bufs_guard[num_nodes];
+
+            for (size_type i = 0; i < num_nodes; ++i) {
+                bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+            }
+#else
+            vector<buffer_guard> bufs_guard;
+
+            bufs_guard.reserve(num_nodes);
+            for (size_type i = 0; i < num_nodes; ++i) {
+                bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+            }
+#endif
+
+            for (size_type i = 0; i < num_nodes; ++i) {
+                *(_finish._node + 1 + i) = bufs_guard[i].get();
+            }
+
+            _uninitialized_move_n(_buf_alloc, insert_pos, distance_from_end, _finish + count - distance_from_end);
+            _fill_n(insert_pos, distance_from_end, value);
+            _uninitialized_fill_n(_buf_alloc, _finish, count - distance_from_end, value);
+
+
+            for (auto& guard : bufs_guard) {
+                guard.release();
+            }
+            _finish += count;
+        }
     }
     return insert_pos;
 }
@@ -1398,51 +1578,98 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
 
         const difference_type distance_from_begin = std::distance(cbegin(), position);
         const difference_type distance_from_end = std::distance(position, cend());
-        iterator insert_pos = _start + distance_from_begin;
+        iterator insert_pos;
         if (distance_from_begin < distance_from_end) {
-            const size_type nodes_to_add =
-                (count - (_start._current - _start._first + 1) + _buffer_size()) / _buffer_size();
-            if (nodes_to_add > 0) {
-                _reallocate_map(nodes_to_add, true);
-                insert_pos = _start + distance_from_begin;
-                for (size_type i = 1; i <= nodes_to_add; ++i) {
-                    _create_buf(*(_start._node - i));
-                }
-            }
             if (distance_from_begin >= count) {
-                std::uninitialized_move(_start, _start + count, _start - count);
-                std::move(_start + count, insert_pos, _start);
-                std::copy(first, last, insert_pos - count);
-            } else {
-                std::uninitialized_move(_start, insert_pos, _start - count);
-                InputIter mid = first;
-                std::advance(mid, distance_from_begin);
-                std::copy(first, mid, _start);
-                std::uninitialized_copy(mid, last, insert_pos);
-            }
-            _start -= count;
-        } else {
-            const size_type nodes_to_add =
-                (count - (_finish._last - _finish._current + 1) + _buffer_size()) / _buffer_size();
-            if (nodes_to_add > 0) {
-                _reallocate_map(nodes_to_add, false);
                 insert_pos = _start + distance_from_begin;
-                for (size_type i = 1; i <= nodes_to_add; ++i) {
-                    _create_buf(*(_finish._node + i));
-                }
-            }
-            if (distance_from_end >= count) {
-                std::uninitialized_copy_n(_finish - count, count, _finish);
-                std::move_backward(insert_pos, _finish - count, _finish);
-                std::copy(first, last, insert_pos);
+                _uninitialized_move_n(_buf_alloc, _start, count, _start - count);
+                _move_n(_start + count, distance_from_begin - count, _start);
+                std::copy(first, last, insert_pos - count);
+                _start -= count;
             } else {
-                std::uninitialized_move(insert_pos, _finish, insert_pos + count);
-                InputIter mid = first;
-                std::advance(mid, distance_from_end);
-                std::copy(first, mid, insert_pos);
-                std::uninitialized_copy(mid, last, _finish);
+                const size_type space_in_first_buffer = _start._current - _start._first;
+                const size_type num_nodes = (count - space_in_first_buffer + _buffer_size() - 1) / _buffer_size();
+
+                if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
+                    _reallocate_map(num_nodes, false);
+                }
+                insert_pos = _start + distance_from_begin;
+
+#if defined(__GNUC__)
+                buffer_guard bufs_guard[num_nodes];
+
+                for (size_type i = 0; i < num_nodes; ++i) {
+                    bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+                }
+#else
+                vector<buffer_guard> bufs_guard;
+
+                bufs_guard.reserve(num_nodes);
+                for (size_type i = 0; i < num_nodes; ++i) {
+                    bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+                }
+#endif
+
+                for (size_type i = 0; i < num_nodes; ++i) {
+                    *(_start._node - 1 - i) = bufs_guard[i].get();
+                }
+
+                iterator final_new_start = _start - count;
+                _uninitialized_move_n(_buf_alloc, _start, distance_from_begin, final_new_start);
+                _copy_n(first + count - distance_from_begin, distance_from_begin, _start);
+                _uninitialized_copy_n(_buf_alloc, first, count - distance_from_begin, final_new_start + distance_from_begin);
+
+
+                for (auto& guard : bufs_guard) {
+                    guard.release();
+                }
+                _start = final_new_start;
             }
-            _finish += count;
+        } else {
+            if (distance_from_end >= count) {
+                insert_pos = _start + distance_from_begin;
+                _uninitialized_move_n(_buf_alloc, _finish - count, count, _finish);
+                _move_backward_n(insert_pos, distance_from_end - count, _finish);
+                std::copy(first, last, insert_pos);
+                _finish += count;
+            } else {
+                const size_type space_in_last_buffer = _finish._last - _finish._current;
+                const size_type num_nodes = (count - space_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+
+                if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
+                    _reallocate_map(num_nodes, true);
+                }
+                insert_pos = _start + distance_from_begin;
+
+#if defined(__GNUC__)
+                buffer_guard bufs_guard[num_nodes];
+
+                for (size_type i = 0; i < num_nodes; ++i) {
+                    bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
+                }
+#else
+                vector<buffer_guard> bufs_guard;
+
+                bufs_guard.reserve(num_nodes);
+                for (size_type i = 0; i < num_nodes; ++i) {
+                    bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+                }
+#endif
+
+                for (size_type i = 0; i < num_nodes; ++i) {
+                    *(_finish._node + 1 + i) = bufs_guard[i].get();
+                }
+
+                _uninitialized_move_n(_buf_alloc, insert_pos, distance_from_end, _finish + count - distance_from_end);
+                _copy_n(first, distance_from_end, insert_pos);
+                _uninitialized_copy_n(_buf_alloc, first + distance_from_end, count - distance_from_end, _finish);
+
+
+                for (auto& guard : bufs_guard) {
+                    guard.release();
+                }
+                _finish += count;
+            }
         }
         return insert_pos;
     } else {
@@ -1467,7 +1694,9 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
 }
 
 template <class T, class Allocator> void deque<T, Allocator>::pop_front() {
-    std::allocator_traits<buf_allocator>::destroy(_buf_alloc, _start._current);
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+        std::allocator_traits<buf_allocator>::destroy(_buf_alloc, _start._current);
+    }
     iterator old_start = _start;
     ++_start;
     if (old_start._node != _start._node) {
@@ -1476,12 +1705,14 @@ template <class T, class Allocator> void deque<T, Allocator>::pop_front() {
 }
 
 template <class T, class Allocator> void deque<T, Allocator>::pop_back() {
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+        std::allocator_traits<buf_allocator>::destroy(_buf_alloc, (_finish - 1)._current);
+    }
     iterator old_finish = _finish;
     --_finish;
     if (old_finish._node != _finish._node) {
         _deallocate_buf(*old_finish._node);
     }
-    std::allocator_traits<buf_allocator>::destroy(_buf_alloc, _finish._current);
 }
 
 template <class T, class Allocator> deque<T, Allocator>::iterator deque<T, Allocator>::erase(const_iterator position) {
@@ -1498,10 +1729,10 @@ template <class T, class Allocator> deque<T, Allocator>::iterator deque<T, Alloc
     const difference_type distance_from_begin = std::distance(begin(), erase_pos);
     const difference_type distance_from_end = std::distance(erase_pos, end()) - 1;
     if (distance_from_begin < distance_from_end) {
-        std::move_backward(begin(), erase_pos, erase_pos + 1);
+        _move_backward_n(begin(), distance_from_begin, erase_pos + 1);
         pop_front();
     } else {
-        std::move(erase_pos + 1, end(), erase_pos);
+        _move_n(erase_pos + 1, distance_from_end, erase_pos);
         pop_back();
     }
     return erase_pos;
@@ -1525,27 +1756,28 @@ deque<T, Allocator>::iterator deque<T, Allocator>::erase(const_iterator first, c
 
     if (distance_from_begin < distance_from_end) {
         iterator new_start = std::move_backward(begin(), first_iter, last_iter);
-        std::destroy(begin(), new_start);
-        // for (auto it = begin(); it != new_start; ++it) {
-        //     std::allocator_traits<buf_allocator>::destroy(_buf_alloc, std::to_address(it));
-        // }
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            for (auto it = begin(); it != new_start; ++it) {
+                std::allocator_traits<buf_allocator>::destroy(_buf_alloc, std::to_address(it));
+            }
+        }
         for (auto temp = _start._node; temp < new_start._node; ++temp) {
             _deallocate_buf(*temp);
         }
         _start = new_start;
         return last_iter;
-    } else {
-        iterator new_finish = std::move(last_iter, end(), first_iter);
-        std::destroy(new_finish, end());
-        // for (auto it = new_finish; it != end(); ++it) {
-        //     std::allocator_traits<buf_allocator>::destroy(_buf_alloc, std::to_address(it));
-        // }
-        for (auto temp = new_finish._node + 1; temp <= _finish._node; ++temp) {
-            _deallocate_buf(*temp);
-        }
-        _finish = new_finish;
-        return first_iter;
     }
+    iterator new_finish = std::move(last_iter, end(), first_iter);
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+        for (auto it = new_finish; it != end(); ++it) {
+            std::allocator_traits<buf_allocator>::destroy(_buf_alloc, std::to_address(it));
+        }
+    }
+    for (auto temp = new_finish._node + 1; temp <= _finish._node; ++temp) {
+        _deallocate_buf(*temp);
+    }
+    _finish = new_finish;
+    return first_iter;
 }
 
 template <class T, class Allocator>
@@ -1560,11 +1792,24 @@ void deque<T, Allocator>::swap(deque &other) noexcept(std::allocator_traits<Allo
 }
 
 template <class T, class Allocator> void deque<T, Allocator>::clear() noexcept {
-    _destroy_elements_and_buffer();
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+        for (auto it = begin(); it != end(); ++it) {
+            std::allocator_traits<buf_allocator>::destroy(_buf_alloc, std::to_address(it));
+        }
+    }
     buf *start_node = _map + _map_capacity / 2;
-    _create_buf(*start_node);
-
     pointer start_pos = *start_node + _buffer_size() / 2;
+
+    for (buf *node = _start._node; node < start_node; ++node) {
+        _deallocate_buf(*node);
+        *node = nullptr;
+    }
+
+    for (buf *node = _finish._node; node > start_node; --node) {
+        _deallocate_buf(*node);
+        *node = nullptr;
+    }
+
     _start = iterator(start_node, start_pos);
     _finish = _start;
 }
