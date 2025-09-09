@@ -322,6 +322,7 @@ template <class T, class Allocator> class vector<T, Allocator>::const_iterator {
     bool operator==(const const_iterator &other) const noexcept {
         return _ptr == other._ptr;
     }
+
     auto operator<=>(const const_iterator &other) const noexcept {
         return _ptr <=> other._ptr;
     }
