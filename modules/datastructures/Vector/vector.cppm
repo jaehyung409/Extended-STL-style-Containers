@@ -156,7 +156,7 @@ template <class T, class Allocator> class vector<T, Allocator>::iterator {
     friend vector;
 
   public:
-    using iterator_category = std::random_access_iterator_tag;
+    using iterator_category = std::contiguous_iterator_tag;
     using value_type = typename vector::value_type;
     using difference_type = typename vector::difference_type;
     using pointer = typename vector::pointer;
@@ -166,77 +166,77 @@ template <class T, class Allocator> class vector<T, Allocator>::iterator {
     pointer _ptr;
 
   public:
-    explicit iterator(pointer ptr = nullptr) : _ptr(ptr) {}
+    explicit iterator(pointer ptr = nullptr) noexcept : _ptr(ptr) {}
     iterator(const iterator &other) = default;
 
-    reference operator*() {
+    reference operator*() const noexcept {
         return *_ptr;
     }
-    pointer operator->() {
+    pointer operator->() const noexcept {
         return &(*_ptr);
     }
 
-    iterator &operator++() {
+    iterator &operator++() noexcept {
         ++_ptr;
         return *this;
     }
 
-    iterator operator++(int) {
+    iterator operator++(int) noexcept {
         iterator temp = *this;
         ++(*this);
         return temp;
     }
 
-    iterator &operator--() {
+    iterator &operator--() noexcept {
         --_ptr;
         return *this;
     }
 
-    iterator operator--(int) {
+    iterator operator--(int) noexcept {
         iterator temp = *this;
         --(*this);
         return temp;
     }
 
-    iterator &operator+=(difference_type n) {
+    iterator &operator+=(difference_type n) noexcept {
         _ptr += n;
         return *this;
     }
 
-    iterator operator+(difference_type n) const {
+    iterator operator+(difference_type n) const noexcept {
         iterator temp = *this;
         return temp += n;
     }
 
-    friend iterator operator+(difference_type n, const iterator &it) {
+    friend iterator operator+(difference_type n, const iterator &it) noexcept {
         return it + n;
     }
 
-    iterator &operator-=(difference_type n) {
+    iterator &operator-=(difference_type n) noexcept {
         _ptr -= n;
         return *this;
     }
 
-    iterator operator-(difference_type n) const {
+    iterator operator-(difference_type n) const noexcept {
         iterator temp = *this;
         return temp -= n;
     }
 
-    difference_type operator-(const iterator &other) const {
+    difference_type operator-(const iterator &other) const noexcept {
         return _ptr - other._ptr;
     }
 
-    reference operator[](difference_type n) {
+    reference operator[](difference_type n) const {
         return *(*this + n);
     }
 
-    bool operator==(const iterator &other) const {
+    bool operator==(const iterator &other) const noexcept {
         return _ptr == other._ptr;
     }
-    auto operator<=>(const iterator &other) const {
+    auto operator<=>(const iterator &other) const noexcept {
         return _ptr <=> other._ptr;
     }
-    operator const_iterator() const {
+    operator const_iterator() const noexcept {
         return const_iterator(_ptr);
     }
 };
@@ -245,7 +245,7 @@ template <class T, class Allocator> class vector<T, Allocator>::const_iterator {
     friend vector;
 
   public:
-    using iterator_category = std::random_access_iterator_tag;
+    using iterator_category = std::contiguous_iterator_tag;
     using value_type = typename vector::value_type;
     using difference_type = typename vector::difference_type;
     using pointer = typename vector::const_pointer;
@@ -257,72 +257,72 @@ template <class T, class Allocator> class vector<T, Allocator>::const_iterator {
     pointer _ptr;
 
   public:
-    explicit const_iterator(pointer ptr = nullptr) : _ptr(ptr) {}
-    explicit const_iterator(const iterator &other) : _ptr(other._ptr) {}
+    explicit const_iterator(pointer ptr = nullptr) noexcept : _ptr(ptr) {}
+    explicit const_iterator(const iterator &other) noexcept : _ptr(other._ptr) {}
     const_iterator(const const_iterator &other) = default;
     const_iterator &operator=(const const_iterator &other) = default;
 
-    const_reference operator*() const {
+    reference operator*() const noexcept {
         return *_ptr;
     }
-    const_pointer operator->() const {
+    pointer operator->() const noexcept {
         return &(*_ptr);
     }
 
-    const_iterator &operator++() {
+    const_iterator &operator++() noexcept {
         ++_ptr;
         return *this;
     }
 
-    const_iterator operator++(int) {
+    const_iterator operator++(int) noexcept {
         const_iterator temp = *this;
         ++(*this);
         return temp;
     }
 
-    const_iterator &operator--() {
+    const_iterator &operator--() noexcept {
         --_ptr;
         return *this;
     }
 
-    const_iterator operator--(int) {
+    const_iterator operator--(int) noexcept {
         const_iterator temp = *this;
         --(*this);
         return temp;
     }
 
-    const_iterator &operator+=(difference_type n) {
+    const_iterator &operator+=(difference_type n) noexcept {
         _ptr += n;
         return *this;
     }
 
-    const_iterator operator+(difference_type n) const {
+    const_iterator operator+(difference_type n) const noexcept {
         const_iterator temp = *this;
         return temp += n;
     }
 
-    const_iterator &operator-=(difference_type n) {
+    const_iterator &operator-=(difference_type n) noexcept {
         _ptr -= n;
         return *this;
     }
 
-    const_iterator operator-(difference_type n) const {
+    const_iterator operator-(difference_type n) const noexcept {
         const_iterator temp = *this;
         return temp -= n;
     }
 
-    difference_type operator-(const const_iterator &other) const {
+    difference_type operator-(const const_iterator &other) const noexcept {
         return _ptr - other._ptr;
     }
 
-    const_reference operator[](difference_type n) const {
+    reference operator[](difference_type n) const {
         return *(*this + n);
     }
 
-    bool operator==(const const_iterator &other) const {
+    bool operator==(const const_iterator &other) const noexcept {
         return _ptr == other._ptr;
     }
-    auto operator<=>(const const_iterator &other) const {
+    auto operator<=>(const const_iterator &other) const  noexcept{
         return _ptr <=> other._ptr;
     }
 };
