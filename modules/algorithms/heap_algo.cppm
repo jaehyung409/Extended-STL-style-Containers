@@ -7,74 +7,83 @@
 module;
 #include <iterator>
 
-export module j.heap_algo;
+module j:heap_algo;
 
 namespace j {
     template <std::random_access_iterator Iter, class Compare>
-    void heapify(Iter first, Iter parent, std::ptrdiff_t distance, Compare comp) {
-        while (parent < distance / 2) {
-            auto left = 2 * parent + 1;
-            auto right = 2 * parent + 2;
-            auto largest = parent;
-            if (comp(first[largest], first[left])) {
-                largest = left;
+    void _heapify(Iter first, std::ptrdiff_t parent, std::ptrdiff_t distance, Compare comp) {
+        auto value = std::move(first[parent]);
+        auto hole = parent;
+
+        while (true) {
+            auto child = 2 * hole + 1; // left
+            if (child >= distance) break;;
+
+            if (child + 1 < distance && comp(first[child], first[child + 1])) {
+                ++child; // right
             }
-            if (right < distance && comp(first[largest], first[right])) {
-                largest = right;
-            }
-            if (largest == parent) break;
-            std::swap(first[parent], first[largest]);
-            parent = largest;
+
+            if (!comp(value, first[child])) break;
+
+            first[hole] = std::move(first[child]);
+            hole = child;
         }
+        first[hole] = std::move(value);
     }
 
-    export template <std::random_access_iterator Iter, class Compare>
-    void make_heap(Iter first, Iter last, Compare comp) {
-        if (first == last) return;
-        auto distance = std::distance(first, last);
+    template <std::random_access_iterator Iter, class Compare>
+    void _make_heap(Iter first, Iter last, Compare comp) {
+        const auto distance = std::distance(first, last);
+        if (distance < 2) return;
         for (auto i = distance / 2 - 1; i >= 0; --i) {
-            auto parent = i;
-            heapify(first, parent, distance, comp);
+            _heapify(first, i, distance, comp);
         }
     }
 
-    export template <std::random_access_iterator Iter>
-    void make_heap(Iter first, Iter last) {
-        make_heap(first, last, std::less<>());
+    template <std::random_access_iterator Iter, class Compare>
+    void _push_heap(Iter first, Iter last, Compare comp) {
+        auto distance = std::distance(first, last);
+        if (distance < 2) return;
+
+        auto hole = distance - 1;
+        auto value = std::move(first[hole]);
+        auto parent = (hole - 1) / 2;
+
+        while (hole > 0 && comp(first[parent], value)) {
+            first[hole] = std::move(first[parent]);
+            hole = parent;
+            if (hole == 0) break;
+            parent = (hole - 1) / 2;
+        }
+
+        first[hole] = std::move(value);
     }
 
-    export template <std::random_access_iterator Iter, class Compare>
-    void push_heap(Iter first, Iter last, Compare comp) {
-        if (first == last) return;
-        auto distance = std::distance(first, last);
-        auto child = distance - 1;
-        while (child > 0) {
-            auto parent = (child - 1) / 2;
-            if (comp(first[parent], first[child])) {
-                std::swap(first[parent], first[child]);
-                child = parent;
-            } else {
-                break;
+    template <std::random_access_iterator Iter, class Compare>
+    void _pop_heap(Iter first, Iter last, Compare comp) {
+        const auto distance = std::distance(first, last);
+        if (distance < 2) return;
+
+        auto value = std::move(first[distance - 1]);
+        first[distance - 1] = std::move(first[0]);
+
+        std::ptrdiff_t hole = 0;
+        const auto limit = distance - 1;
+
+        while (true) {
+            auto child = 2 * hole + 1;
+            if (child >= limit) break;
+
+            if (child + 1 < limit && comp(first[child], first[child + 1])) {
+                ++child;
             }
+
+            if (!comp(value, first[child])) break;
+
+            first[hole] = std::move(first[child]);
+            hole = child;
         }
-    }
 
-    export template <std::random_access_iterator Iter>
-    void push_heap(Iter first, Iter last) {
-        push_heap(first, last, std::less<>());
-    }
-
-    export template <std::random_access_iterator Iter, class Compare>
-    void pop_heap(Iter first, Iter last, Compare comp) {
-        if (first == last) return;
-        auto distance = std::distance(first, last);
-        std::swap(first[0], first[distance - 1]);
-        auto parent = 0;
-        heapify(first, parent, distance, comp);
-    }
-
-    export template <std::random_access_iterator Iter>
-    void pop_heap(Iter first, Iter last) {
-        pop_heap(first, last, std::less<>());
+        first[hole] = std::move(value);
     }
 }
