@@ -23,7 +23,6 @@ void _heapify(Iter first, std::ptrdiff_t parent, std::ptrdiff_t distance, Compar
         auto child = 2 * hole + 1; // left
         if (child >= distance)
             break;
-        ;
 
         if (child + 1 < distance && comp(first[child], first[child + 1])) {
             ++child; // right
