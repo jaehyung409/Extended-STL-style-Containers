@@ -1,19 +1,17 @@
 /*
  * @ Created by jaehyung409 on 25. 1. 28.
- * @ Copyright (c) 2025 jaehyung409 All rights reserved.
+ * @ Copyright (c) 2025 jaehyung409
  * This software is licensed under the MIT License. 
  */
 
 module;
-#include <initializer_list>
-#include <memory>
+#include <type_traits>
+#include <utility>
 #include <iterator>
-#include <ranges>
 
-export module j.stack;
+export module j:stack;
 
-import j.basics;
-import j.deque;
+import :deque;
 
 namespace j {
     export template <class T, class Container = deque<T>>
@@ -32,44 +30,42 @@ namespace j {
         stack() : stack(Container()) {}
         explicit stack(const Container &cont);
         explicit stack(Container &&cont);
-        //template <class InputIter>
-        //stack(InputIter first, InputIter last);
-        //template <container-compatible-range<T> R>
-        //stack(from_range_t, R&& range);
+        stack(const stack&) = default;
+        stack(stack&&) = default;
+        template <class InputIter>
+        requires std::input_iterator<InputIter>
+        stack(InputIter first, InputIter last);
         template <class Alloc>
-        requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
+        requires std::uses_allocator_v<Container, Alloc>
         explicit stack(const Alloc &alloc);
-
         template <class Alloc>
-        requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
+        requires std::uses_allocator_v<Container, Alloc>
         stack(const Container &cont, const Alloc &alloc);
-
         template <class Alloc>
-        requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
+        requires std::uses_allocator_v<Container, Alloc>
         stack(Container &&cont, const Alloc &alloc);
-
         template <class Alloc>
-        requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
+        requires std::uses_allocator_v<Container, Alloc>
         stack(const stack &other, const Alloc &alloc);
-
         template <class Alloc>
-        requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
+        requires std::uses_allocator_v<Container, Alloc>
         stack(stack &&other, const Alloc &alloc);
 
-        //template <class Alloc, class InputIter>
-        //requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
-        //stack(InputIter first, InputIter last, const Alloc& alloc);
-        //template <class Alloc, container-compatible-range<T> R>
-        //stack(from_range_t, R&& range, const Alloc& alloc);
+        stack& operator=(const stack&) = default;
+        stack& operator=(stack&&) = default;
 
-        bool empty() const { return _c.empty(); }
-        size_type size() const { return _c.size(); }
+        template <class InputIter, class Alloc>
+        requires std::input_iterator<InputIter> && std::uses_allocator_v<Container, Alloc>
+        stack(InputIter first, InputIter last, const Alloc& alloc);
+        ~stack() = default;
+
+
+        [[nodiscard]] bool empty() const { return _c.empty(); }
+        [[nodiscard]] size_type size() const { return _c.size(); }
         reference top() { return _c.back(); }
         const_reference top() const { return _c.back(); }
         void push(const value_type &value) { _c.push_back(value); }
         void push(value_type &&value) { _c.push_back(std::move(value)); }
-        //template<container-compatible-range<T> R>
-        //void push_range(R&& rg);
         template <class... Args>
         decltype(auto) emplace(Args &&... args) {
             return _c.emplace_back(std::forward<Args>(args)...);
@@ -79,16 +75,19 @@ namespace j {
             using std::swap;
             swap(_c, s._c);
         }
+        bool operator==(const stack& s) const {
+            return _c == s._c;
+        }
+        auto operator<=>(const stack &s) const {
+            return _c <=> s._c;
+        }
     };
 
     template <class Container>
     stack(Container) -> stack<typename Container::value_type, Container>;
 
-    //template <class InputIter>
-    //stack(InputIter, InputIter) -> stack<typename std::iterator_traits<InputIter>::value_type>;
-
-    //template <container-compatible-range<T> R>
-    //stack(from_range_t, R&&) -> stack<typename std::ranges::range_value_t<R>>;
+    template <class InputIter>
+    stack(InputIter, InputIter) -> stack<typename std::iterator_traits<InputIter>::value_type>;
 
     template <class Container, class Allocator>
     stack(Container, Allocator) -> stack<typename Container::value_type, Container>;
@@ -98,13 +97,24 @@ namespace j {
         -> stack<typename std::iterator_traits<InputIter>::value_type,
                  deque<typename std::iterator_traits<InputIter>::value_type, Allocator>>;
 
-    //template <ranges::input_range R, class Allocator>
-    //stack(from_range_t, R&&, Allocator)
-    //    -> stack<std::ranges::range_value_t<R>, deque<std::ranges::range_value_t<R>, Allocator>>;
+    export template <class T, class Container>
+    bool operator==(const stack<T, Container>& lhs, const stack<T, Container>& rhs) {
+        return lhs.operator==(rhs);
+    }
 
-    template <class T, class Container, class Alloc>
-    struct uses_allocator<stack<T, Container>, Alloc> : uses_allocator<Container, Alloc>::type {};
+    export template <class T, class Container>
+    auto operator<=>(const stack<T, Container>& lhs, const stack<T, Container>& rhs) {
+        return lhs.operator<=>(rhs);
+    }
+
+    export template <class T, class Container>
+    void swap(stack<T, Container>& x, stack<T, Container>& y) noexcept(noexcept(x.swap(y))) {
+        x.swap(y);
+    }
 }
+
+template <class T, class Container, class Alloc>
+struct std::uses_allocator<j::stack<T, Container>, Alloc> : uses_allocator<Container, Alloc> {};
 
 namespace j {
     template <class T, class Container>
@@ -114,27 +124,44 @@ namespace j {
     stack<T, Container>::stack(Container &&cont) : _c(std::move(cont)) {}
 
     template <class T, class Container>
-    template<class Alloc>
-    requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
-    stack<T, Container>::stack(const Alloc &alloc) : _c(Container(), alloc) {}
+    template <class InputIter>
+requires std::input_iterator<InputIter>
+    stack<T, Container>::stack(InputIter first, InputIter last) : _c(first, last) {
+    }
 
     template <class T, class Container>
     template <class Alloc>
-    requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
-    stack<T, Container>::stack(const Container &cont, const Alloc &alloc) : _c(cont, alloc) {}
+requires std::uses_allocator_v<Container, Alloc>
+    stack<T, Container>::stack(const Alloc &alloc) : _c(alloc) {
+    }
 
     template <class T, class Container>
     template <class Alloc>
-    requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
-    stack<T, Container>::stack(Container &&cont, const Alloc &alloc) : _c(std::move(cont), alloc) {}
+requires std::uses_allocator_v<Container, Alloc>
+    stack<T, Container>::stack(const Container &cont, const Alloc &alloc) : _c(cont, alloc) {
+    }
 
     template <class T, class Container>
     template <class Alloc>
-    requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
-    stack<T, Container>::stack(const stack &other, const Alloc &alloc) : _c(other._c, alloc) {}
+requires std::uses_allocator_v<Container, Alloc>
+    stack<T, Container>::stack(Container &&cont, const Alloc &alloc) : _c(std::move(cont), alloc) {
+    }
 
     template <class T, class Container>
     template <class Alloc>
-    requires std::is_class_v<Alloc> && requires { typename std::allocator_traits<Alloc>::value_type; }
-    stack<T, Container>::stack(stack &&other, const Alloc &alloc) : _c(std::move(other._c, alloc)) {}
+requires std::uses_allocator_v<Container, Alloc>
+    stack<T, Container>::stack(const stack &other, const Alloc &alloc) : _c(other._c, alloc) {
+    }
+
+    template <class T, class Container>
+    template <class Alloc>
+requires std::uses_allocator_v<Container, Alloc>
+    stack<T, Container>::stack(stack &&other, const Alloc &alloc) : _c(std::move(other._c), alloc) {
+    }
+
+    template <class T, class Container>
+    template <class InputIter, class Alloc>
+requires std::input_iterator<InputIter> && std::uses_allocator_v<Container, Alloc>
+    stack<T, Container>::stack(InputIter first, InputIter last, const Alloc &alloc) : _c(first, last, alloc) {
+    }
 }
