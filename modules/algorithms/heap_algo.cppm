@@ -7,7 +7,11 @@
 module;
 #include <iterator>
 
+#if defined(__clang__)
+export module j:heap_algo;
+#else
 module j:heap_algo;
+#endif
 
 namespace j {
     template <std::random_access_iterator Iter, class Compare>
