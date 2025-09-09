@@ -191,35 +191,35 @@ public:
       : priority_queue(Compare())
     {
     }
-    explicit priority_queue(const Compare& x)
-      : priority_queue(x, Container())
+    explicit priority_queue(const Compare& compare)
+      : priority_queue(compare, Container())
     {
     }
-    priority_queue(const Compare& comp, const Container& cont);
-    priority_queue(const Compare& comp, Container&& cont);
+    priority_queue(const Compare& compare, const Container& cont);
+    priority_queue(const Compare& compare, Container&& cont);
     priority_queue(const priority_queue& pq);
     priority_queue(priority_queue&& pq);
     template<class InputIter>
     requires std::input_iterator<InputIter>
-    priority_queue(InputIter first, InputIter last, const Compare& comp = Compare());
+    priority_queue(InputIter first, InputIter last, const Compare& compare = Compare());
     template<class InputIter>
     requires std::input_iterator<InputIter>
-    priority_queue(InputIter first, InputIter last, const Compare& comp, const Container& cont);
+    priority_queue(InputIter first, InputIter last, const Compare& compare, const Container& cont);
     template<class InputIter>
     requires std::input_iterator<InputIter>
-    priority_queue(InputIter first, InputIter last, const Compare& comp, Container&& cont);
+    priority_queue(InputIter first, InputIter last, const Compare& compare, Container&& cont);
     template<class Alloc>
     requires std::uses_allocator_v<Container, Alloc>
     explicit priority_queue(const Alloc& alloc);
     template<class Alloc>
     requires std::uses_allocator_v<Container, Alloc>
-    priority_queue(const Compare& comp, const Alloc& alloc);
+    priority_queue(const Compare& compare, const Alloc& alloc);
     template<class Alloc>
     requires std::uses_allocator_v<Container, Alloc>
-    priority_queue(const Compare& comp, const Container& cont, const Alloc& alloc);
+    priority_queue(const Compare& compare, const Container& cont, const Alloc& alloc);
     template<class Alloc>
     requires std::uses_allocator_v<Container, Alloc>
-    priority_queue(const Compare& comp, Container&& cont, const Alloc& alloc);
+    priority_queue(const Compare& compare, Container&& cont, const Alloc& alloc);
     template<class Alloc>
     requires std::uses_allocator_v<Container, Alloc>
     priority_queue(const priority_queue& pq, const Alloc& alloc);
@@ -231,13 +231,13 @@ public:
     priority_queue(InputIter first, InputIter last, const Alloc& alloc);
     template<class InputIter, class Alloc>
     requires std::input_iterator<InputIter> && std::uses_allocator_v<Container, Alloc>
-    priority_queue(InputIter first, InputIter last, const Compare& comp, const Alloc& alloc);
+    priority_queue(InputIter first, InputIter last, const Compare& compare, const Alloc& alloc);
     template<class InputIter, class Alloc>
     requires std::input_iterator<InputIter> && std::uses_allocator_v<Container, Alloc>
-    priority_queue(InputIter first, InputIter last, const Compare& comp, const Container& cont, const Alloc& alloc);
+    priority_queue(InputIter first, InputIter last, const Compare& compare, const Container& cont, const Alloc& alloc);
     template<class InputIter, class Alloc>
     requires std::input_iterator<InputIter> && std::uses_allocator_v<Container, Alloc>
-    priority_queue(InputIter first, InputIter last, const Compare& comp, Container&& cont, const Alloc& alloc);
+    priority_queue(InputIter first, InputIter last, const Compare& compare, Container&& cont, const Alloc& alloc);
 
     [[nodiscard]] bool empty() const { return _c.empty(); }
     [[nodiscard]] size_type size() const { return _c.size(); }
@@ -261,14 +261,14 @@ priority_queue( Compare, Container )
     -> priority_queue<typename Container::value_type, Container, Compare>;
 
 template< class InputIter,
-      class Comp = std::less<typename std::iterator_traits<InputIter>::value_type>,
-      class Container = vector<typename std::iterator_traits<InputIter>::value_type>
-priority_queue(InputIter, InputIter, Comp = Comp(), Container = Container() )
--> priority_queue<typename std::iterator_traits<InputIter>::value_type, Container, Comp>;
+      class Compare = std::less<typename std::iterator_traits<InputIter>::value_type>,
+      class Container = vector<typename std::iterator_traits<InputIter>::value_type>>
+priority_queue(InputIter, InputIter, Compare = Compare(), Container = Container() )
+-> priority_queue<typename std::iterator_traits<InputIter>::value_type, Container, Compare>;
 
-template< class Comp, class Container, class Alloc >
-priority_queue( Comp, Container, Alloc )
--> priority_queue<typename Container::value_type, Container, Comp>;
+template< class Compare, class Container, class Alloc >
+priority_queue( Compare, Container, Alloc )
+-> priority_queue<typename Container::value_type, Container, Compare>;
 
 template< class InputIter, class Alloc >
 priority_queue( InputIter, InputIter, Alloc )
@@ -281,9 +281,9 @@ priority_queue( InputIter, InputIter, Compare, Alloc )
 -> priority_queue<typename std::iterator_traits<InputIter>::value_type,
                   vector<typename std::iterator_traits<InputIter>::value_type, Alloc>, Compare>;
 
-template< class InputIt, class Comp, class Container, class Alloc >
-priority_queue( InputIt, InputIt, Comp, Container, Alloc )
--> priority_queue<typename Container::value_type, Container, Comp>;
+template< class InputIt, class Compare, class Container, class Alloc >
+priority_queue( InputIt, InputIt, Compare, Container, Alloc )
+-> priority_queue<typename Container::value_type, Container, Compare>;
 
 
 export template <class T, class Container>
@@ -297,12 +297,12 @@ struct std::uses_allocator<j::priority_queue<T, Container, Compare>, Alloc> : st
 
 namespace j {
 template <class T, class Container, class Compare>
-priority_queue<T, Container, Compare>::priority_queue(const Compare &comp, const Container &cont) : _c(cont), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(const Compare &compare, const Container &cont) : _c(cont), _comp(compare) {
     make_heap(_c.begin(), _c.end(), _comp);
 }
 
 template <class T, class Container, class Compare>
-priority_queue<T, Container, Compare>::priority_queue(const Compare &comp, Container &&cont) : _c(std::move(cont)), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(const Compare &compare, Container &&cont) : _c(std::move(cont)), _comp(compare) {
     make_heap(_c.begin(), _c.end(), _comp);
 }
 
@@ -318,22 +318,22 @@ priority_queue<T, Container, Compare>::priority_queue(priority_queue &&pq)
 
 template <class T, class Container, class Compare>
 template <class InputIter> requires std::input_iterator<InputIter>
-priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &comp) : _c(first, last), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &compare) : _c(first, last), _comp(compare) {
     make_heap(_c.begin(), _c.end(), _comp);
 }
 
 template <class T, class Container, class Compare>
 template <class InputIter> requires std::input_iterator<InputIter>
-priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &comp,
-    const Container &cont) : _c(cont), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &compare,
+    const Container &cont) : _c(cont), _comp(compare) {
     _c.insert(_c.end(), first, last);
     make_heap(_c.begin(), _c.end(), _comp);
 }
 
 template <class T, class Container, class Compare>
 template <class InputIter> requires std::input_iterator<InputIter>
-priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &comp, Container && cont)
-    : _c(std::move(cont)), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &compare, Container && cont)
+    : _c(std::move(cont)), _comp(compare) {
     _c.insert(_c.end(), first, last);
     make_heap(_c.begin(), _c.end(), _comp);
 }
@@ -346,20 +346,20 @@ priority_queue<T, Container, Compare>::priority_queue(const Alloc &alloc) : _c(a
 
 template <class T, class Container, class Compare>
 template <class Alloc> requires std::uses_allocator_v<Container, Alloc>
-priority_queue<T, Container, Compare>::priority_queue(const Compare &comp, const Alloc &alloc) : _c(alloc), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(const Compare &compare, const Alloc &alloc) : _c(alloc), _comp(compare) {
 }
 
 template <class T, class Container, class Compare>
 template <class Alloc> requires std::uses_allocator_v<Container, Alloc>
-priority_queue<T, Container, Compare>::priority_queue(const Compare &comp, const Container &cont, const Alloc &alloc)
-    : _c(cont, alloc), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(const Compare &compare, const Container &cont, const Alloc &alloc)
+    : _c(cont, alloc), _comp(compare) {
     make_heap(_c.begin(), _c.end(), _comp);
 }
 
 template <class T, class Container, class Compare>
 template <class Alloc> requires std::uses_allocator_v<Container, Alloc>
-priority_queue<T, Container, Compare>::priority_queue(const Compare & comp, Container &&cont, const Alloc &alloc)
-    : _c(std::move(cont), alloc), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(const Compare & compare, Container &&cont, const Alloc &alloc)
+    : _c(std::move(cont), alloc), _comp(compare) {
     make_heap(_c.begin(), _c.end(), _comp);
 }
 
@@ -386,16 +386,16 @@ priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter
 template <class T, class Container, class Compare>
 template <class InputIter, class Alloc> requires std::input_iterator<InputIter> && std::uses_allocator_v<Container,
     Alloc>
-priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &comp, const Alloc &alloc)
-    : _c(first, last, alloc), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &compare, const Alloc &alloc)
+    : _c(first, last, alloc), _comp(compare) {
     make_heap(_c.begin(), _c.end(), _comp);
 }
 
 template <class T, class Container, class Compare>
 template <class InputIter, class Alloc> requires std::input_iterator<InputIter> && std::uses_allocator_v<Container,
     Alloc>
-priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &comp, const Container &cont,
-    const Alloc &alloc) : _c(cont, alloc), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &compare, const Container &cont,
+    const Alloc &alloc) : _c(cont, alloc), _comp(compare) {
     _c.insert(_c.end(), first, last);
     make_heap(_c.begin(), _c.end(), _comp);
 }
@@ -403,8 +403,8 @@ priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter
 template <class T, class Container, class Compare>
 template <class InputIter, class Alloc> requires std::input_iterator<InputIter> && std::uses_allocator_v<Container,
     Alloc>
-priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &comp, Container &&cont,
-    const Alloc &alloc) : _c(std::move(cont), alloc), _comp(comp) {
+priority_queue<T, Container, Compare>::priority_queue(InputIter first, InputIter last, const Compare &compare, Container &&cont,
+    const Alloc &alloc) : _c(std::move(cont), alloc), _comp(compare) {
     _c.insert(_c.end(), first, last);
     make_heap(_c.begin(), _c.end(), _comp);
 }
