@@ -292,7 +292,7 @@ void swap(priority_queue<T, Container> &x, priority_queue<T, Container> &y) noex
 
 template <class T, class Container, class Compare, class Alloc>
 struct std::uses_allocator<j::priority_queue<T, Container, Compare>, Alloc>
-    : std::uses_allocator<Compare, Alloc>::type {};
+    : std::uses_allocator<Container, Alloc>::type {};
 
 namespace j {
 template <class T, class Container, class Compare>
