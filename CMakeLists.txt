@@ -108,7 +108,7 @@ target_link_libraries(bench_deque PRIVATE j Catch2::Catch2WithMain)
 # --------------- Add CTest ---------------
 enable_testing()
 
-set(CTEST_MEMORYCHECK_COMMAND "/usr/bin/valgrindc")
+set(CTEST_MEMORYCHECK_COMMAND "/usr/bin/valgrind")
 set(CTEST_MEMORYCHECK_COMMAND_OPTIONS
     "--leak-check=full;--show-leak-kinds=all;--error-exitcode=1;--track-origins=yes"
 )
