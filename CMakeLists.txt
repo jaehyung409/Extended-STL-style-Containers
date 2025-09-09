@@ -28,15 +28,15 @@ target_sources(j
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/j.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/unique_ptr.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/memory.cppm
-        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/algorithm.cppm
-        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/heap_algo.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/algorithm.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/heap_algo.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Array/array.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/list.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/LinkedList/forward_list.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Vector/vector.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/deque.cppm
-        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/stack.cppm
-        # ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/queue.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/stack.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/queue.cppm
 )
 
 # --------------- Add Tests and Benchmarks ---------------
@@ -90,15 +90,20 @@ add_executable(bench_deque
 )
 target_link_libraries(bench_deque PRIVATE j Catch2::Catch2WithMain)
 
-# add_executable(test_stack
-#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_stack.cpp
-# )
-# target_link_libraries(test_stack PRIVATE j Catch2::Catch2WithMain)
-#
-# add_executable(bench_stack
-#         ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_stack.cpp
-# )
-# target_link_libraries(bench_stack PRIVATE j Catch2::Catch2WithMain)
+add_executable(test_stack
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_stack.cpp
+)
+target_link_libraries(test_stack PRIVATE j Catch2::Catch2WithMain)
+
+add_executable(test_queue
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_queue.cpp
+)
+target_link_libraries(test_queue PRIVATE j Catch2::Catch2WithMain)
+
+add_executable(bench_queue
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_queue.cpp
+)
+target_link_libraries(bench_queue PRIVATE j Catch2::Catch2WithMain)
 
 # add_executable(main
 #         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp

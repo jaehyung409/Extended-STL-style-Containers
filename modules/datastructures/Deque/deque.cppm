@@ -294,9 +294,9 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     const_reverse_iterator crend() const noexcept;
 
     // capacity
-    bool empty() const noexcept;
-    size_type size() const noexcept;
-    size_type max_size() const noexcept;
+    [[nodiscard]] bool empty() const noexcept;
+    [[nodiscard]] size_type size() const noexcept;
+    [[nodiscard]] size_type max_size() const noexcept;
     void resize(size_type sz);
     void resize(size_type sz, const T &value);
     void shrink_to_fit();
@@ -957,6 +957,7 @@ deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &all
     if constexpr (std::random_access_iterator<InputIter>) { // BENCHMARK !! list, linked-list
         auto dist = std::distance(first, last);
         if (dist == 0) {
+            _initialize_map(_initial_map_size);
             return;
         }
         const size_type num_nodes = (dist + _buffer_size() - 1) / _buffer_size();
@@ -1022,6 +1023,7 @@ deque<T, Allocator>::deque(deque &&x, const std::type_identity_t<Allocator> &all
     } else {
         auto dist = x.size();
         if (dist == 0) {
+            _initialize_map(_initial_map_size);
             return;
         }
         const size_type num_nodes = (dist + _buffer_size() - 1) / _buffer_size();
@@ -1346,8 +1348,7 @@ template <class T, class Allocator> deque<T, Allocator>::reference deque<T, Allo
     return this->operator[](n);
 }
 
-template <class T, class Allocator>
-deque<T, Allocator>::const_reference deque<T, Allocator>::at(deque::size_type n) const {
+template <class T, class Allocator> deque<T, Allocator>::const_reference deque<T, Allocator>::at(size_type n) const {
     if (n >= size()) {
         throw std::out_of_range("deque::at() : index is out of range");
     }
