@@ -12,6 +12,6 @@ export import :forward_list;
 export import :vector;
 export import :deque;
 export import :stack;
-// export import :queue;
-//
-// export import :algorithm;
+export import :queue;
+
+export import :algorithm;
