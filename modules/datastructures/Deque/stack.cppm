@@ -78,7 +78,7 @@ namespace j {
         bool operator==(const stack& s) const {
             return _c == s._c;
         }
-        auto operator<=>(const stack &s) const {
+        auto operator<=>(const stack &s) const -> std::strong_ordering {
             return _c <=> s._c;
         }
     };
@@ -103,7 +103,7 @@ namespace j {
     }
 
     export template <class T, class Container>
-    auto operator<=>(const stack<T, Container>& lhs, const stack<T, Container>& rhs) {
+    auto operator<=>(const stack<T, Container>& lhs, const stack<T, Container>& rhs) -> std::strong_ordering {
         return lhs.operator<=>(rhs);
     }
 
