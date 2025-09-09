@@ -1348,8 +1348,7 @@ template <class T, class Allocator> deque<T, Allocator>::reference deque<T, Allo
     return this->operator[](n);
 }
 
-template <class T, class Allocator>
-deque<T, Allocator>::const_reference deque<T, Allocator>::at(size_type n) const {
+template <class T, class Allocator> deque<T, Allocator>::const_reference deque<T, Allocator>::at(size_type n) const {
     if (n >= size()) {
         throw std::out_of_range("deque::at() : index is out of range");
     }
