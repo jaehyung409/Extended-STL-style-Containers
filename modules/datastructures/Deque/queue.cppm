@@ -188,7 +188,7 @@ protected:
 
 public:
     priority_queue()
-      : priority_queue(Compare())
+      : priority_queue(Compare(), Container())
     {
     }
     explicit priority_queue(const Compare& compare)
