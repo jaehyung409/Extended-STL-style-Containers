@@ -208,46 +208,45 @@ template <class T, class Allocator> class list<T, Allocator>::iterator {
     node_pointer _ptr;
 
   public:
-    explicit iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-    iterator &operator=(const const_iterator &other) {
+    explicit iterator(node_pointer ptr = nullptr) noexcept : _ptr(ptr) {}
+    iterator &operator=(const const_iterator &other) noexcept {
         _ptr = other._ptr;
         return *this;
     }
 
-    reference operator*() {
+    reference operator*() const noexcept {
         return _ptr->_value;
     }
-    pointer operator->() {
+    pointer operator->() const noexcept {
         return &(_ptr->_value);
     }
 
-    iterator &operator++() {
+    iterator &operator++() noexcept {
         _ptr = _ptr->_next;
         return *this;
     }
 
-    iterator operator++(int) {
+    iterator operator++(int) noexcept {
         iterator temp = *this;
         ++(*this);
         return temp;
     }
 
-    iterator &operator--() {
+    iterator &operator--() noexcept {
         _ptr = _ptr->_prev;
         return *this;
     }
 
-    iterator operator--(int) {
+    iterator operator--(int) noexcept {
         iterator temp = *this;
         --(*this);
         return temp;
     }
 
-    // friend bool operator==(const iterator& lhs, const iterator& rhs) = default;
-    bool operator==(const iterator &other) const {
+    bool operator==(const iterator &other) const noexcept {
         return _ptr == other._ptr;
     }
-    operator const_iterator() const {
+    operator const_iterator() const noexcept {
         return const_iterator(_ptr);
     }
 };
@@ -269,44 +268,43 @@ template <class T, class Allocator> class list<T, Allocator>::const_iterator {
     node_pointer _ptr;
 
   public:
-    explicit const_iterator(node_pointer ptr = nullptr) : _ptr(ptr) {}
-    explicit const_iterator(const iterator &other) : _ptr(other._ptr) {}
-    const_iterator &operator=(const const_iterator &other) {
+    explicit const_iterator(node_pointer ptr = nullptr) noexcept : _ptr(ptr) {}
+    explicit const_iterator(const iterator &other) noexcept : _ptr(other._ptr) {}
+    const_iterator &operator=(const const_iterator &other) noexcept {
         _ptr = other._ptr;
         return *this;
     }
 
-    const_reference operator*() const {
+    const_reference operator*() const noexcept {
         return _ptr->_value;
     }
-    const_pointer operator->() const {
+    const_pointer operator->() const noexcept {
         return &(_ptr->_value);
     }
 
-    const_iterator &operator++() {
+    const_iterator &operator++() noexcept {
         _ptr = _ptr->_next;
         return *this;
     }
 
-    const_iterator operator++(int) {
+    const_iterator operator++(int) noexcept {
         const_iterator temp = *this;
         ++(*this);
         return temp;
     }
 
-    const_iterator &operator--() {
+    const_iterator &operator--() noexcept {
         _ptr = _ptr->_prev;
         return *this;
     }
 
-    const_iterator operator--(int) {
+    const_iterator operator--(int) noexcept {
         const_iterator temp = *this;
         --(*this);
         return temp;
     }
 
-    // friend bool operator==(const_iterator& lhs, const_iterator& rhs) = default;
-    bool operator==(const const_iterator &other) const {
+    bool operator==(const const_iterator &other) const noexcept {
         return _ptr == other._ptr;
     }
 };
