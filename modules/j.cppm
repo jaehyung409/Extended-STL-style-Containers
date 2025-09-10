@@ -6,6 +6,8 @@
 
 export module j;
 
+export import :traits;
+
 export import :array;
 export import :list;
 export import :forward_list;
