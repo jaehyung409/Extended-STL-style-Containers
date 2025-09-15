@@ -689,12 +689,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_insert_impl(const_iterator p
 }
 
 template <class T, class Allocator>
-template <class InputIter>
-    requires std::forward_iterator<InputIter>
-deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(InputIter first, size_type count, iterator dest) {
+template <class FwdIter>
+    requires std::forward_iterator<FwdIter>
+deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(FwdIter first, size_type count, iterator dest) {
     const size_type dest_buffer_remaining = _buffer_size() - (dest._current - dest._first);
 
-    if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
+    if constexpr (std::is_same_v<FwdIter, iterator> || std::is_same_v<FwdIter, const_iterator>) {
         const size_type source_buffer_remaining = _buffer_size() - (first._current - first._first);
         return std::min({count, source_buffer_remaining, dest_buffer_remaining});
     } else {
@@ -703,14 +703,14 @@ deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(InputIter firs
 }
 
 template <class T, class Allocator>
-template <class InputIter>
-    requires std::forward_iterator<InputIter>
-deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_backward_now(InputIter last, size_type count,
+template <class FwdIter>
+    requires std::forward_iterator<FwdIter>
+deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_backward_now(FwdIter last, size_type count,
                                                                            iterator dest) {
     const size_type dest_buffer_remaining =
         (dest._current - dest._first) ? dest._current - dest._first : _buffer_size();
 
-    if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
+    if constexpr (std::is_same_v<FwdIter, iterator> || std::is_same_v<FwdIter, const_iterator>) {
         const size_type source_buffer_remaining =
             (last._current - last._first) ? last._current - last._first : _buffer_size();
         return std::min({count, source_buffer_remaining, dest_buffer_remaining});
