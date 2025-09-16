@@ -1009,7 +1009,12 @@ deque<T, Allocator>::deque(const deque &x)
     : deque(x.begin(), x.end(),
             std::allocator_traits<Allocator>::select_on_container_copy_construction(x.get_allocator())) {}
 
-template <class T, class Allocator> deque<T, Allocator>::deque(deque &&x) : deque(std::move(x), x.get_allocator()) {}
+template <class T, class Allocator>
+deque<T, Allocator>::deque(deque &&x)
+    : _map(nullptr), _map_capacity(0), _start(), _finish(), _map_alloc(std::move(x.get_allocator())),
+      _buf_alloc(std::move(x.get_allocator())) {
+    _move_state(std::move(x));
+}
 
 template <class T, class Allocator>
 deque<T, Allocator>::deque(const deque &x, const std::type_identity_t<Allocator> &alloc)
