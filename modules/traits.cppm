@@ -7,7 +7,11 @@
 module;
 #include <utility>
 
+#if defined(__clang__)
 export module j:traits;
+#else
+module j:traits;
+#endif
 
 namespace j {
 template <class T>
