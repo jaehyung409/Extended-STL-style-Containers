@@ -35,5 +35,22 @@ struct key_traits<std::pair<const K, V>> {
         return value.first;
     }
 };
+
+template <class Key, class Value, class Compare, class Traits>
+struct value_compare_traits {
+    using value_compare = std::conditional_t<
+        std::is_same_v<Value, Key>,
+        Compare,
+        struct value_compare_impl {
+        protected:
+            Compare comp;
+            explicit value_compare_impl(const Compare& c) : comp(c) {}
+        public:
+            bool operator()(const Value& lhs, const Value& rhs) const {
+                return comp(Traits::extract_key(lhs), Traits::extract_key(rhs));
+            }
+        }
+    >;
+};
 // need to add iterator related traits (const/non-const iterator)
 }
