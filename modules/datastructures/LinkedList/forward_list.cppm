@@ -186,6 +186,7 @@ template <class T, class Allocator> class forward_list<T, Allocator>::iterator {
     friend forward_list;
 
   public:
+    using iterator_concept = std::forward_iterator_tag;
     using iterator_category = std::forward_iterator_tag;
     using value_type = typename forward_list::value_type;
     using difference_type = typename forward_list::difference_type;
@@ -233,13 +234,12 @@ template <class T, class Allocator> class forward_list<T, Allocator>::const_iter
     friend forward_list;
 
   public:
+    using iterator_concept = std::forward_iterator_tag;
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const typename forward_list::value_type;
+    using value_type = typename forward_list::value_type;
     using difference_type = typename forward_list::difference_type;
-    using pointer = typename forward_list::const_pointer;
-    using reference = typename forward_list::const_reference;
-    using const_pointer = typename forward_list::const_pointer;
-    using const_reference = typename forward_list::const_reference;
+    using pointer = typename forward_list::pointer;
+    using reference = typename forward_list::reference;
 
   private:
     using node_pointer = Node *;

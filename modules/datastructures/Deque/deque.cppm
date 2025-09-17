@@ -378,14 +378,15 @@ template <class T, class Allocator> class deque<T, Allocator>::iterator {
     friend deque;
 
   public:
+    using iterator_concept = std::random_access_iterator_tag;
     using iterator_category = std::random_access_iterator_tag;
     using value_type = typename deque::value_type;
     using difference_type = typename deque::difference_type;
     using pointer = typename deque::pointer;
     using reference = typename deque::reference;
-    using buf = typename deque::buf;
 
   private:
+    using buf = typename deque::buf;
     pointer _current; // pointer to current element
     pointer _first;   // pointer to first element of current chunk(buf)
     pointer _last;    // pointer to last element of current chunk(buf)
@@ -497,16 +498,15 @@ template <class T, class Allocator> class deque<T, Allocator>::const_iterator {
     friend deque;
 
   public:
+    using iterator_concept = std::random_access_iterator_tag;
     using iterator_category = std::random_access_iterator_tag;
     using value_type = typename deque::value_type;
     using difference_type = typename deque::difference_type;
-    using pointer = typename deque::const_pointer;
-    using reference = typename deque::const_reference;
-    using const_pointer = typename deque::const_pointer;
-    using const_reference = typename deque::const_reference;
-    using buf = typename deque::buf;
+    using pointer = typename deque::pointer;
+    using reference = typename deque::reference;
 
   private:
+    using buf = typename deque::buf;
     pointer _current; // pointer to current element
     pointer _first;   // pointer to first element of current chunk(buf)
     pointer _last;    // pointer to last element of current chunk(buf)
