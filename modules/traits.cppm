@@ -17,6 +17,7 @@ namespace j {
 template <class T>
 struct key_traits {
     using key_type = T;
+    using mapped_type = void;
     using value_type = T;
 
     static const key_type& extract_key(const value_type& value) {
