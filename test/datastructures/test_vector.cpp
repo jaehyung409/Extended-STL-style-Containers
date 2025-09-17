@@ -20,6 +20,11 @@ std::mt19937 gen(42); // Fixed seed for reproducibility
 std::uniform_int_distribution<> dis(0, static_cast<int>(N - 1));
 
 TEST_CASE("Vector Basic") {
+    SECTION("Iterator Category") {
+        j::vector<int> vec;
+        using It = decltype(vec.begin());
+        REQUIRE(std::is_same_v<typename std::iterator_traits<It>::iterator_category, std::contiguous_iterator_tag>);
+    }
     SECTION("Constructors") {
         // Default constructor
         j::vector<int> default_v;

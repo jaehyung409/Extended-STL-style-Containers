@@ -16,7 +16,10 @@ import j;
 TEST_CASE("List Basic") {
     j::list<int> lst = {1, 2, 3, 4, 5};
     j::list char_lst = {'a', 'b', 'c'};
-
+    SECTION("Iterator Category") {
+        using It = decltype(lst.begin());
+        REQUIRE(std::is_same_v<typename std::iterator_traits<It>::iterator_category, std::bidirectional_iterator_tag>);
+    }
     SECTION("Constructors") {
         // Default constructor
         j::list<int> default_lst;
