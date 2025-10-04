@@ -116,6 +116,11 @@ add_executable(test_set
 )
 target_link_libraries(test_set PRIVATE j Catch2::Catch2WithMain)
 
+add_executable(bench_set
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_set.cpp
+)
+target_link_libraries(bench_set PRIVATE j Catch2::Catch2WithMain)
+
 # add_executable(main
 #         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
 # )
