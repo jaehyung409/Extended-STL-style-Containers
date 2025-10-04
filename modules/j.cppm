@@ -16,4 +16,8 @@ export import :deque;
 export import :stack;
 export import :queue;
 
+export import :tree_selector;
+export import :map;
+export import :set;
+
 export import :algorithm;

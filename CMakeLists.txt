@@ -28,6 +28,7 @@ target_sources(j
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/j.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/unique_ptr.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/memory.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/concepts.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/traits.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/algorithm.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/heap_algo.cppm
@@ -39,6 +40,9 @@ target_sources(j
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/stack.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/queue.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/tree_selector.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/Map/map.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/Set/set.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/Base/skip_list.cppm
 )
 
 # --------------- Add Tests and Benchmarks ---------------
