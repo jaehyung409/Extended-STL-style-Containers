@@ -1271,7 +1271,7 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
         }
 
         for (size_type i = 0; i < num_nodes; ++i) {
-            *(_finish._node + 1) = bufs_guard[i].release();
+            *(_finish._node + 1 + i) = bufs_guard[i].release();
         }
 
         _finish += diff;
