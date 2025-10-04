@@ -156,6 +156,7 @@ template <class T, class Allocator> class vector<T, Allocator>::iterator {
     friend vector;
 
   public:
+    using iterator_concept = std::contiguous_iterator_tag;
     using iterator_category = std::contiguous_iterator_tag;
     using value_type = typename vector::value_type;
     using difference_type = typename vector::difference_type;
@@ -245,13 +246,12 @@ template <class T, class Allocator> class vector<T, Allocator>::const_iterator {
     friend vector;
 
   public:
+    using iterator_concept = std::contiguous_iterator_tag;
     using iterator_category = std::contiguous_iterator_tag;
     using value_type = typename vector::value_type;
     using difference_type = typename vector::difference_type;
-    using pointer = typename vector::const_pointer;
-    using reference = typename vector::const_reference;
-    using const_pointer = typename vector::const_pointer;
-    using const_reference = typename vector::const_reference;
+    using pointer = typename vector::pointer;
+    using reference = typename vector::reference;
 
   private:
     pointer _ptr;

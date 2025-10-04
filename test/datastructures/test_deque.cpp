@@ -19,6 +19,11 @@ std::mt19937 gen(42);
 std::uniform_int_distribution<> dis(0, static_cast<int>(N - 1));
 
 TEST_CASE("Deque Basic") {
+    SECTION("Iterator Category") {
+        j::deque<int> deq;
+        using It = decltype(deq.begin());
+        REQUIRE(std::is_same_v<typename std::iterator_traits<It>::iterator_category, std::random_access_iterator_tag>);
+    }
     SECTION("Constructors") {
         j::deque<int> default_d;
         REQUIRE(default_d.empty());

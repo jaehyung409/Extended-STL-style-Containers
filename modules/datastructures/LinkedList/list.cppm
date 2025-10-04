@@ -197,6 +197,7 @@ template <class T, class Allocator> class list<T, Allocator>::iterator {
     friend list;
 
   public:
+    using iterator_concept = std::bidirectional_iterator_tag;
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = typename list::value_type;
     using difference_type = typename list::difference_type;
@@ -255,13 +256,12 @@ template <class T, class Allocator> class list<T, Allocator>::const_iterator {
     friend list;
 
   public:
+    using iterator_concept = std::bidirectional_iterator_tag;
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = typename list::value_type;
     using difference_type = typename list::difference_type;
-    using pointer = typename list::const_pointer;
-    using reference = typename list::const_reference;
-    using const_pointer = typename list::const_pointer;
-    using const_reference = typename list::const_reference;
+    using pointer = typename list::pointer;
+    using reference = typename list::reference;
 
   private:
     using node_pointer = Node *;

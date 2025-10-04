@@ -16,7 +16,10 @@ import j;
 TEST_CASE("Forward List Basic") {
     j::forward_list<int> flist = {1, 2, 3, 4, 5};
     j::forward_list char_flist = {'a', 'b', 'c'};
-
+    SECTION("Iterator Category") {
+        using It = decltype(flist.begin());
+        REQUIRE(std::is_same_v<typename std::iterator_traits<It>::iterator_category, std::forward_iterator_tag>);
+    }
     SECTION("Constructors") {
         // Default constructor
         j::forward_list<int> default_flist;
