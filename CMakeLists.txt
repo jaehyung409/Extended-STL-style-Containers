@@ -111,6 +111,11 @@ add_executable(bench_queue
 )
 target_link_libraries(bench_queue PRIVATE j Catch2::Catch2WithMain)
 
+add_executable(test_set
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_set.cpp
+)
+target_link_libraries(test_set PRIVATE j Catch2::Catch2WithMain)
+
 # add_executable(main
 #         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
 # )
@@ -129,3 +134,6 @@ add_test(NAME test_list COMMAND test_list)
 add_test(NAME test_forward_list COMMAND test_forward_list)
 add_test(NAME test_vector COMMAND test_vector)
 add_test(NAME test_deque COMMAND test_deque)
+add_test(NAME test_stack COMMAND test_stack)
+add_test(NAME test_queue COMMAND test_queue)
+add_test(NAME test_set COMMAND test_set)
