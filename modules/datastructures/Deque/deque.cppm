@@ -1404,9 +1404,8 @@ deque<T, Allocator>::reference deque<T, Allocator>::emplace_back(Args &&...args)
         _ensure_back_map_space();
         old_finish = _finish._current;
         buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
-        *(_finish._node + 1) = buf_guard.get();
         std::allocator_traits<buf_allocator>::construct(_buf_alloc, old_finish, std::forward<Args>(args)...);
-        buf_guard.release();
+        *(_finish._node + 1) = buf_guard.release();
     } else {
         std::allocator_traits<buf_allocator>::construct(_buf_alloc, old_finish, std::forward<Args>(args)...);
     }
@@ -1714,8 +1713,8 @@ template <class T, class Allocator> void deque<T, Allocator>::pop_front() {
     }
     iterator old_start = _start;
     ++_start;
-    if (old_start._node != _start._node && old_start._node > _map) {
-        _deallocate_buf(*(old_start._node - 1));
+    if (old_start._node != _start._node && old_start._node != _finish._node) {
+        _deallocate_buf(*(old_start._node));
     }
 }
 
@@ -1725,8 +1724,8 @@ template <class T, class Allocator> void deque<T, Allocator>::pop_back() {
     }
     iterator old_finish = _finish;
     --_finish;
-    if (old_finish._node != _finish._node && old_finish._node < _map + _map_capacity - 1) {
-        _deallocate_buf(*(old_finish._node + 1));
+    if (old_finish._node != _finish._node && _start._node != old_finish._node) {
+        _deallocate_buf(*old_finish._node);
     }
 }
 
