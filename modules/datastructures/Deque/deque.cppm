@@ -918,20 +918,12 @@ deque<T, Allocator>::deque(size_type n, const T &value, const Allocator &alloc)
     unique_ptr map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
     buf *start_node = map_guard.get() + (new_map_capacity - num_nodes) / 2;
 
-#if defined(__GNUC__)
-    buffer_guard bufs_guard[num_nodes];
-
-    for (size_type i = 0; i < num_nodes; ++i) {
-        bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-    }
-#else
     vector<buffer_guard> bufs_guard;
 
     bufs_guard.reserve(num_nodes);
     for (size_type i = 0; i < num_nodes; ++i) {
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
     }
-#endif
 
     for (size_type i = 0; i < num_nodes; ++i) {
         *(start_node + i) = bufs_guard[i].get();
@@ -966,20 +958,12 @@ deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &all
         unique_ptr map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
         buf *start_node = map_guard.get() + (new_map_capacity - num_nodes) / 2;
 
-#if defined(__GNUC__)
-        buffer_guard bufs_guard[num_nodes];
-
-        for (size_type i = 0; i < num_nodes; ++i) {
-            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-        }
-#else
         vector<buffer_guard> bufs_guard;
 
         bufs_guard.reserve(num_nodes);
         for (size_type i = 0; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         }
-#endif
 
         for (size_type i = 0; i < num_nodes; ++i) {
             *(start_node + i) = bufs_guard[i].get();
@@ -1037,20 +1021,12 @@ deque<T, Allocator>::deque(deque &&x, const std::type_identity_t<Allocator> &all
         unique_ptr map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
         buf *start_node = map_guard.get() + (new_map_capacity - num_nodes) / 2;
 
-#if defined(__GNUC__)
-        buffer_guard bufs_guard[num_nodes];
-
-        for (size_type i = 0; i < num_nodes; ++i) {
-            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-        }
-#else
         vector<buffer_guard> bufs_guard;
 
         bufs_guard.reserve(num_nodes);
         for (size_type i = 0; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         }
-#endif
 
         for (size_type i = 0; i < num_nodes; ++i) {
             *(start_node + i) = bufs_guard[i].get();
@@ -1242,20 +1218,12 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
             _reallocate_map(num_nodes, false);
         }
 
-#if defined(__GNUC__)
-        buffer_guard bufs_guard[num_nodes];
-
-        for (size_type i = 0; i < num_nodes; ++i) {
-            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-        }
-#else
         vector<buffer_guard> bufs_guard;
 
         bufs_guard.reserve(num_nodes);
         for (size_type i = 0; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         }
-#endif
 
         size_type remain = diff - fill_in_last_buffer;
         for (size_type i = 0; i < num_nodes; ++i) {
@@ -1292,20 +1260,12 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
             _reallocate_map(num_nodes, false);
         }
 
-#if defined(__GNUC__)
-        buffer_guard bufs_guard[num_nodes];
-
-        for (size_type i = 0; i < num_nodes; ++i) {
-            bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-        }
-#else
         vector<buffer_guard> bufs_guard;
 
         bufs_guard.reserve(num_nodes);
         for (size_type i = 0; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         }
-#endif
 
         for (size_type i = 0; i < num_nodes; ++i) {
             *(_finish._node + 1 + i) = bufs_guard[i].get();
@@ -1504,20 +1464,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
             }
             insert_pos = _start + distance_from_begin;
 
-#if defined(__GNUC__)
-            buffer_guard bufs_guard[num_nodes];
-
-            for (size_type i = 0; i < num_nodes; ++i) {
-                bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-            }
-#else
             vector<buffer_guard> bufs_guard;
 
             bufs_guard.reserve(num_nodes);
             for (size_type i = 0; i < num_nodes; ++i) {
                 bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
             }
-#endif
 
             for (size_type i = 0; i < num_nodes; ++i) {
                 *(_start._node - 1 - i) = bufs_guard[i].get();
@@ -1550,20 +1502,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
             }
             insert_pos = _start + distance_from_begin;
 
-#if defined(__GNUC__)
-            buffer_guard bufs_guard[num_nodes];
-
-            for (size_type i = 0; i < num_nodes; ++i) {
-                bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-            }
-#else
             vector<buffer_guard> bufs_guard;
 
             bufs_guard.reserve(num_nodes);
             for (size_type i = 0; i < num_nodes; ++i) {
                 bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
             }
-#endif
 
             for (size_type i = 0; i < num_nodes; ++i) {
                 *(_finish._node + 1 + i) = bufs_guard[i].get();
@@ -1610,20 +1554,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
                 }
                 insert_pos = _start + distance_from_begin;
 
-#if defined(__GNUC__)
-                buffer_guard bufs_guard[num_nodes];
-
-                for (size_type i = 0; i < num_nodes; ++i) {
-                    bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-                }
-#else
                 vector<buffer_guard> bufs_guard;
 
                 bufs_guard.reserve(num_nodes);
                 for (size_type i = 0; i < num_nodes; ++i) {
                     bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
                 }
-#endif
 
                 for (size_type i = 0; i < num_nodes; ++i) {
                     *(_start._node - 1 - i) = bufs_guard[i].get();
@@ -1656,20 +1592,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
                 }
                 insert_pos = _start + distance_from_begin;
 
-#if defined(__GNUC__)
-                buffer_guard bufs_guard[num_nodes];
-
-                for (size_type i = 0; i < num_nodes; ++i) {
-                    bufs_guard[i] = buffer_guard(_allocate_buf(), _buf_alloc);
-                }
-#else
                 vector<buffer_guard> bufs_guard;
 
                 bufs_guard.reserve(num_nodes);
                 for (size_type i = 0; i < num_nodes; ++i) {
                     bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
                 }
-#endif
 
                 for (size_type i = 0; i < num_nodes; ++i) {
                     *(_finish._node + 1 + i) = bufs_guard[i].get();
