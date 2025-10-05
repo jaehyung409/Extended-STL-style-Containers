@@ -28,6 +28,8 @@ target_sources(j
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/j.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/unique_ptr.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/memory.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/concepts.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/traits.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/algorithm.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/algorithms/heap_algo.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Array/array.cppm
@@ -37,6 +39,10 @@ target_sources(j
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/deque.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/stack.cppm
         ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Deque/queue.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/tree_selector.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/Map/map.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/Set/set.cppm
+        ${CMAKE_CURRENT_SOURCE_DIR}/modules/datastructures/Tree/Base/skip_list.cppm
 )
 
 # --------------- Add Tests and Benchmarks ---------------
@@ -105,6 +111,16 @@ add_executable(bench_queue
 )
 target_link_libraries(bench_queue PRIVATE j Catch2::Catch2WithMain)
 
+add_executable(test_set
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/test_set.cpp
+)
+target_link_libraries(test_set PRIVATE j Catch2::Catch2WithMain)
+
+add_executable(bench_set
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/benchmark/bench_set.cpp
+)
+target_link_libraries(bench_set PRIVATE j Catch2::Catch2WithMain)
+
 # add_executable(main
 #         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
 # )
@@ -123,3 +139,6 @@ add_test(NAME test_list COMMAND test_list)
 add_test(NAME test_forward_list COMMAND test_forward_list)
 add_test(NAME test_vector COMMAND test_vector)
 add_test(NAME test_deque COMMAND test_deque)
+add_test(NAME test_stack COMMAND test_stack)
+add_test(NAME test_queue COMMAND test_queue)
+add_test(NAME test_set COMMAND test_set)

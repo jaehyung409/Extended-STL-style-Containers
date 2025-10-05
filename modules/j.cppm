@@ -6,6 +6,8 @@
 
 export module j;
 
+export import :traits;
+
 export import :array;
 export import :list;
 export import :forward_list;
@@ -13,5 +15,9 @@ export import :vector;
 export import :deque;
 export import :stack;
 export import :queue;
+
+export import :tree_selector;
+export import :map;
+export import :set;
 
 export import :algorithm;
