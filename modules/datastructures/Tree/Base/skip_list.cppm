@@ -396,8 +396,8 @@ template <class Traits> class skip_list<Traits>::_const_iterator {
 };
 
 template <class Traits>
-struct skip_list<Traits>::node_type { // node hanlder 구현이
-                                      // 잘못됨.https://en.cppreference.com/w/cpp/container/node_handle.html
+struct skip_list<Traits>::node_type { // Node handler implementation is incorrect.
+                                      // https://en.cppreference.com/w/cpp/container/node_handle.html
     friend skip_list;
 
   public:
