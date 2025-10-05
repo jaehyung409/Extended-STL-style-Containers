@@ -1038,7 +1038,7 @@ void skip_list<Traits>::insert(InputIter first, InputIter last) {
         _insert_node(new_node_guard.get(), predecessors);
         new_node_guard.release();
     }
-} // benchmark 해볼 것.
+} // Should benchmark.
 
 template <class Traits> skip_list<Traits>::node_type skip_list<Traits>::extract(const_iterator position) {
     return node_type{_extract_node(position), get_allocator()};
