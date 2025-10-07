@@ -184,22 +184,22 @@ jobs:
           cd build-benchmark
           echo "Running benchmarks with GCC 15 for consistent performance measurement..."
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Array/"; then
-            ./bench_array > bench_array_result.txt || echo "Array benchmark failed" > bench_array_result.txt
+            ./bench_array --order decl > bench_array_result.txt || echo "Array benchmark failed" > bench_array_result.txt
           fi
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/LinkedList/list"; then
-            ./bench_list > bench_list_result.txt || echo "List benchmark failed" > bench_list_result.txt
+            ./bench_list --order decl > bench_list_result.txt || echo "List benchmark failed" > bench_list_result.txt
           fi
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/LinkedList/forward_list"; then
-            ./bench_forward_list > bench_forward_list_result.txt || echo "Forward list benchmark failed" > bench_forward_list_result.txt
+            ./bench_forward_list --order decl > bench_forward_list_result.txt || echo "Forward list benchmark failed" > bench_forward_list_result.txt
           fi
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Vector/vector"; then
-            ./bench_vector > bench_vector_result.txt || echo "Vector benchmark failed" > bench_vector_result.txt
+            ./bench_vector --order decl > bench_vector_result.txt || echo "Vector benchmark failed" > bench_vector_result.txt
           fi
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/datastructures/Deque/deque"; then
-            ./bench_deque > bench_deque_result.txt || echo "Deque benchmark failed" > bench_deque_result.txt
+            ./bench_deque --order decl > bench_deque_result.txt || echo "Deque benchmark failed" > bench_deque_result.txt
           fi
           if echo "${{ steps.determine_changed_files.outputs.changed_files }}" | grep -q "modules/algorithms/heap_algo.cppm"; then
-            ./bench_queue > bench_queue_result.txt || echo "Queue(Heap) benchmark failed" > bench_queue_result.txt
+            ./bench_queue --order decl > bench_queue_result.txt || echo "Queue(Heap) benchmark failed" > bench_queue_result.txt
           fi
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
