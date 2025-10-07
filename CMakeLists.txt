@@ -121,6 +121,11 @@ add_executable(bench_set
 )
 target_link_libraries(bench_set PRIVATE j Catch2::Catch2WithMain)
 
+add_executable(bench_skip_list_version
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/datastructures/set/skip_list/bench_o_vs_n.cpp
+)
+target_link_libraries(bench_skip_list_version PRIVATE j Catch2::Catch2WithMain)
+
 # --------------- Add Main (if needed) ---------------
 # add_executable(main
 #         ${CMAKE_CURRENT_SOURCE_DIR}/test/main.cpp
