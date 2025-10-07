@@ -537,6 +537,7 @@ template <class Traits> class skip_list<Traits>::node_forward_guard {
 template <class Traits> class skip_list<Traits>::copy_guard {
   private:
     std::unordered_map<node_ptr, node_ptr> _node_map; // later, use custom hash function
+    vector<node_ptr> _owned_nodes;
     node_allocator_type _node_alloc;
 
   public:
@@ -546,7 +547,7 @@ template <class Traits> class skip_list<Traits>::copy_guard {
     copy_guard(copy_guard &&) = delete;
     copy_guard &operator=(copy_guard &&) = delete;
     ~copy_guard() {
-        for (auto &[old_node, new_node] : _node_map) {
+        for (auto new_node : _owned_nodes) {
             if (new_node) {
                 std::allocator_traits<node_allocator_type>::destroy(_node_alloc, &new_node->_value);
                 std::allocator_traits<node_allocator_type>::destroy(_node_alloc, new_node);
@@ -556,7 +557,16 @@ template <class Traits> class skip_list<Traits>::copy_guard {
         }
     }
 
+    void reserve(size_type n) {
+        _owned_nodes.reserve(n);
+    }
+
     void insert(node_ptr old_node, node_ptr new_node) {
+        _node_map[old_node] = new_node;
+        _owned_nodes.push_back(new_node);
+    }
+
+    void insert_without_owning(node_ptr old_node, node_ptr new_node) {
         _node_map[old_node] = new_node;
     }
 
@@ -566,7 +576,7 @@ template <class Traits> class skip_list<Traits>::copy_guard {
     }
 
     void release() {
-        _node_map.clear();
+        _owned_nodes.clear();
     }
 };
 
@@ -676,11 +686,11 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
         return;
     }
 
+    _init_dummy();
     copy_guard guard(_node_alloc);
-    node_forward_guard init_guard(std::move(_construct_node(MAX_LEVEL)));
-    guard.insert(other._dummy, init_guard.get());
-    init_guard.release();
+    guard.reserve(other._size - 1); // excluding dummy node
 
+    guard.insert_without_owning(other._dummy, _dummy);
     node_ptr current_other = other._dummy->_forward[0];
     while (current_other != other._dummy) {
         if constexpr (Strategy::copy) {
@@ -695,6 +705,7 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
         }
         current_other = current_other->_forward[0];
     }
+    // now all nodes are created, we need to set forward and backward pointers (noexception)
     // current_other is now other._dummy
     do {
         node_ptr new_node = guard.get_new_node(current_other);
@@ -707,7 +718,6 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
         current_other = current_other->_forward[0];
     } while (current_other != other._dummy);
 
-    _dummy = guard.get_new_node(other._dummy);
     guard.release();
     _max_level = other._max_level;
     _size = other._size;
