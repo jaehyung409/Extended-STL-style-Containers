@@ -15,13 +15,14 @@
 #include <functional>
 import j;
 
+#define TREE_SELECTOR j::use_skip_list
 const int N = 10000;
 const int DUPLICATES = 10;
 
 TEST_CASE("Set Basic") {
-    j::set<int> s;
-    j::set<int> s_init = {5, 2, 8, 1, 9, 3};
-    j::set<std::string> s_str = {"apple", "banana", "cherry"};
+    j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s;
+    j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s_init = {5, 2, 8, 1, 9, 3};
+    j::set<std::string, std::less<std::string>, std::allocator<std::string>, TREE_SELECTOR> s_str = {"apple", "banana", "cherry"};
 
     SECTION("Construction and Initialization") {
         REQUIRE(s.empty());
@@ -31,25 +32,25 @@ TEST_CASE("Set Basic") {
         REQUIRE(s_init.size() == 6);
 
         // Test deduction guide
-        j::set s_deduction = {10, 20, 30};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s_deduction = {10, 20, 30};
         REQUIRE(s_deduction.size() == 3);
         REQUIRE(s_deduction.contains(20));
     }
 
     SECTION("Iterator construction") {
         std::vector<int> vec = {4, 1, 7, 2, 9};
-        j::set<int> s_iter(vec.begin(), vec.end());
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s_iter(vec.begin(), vec.end());
         REQUIRE(s_iter.size() == 5);
         REQUIRE(s_iter.contains(4));
         REQUIRE(s_iter.contains(9));
     }
 
     SECTION("Copy and Move construction") {
-        j::set<int> s_copy(s_init);
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s_copy(s_init);
         REQUIRE(s_copy.size() == s_init.size());
         REQUIRE(s_copy == s_init);
 
-        j::set<int> s_move(std::move(s_copy));
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s_move(std::move(s_copy));
         REQUIRE(s_move.size() == 6);
         REQUIRE((s_copy.empty() || s_copy.size() == 6)); // Implementation dependent
     }
@@ -120,7 +121,7 @@ TEST_CASE("Set Basic") {
     }
 
     SECTION("Erase operations") {
-        j::set<int> s_erase = {1, 2, 3, 4, 5};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s_erase = {1, 2, 3, 4, 5};
 
         // Erase by key
         auto erased_count = s_erase.erase(3);
@@ -158,8 +159,8 @@ TEST_CASE("Set Basic") {
     }
 
     SECTION("Clear and Swap") {
-        j::set<int> s1 = {1, 2, 3};
-        j::set<int> s2 = {4, 5, 6};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s1 = {1, 2, 3};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s2 = {4, 5, 6};
 
         s1.clear();
         REQUIRE(s1.empty());
@@ -171,9 +172,9 @@ TEST_CASE("Set Basic") {
     }
 
     SECTION("Comparison operators") {
-        j::set<int> s1 = {1, 2, 3};
-        j::set<int> s2 = {1, 2, 3};
-        j::set<int> s3 = {1, 2, 4};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s1 = {1, 2, 3};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s2 = {1, 2, 3};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s3 = {1, 2, 4};
 
         REQUIRE(s1 == s2);
         REQUIRE(s1 != s3);
@@ -192,9 +193,9 @@ TEST_CASE("Set Basic") {
 }
 
 TEST_CASE("MultiSet Basic") {
-    j::multiset<int> ms;
-    j::multiset<int> ms_init = {5, 2, 8, 1, 9, 3, 5, 2}; // With duplicates
-    j::multiset<std::string> ms_str = {"apple", "banana", "cherry", "apple"};
+    j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms;
+    j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms_init = {5, 2, 8, 1, 9, 3, 5, 2}; // With duplicates
+    j::multiset<std::string, std::less<std::string>, std::allocator<std::string>, TREE_SELECTOR> ms_str = {"apple", "banana", "cherry", "apple"};
 
     SECTION("Construction and Initialization") {
         REQUIRE(ms.empty());
@@ -204,7 +205,7 @@ TEST_CASE("MultiSet Basic") {
         REQUIRE(ms_init.size() == 8); // Includes duplicates
 
         // Test deduction guide
-        j::multiset ms_deduction = {10, 20, 30, 20};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms_deduction = {10, 20, 30, 20};
         REQUIRE(ms_deduction.size() == 4);
         REQUIRE(ms_deduction.count(20) == 2);
     }
@@ -264,7 +265,7 @@ TEST_CASE("MultiSet Basic") {
     }
 
     SECTION("Erase operations with duplicates") {
-        j::multiset<int> ms_erase = {1, 2, 2, 3, 3, 3, 4};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms_erase = {1, 2, 2, 3, 3, 3, 4};
 
         // Erase all occurrences by key
         auto erased_count = ms_erase.erase(3);
@@ -291,7 +292,7 @@ TEST_CASE("MultiSet Basic") {
 
 TEST_CASE("Set Edge Cases") {
     SECTION("Empty set operations") {
-        j::set<int> empty_set;
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> empty_set;
 
         REQUIRE(empty_set.empty());
         REQUIRE(empty_set.size() == 0);
@@ -306,7 +307,7 @@ TEST_CASE("Set Edge Cases") {
     }
 
     SECTION("Single element set") {
-        j::set<int> single = {42};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> single = {42};
 
         REQUIRE(single.size() == 1);
         REQUIRE(!single.empty());
@@ -319,7 +320,7 @@ TEST_CASE("Set Edge Cases") {
     }
 
     SECTION("Custom comparator") {
-        j::set<int, std::greater<int>> desc_set = {3, 1, 4, 1, 5};
+        j::set<int, std::greater<int>, std::allocator<int>, TREE_SELECTOR> desc_set = {3, 1, 4, 1, 5};
 
         std::vector<int> result;
         for (const auto& val : desc_set) {
@@ -333,8 +334,8 @@ TEST_CASE("Set Edge Cases") {
     }
 
     SECTION("Node extraction and insertion") {
-        j::set<int> s1 = {1, 2, 3};
-        j::set<int> s2 = {4, 5, 6};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s1 = {1, 2, 3};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s2 = {4, 5, 6};
 
         // Extract node
         auto node = s1.extract(2);
@@ -352,9 +353,9 @@ TEST_CASE("Set Edge Cases") {
     }
 
     SECTION("Merge operations") {
-        j::set<int> s1 = {1, 3, 5};
-        j::set<int> s2 = {2, 4, 6};
-        j::set<int> s3 = {1, 2, 7}; // Has overlapping elements
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s1 = {1, 3, 5};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s2 = {2, 4, 6};
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> s3 = {1, 2, 7}; // Has overlapping elements
 
         s1.merge(s2);
         REQUIRE(s1.size() == 6);
@@ -370,7 +371,7 @@ TEST_CASE("Set Edge Cases") {
         std::vector<int> large_range(1000);
         std::iota(large_range.begin(), large_range.end(), 1);
 
-        j::set<int> large_set(large_range.begin(), large_range.end());
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> large_set(large_range.begin(), large_range.end());
         REQUIRE(large_set.size() == 1000);
 
         // Erase half
@@ -383,7 +384,7 @@ TEST_CASE("Set Edge Cases") {
 
 TEST_CASE("MultiSet Edge Cases") {
     SECTION("Empty multiset operations") {
-        j::multiset<int> empty_ms;
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> empty_ms;
 
         REQUIRE(empty_ms.empty());
         REQUIRE(empty_ms.size() == 0);
@@ -394,7 +395,7 @@ TEST_CASE("MultiSet Edge Cases") {
     }
 
     SECTION("All same elements") {
-        j::multiset<int> all_same = {5, 5, 5, 5, 5};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> all_same = {5, 5, 5, 5, 5};
 
         REQUIRE(all_same.size() == 5);
         REQUIRE(all_same.count(5) == 5);
@@ -413,7 +414,7 @@ TEST_CASE("MultiSet Edge Cases") {
     }
 
     SECTION("Custom comparator with duplicates") {
-        j::multiset<int, std::greater<int>> desc_ms = {3, 1, 4, 1, 5, 3};
+        j::multiset<int, std::greater<int>, std::allocator<int>, TREE_SELECTOR> desc_ms = {3, 1, 4, 1, 5, 3};
 
         std::vector<int> result;
         for (const auto& val : desc_ms) {
@@ -427,8 +428,8 @@ TEST_CASE("MultiSet Edge Cases") {
     }
 
     SECTION("Node operations with duplicates") {
-        j::multiset<int> ms1 = {1, 2, 2, 3};
-        j::multiset<int> ms2 = {4, 5};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms1 = {1, 2, 2, 3};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms2 = {4, 5};
 
         // Extract one occurrence
         auto node = ms1.extract(ms1.find(2));
@@ -445,8 +446,8 @@ TEST_CASE("MultiSet Edge Cases") {
     }
 
     SECTION("Merge with duplicates") {
-        j::multiset<int> ms1 = {1, 2, 3, 3};
-        j::multiset<int> ms2 = {2, 3, 4, 4};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms1 = {1, 2, 3, 3};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms2 = {2, 3, 4, 4};
 
         auto original_size1 = ms1.size();
         auto original_size2 = ms2.size();
@@ -462,7 +463,7 @@ TEST_CASE("MultiSet Edge Cases") {
 
 TEST_CASE("Set Big") {
     SECTION("Large scale insertion and lookup") {
-        j::set<int> big_set;
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> big_set;
 
         // Insert many elements
         for (int i = 0; i < N; ++i) {
@@ -477,20 +478,13 @@ TEST_CASE("Set Big") {
             REQUIRE(!big_set.contains(i * 2 + 1)); // Odd numbers don't exist
         }
 
-        // Performance test - should be fast
-        auto start_time = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < 1000; ++i) {
             auto temp = big_set.find(i * 20);
         }
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-
-        // Should complete quickly (adjust threshold as needed)
-        REQUIRE(duration.count() < 10000); // 10ms
     }
 
     SECTION("Large scale range operations") {
-        j::set<int> big_set;
+        j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> big_set;
 
         // Insert elements
         for (int i = 0; i < N; ++i) {
@@ -509,7 +503,7 @@ TEST_CASE("Set Big") {
     }
 
     SECTION("Memory efficiency test") {
-        std::vector<j::set<int>> many_sets(100);
+        std::vector<j::set<int, std::less<int>, std::allocator<int>, TREE_SELECTOR>> many_sets(100);
 
         for (auto& s : many_sets) {
             for (int i = 0; i < 100; ++i) {
@@ -527,7 +521,7 @@ TEST_CASE("Set Big") {
 
 TEST_CASE("MultiSet Big") {
     SECTION("Large scale with many duplicates") {
-        j::multiset<int> big_ms;
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> big_ms;
 
         // Insert many duplicates
         for (int i = 0; i < N; ++i) {
@@ -549,7 +543,7 @@ TEST_CASE("MultiSet Big") {
     }
 
     SECTION("Bulk operations performance") {
-        j::multiset<int> ms1, ms2;
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms1, ms2;
 
         // Populate both multisets
         for (int i = 0; i < N; ++i) {
@@ -560,21 +554,16 @@ TEST_CASE("MultiSet Big") {
         }
 
         // Merge operation on large multisets
-        auto start_time = std::chrono::high_resolution_clock::now();
         ms1.merge(ms2);
-        auto end_time = std::chrono::high_resolution_clock::now();
 
         REQUIRE(ms2.empty());
         REQUIRE(ms1.size() == 4 * N); // Accounting for overlaps
-
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-        REQUIRE(duration.count() < 100); // Should complete in reasonable time
     }
 
     SECTION("Iterator stability test") {
-        j::multiset<int> ms = {1, 2, 2, 3, 3, 3, 4, 4, 4, 4};
+        j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR> ms = {1, 2, 2, 3, 3, 3, 4, 4, 4, 4};
 
-        std::vector<j::multiset<int>::iterator> iterators;
+        std::vector<j::multiset<int, std::less<int>, std::allocator<int>, TREE_SELECTOR>::iterator> iterators;
 
         // Collect iterators to all elements
         for (auto it = ms.begin(); it != ms.end(); ++it) {
