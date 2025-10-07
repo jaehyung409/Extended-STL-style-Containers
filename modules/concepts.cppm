@@ -6,6 +6,8 @@
 
 module;
 #include <concepts>
+#include <functional>
+#include <type_traits>
 
 #if defined(__clang__)
 export module j:concepts;
@@ -14,6 +16,13 @@ module j:concepts;
 #endif
 
 namespace j {
+template <class T>
+concept NumericKeyTraits =
+    std::is_arithmetic_v<typename T::key_type> &&
+    (std::is_same_v<typename T::key_compare, std::less<typename T::key_type>> ||
+     std::is_same_v<typename T::key_compare, std::greater<typename T::key_type>> ||
+     std::is_same_v<typename T::key_compare, std::less<>> || std::is_same_v<typename T::key_compare, std::greater<>>);
+
 template <class K, class KeyType, class Comparator>
 concept IsTransparentlyComparable = requires(const K &k, const KeyType &key, const Comparator &comp) {
     { comp(k, key) } -> std::convertible_to<bool>;
