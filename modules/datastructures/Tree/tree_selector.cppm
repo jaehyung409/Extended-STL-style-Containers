@@ -12,15 +12,15 @@ import :skip_list;
 
 namespace j {
 struct use_red_black_tree {};
-struct use_skip_list {};
-export struct use_avl_tree {};
+export struct use_skip_list {};
+struct use_avl_tree {};
 
 template <class Traits, class Selector> struct select_tree {
-    using type = skip_list<Traits>;
+    using type = skip_list<Traits, false>;
 };
 
 template <class Traits> struct select_tree<Traits, use_skip_list> {
-    using type = skip_list<Traits>;
+    using type = skip_list<Traits, true>;
 };
 
 template <class Traits> struct select_tree<Traits, use_red_black_tree> {
