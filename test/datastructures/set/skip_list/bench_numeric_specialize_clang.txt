@@ -1,0 +1,994 @@
+Randomness seeded to: 348451968
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+bench_set is a Catch2 v3.11.0 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Insert Operations
+  Insert single element
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:23
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert                                  100             1     14.421 ms 
+                                        156.096 us    142.592 us    204.334 us 
+                                        115.695 us    32.4259 us    264.313 us 
+                                                                               
+std::set insert                                100             1     5.6031 ms 
+                                        119.829 us    115.503 us     127.71 us 
+                                        29.0589 us    17.6298 us    48.8268 us 
+                                                                               
+j::multiset insert                             100             1    16.2554 ms 
+                                         146.01 us    140.103 us    156.373 us 
+                                        39.0634 us    25.4611 us    68.5084 us 
+                                                                               
+std::multiset insert                           100             1     5.8332 ms 
+                                        49.7497 us    47.0268 us     57.253 us 
+                                        21.1556 us    9.42247 us    44.3384 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Insert Operations
+  Insert with hint
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:45
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert with hint                        100             1    13.2653 ms 
+                                        134.351 us    132.253 us    136.818 us 
+                                        11.6616 us    9.62387 us    16.1625 us 
+                                                                               
+std::set insert with hint                      100             1     3.6259 ms 
+                                        25.3518 us    25.0359 us    25.9588 us 
+                                        2.15908 us    1.36502 us    3.97609 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Insert Operations
+  Insert random order
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:59
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert random                           100             1    14.3586 ms 
+                                        144.574 us        141 us    150.848 us 
+                                         23.418 us    15.8289 us    43.2618 us 
+                                                                               
+std::set insert random                         100             1     9.0273 ms 
+                                        79.7192 us    77.7103 us    82.2501 us 
+                                        11.4096 us    9.31871 us     15.115 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Emplace Operations
+  Emplace single element
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:74
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set emplace                                 100             1    14.5358 ms 
+                                        135.363 us    132.205 us    139.653 us 
+                                        18.5939 us     14.312 us    24.9035 us 
+                                                                               
+std::set emplace                               100             1     4.7234 ms 
+                                         44.608 us    43.6453 us    46.0758 us 
+                                        5.99633 us    4.39712 us    9.77172 us 
+                                                                               
+j::multiset emplace                            100             1    12.5671 ms 
+                                        141.184 us    134.332 us    155.882 us 
+                                        48.9916 us    28.4311 us    96.5223 us 
+                                                                               
+std::multiset emplace                          100             1     3.5998 ms 
+                                        30.2117 us    29.7307 us     31.487 us 
+                                        3.71376 us    1.77844 us    7.85282 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Emplace Operations
+  Emplace with hint
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:96
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set emplace_hint                            100             1    14.6761 ms 
+                                        118.419 us    114.184 us    132.592 us 
+                                        35.6536 us    11.4675 us    80.6805 us 
+                                                                               
+std::set emplace_hint                          100             1     2.8024 ms 
+                                         25.846 us    23.6321 us    34.6434 us 
+                                        20.3454 us    2.85874 us    48.0493 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Erase Operations
+  Erase by key
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:113
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set erase by key                            100             1    15.0888 ms 
+                                        131.004 us    127.573 us     136.82 us 
+                                        22.3209 us    15.0049 us    36.8538 us 
+                                                                               
+std::set erase by key                          100             1     6.4087 ms 
+                                        59.6022 us    58.9568 us     60.426 us 
+                                        3.69947 us    2.99382 us    4.97343 us 
+                                                                               
+j::multiset erase by key                       100             1    15.4028 ms 
+                                        202.491 us    181.527 us    262.916 us 
+                                        165.877 us    66.7866 us     357.43 us 
+                                                                               
+std::multiset erase by key                     100             1      6.715 ms 
+                                        48.2352 us    46.8574 us    52.0192 us 
+                                         10.806 us    4.82122 us    23.0558 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Erase Operations
+  Erase by iterator
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:139
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set erase by iterator                       100             1    14.4373 ms 
+                                        175.144 us    164.948 us     204.85 us 
+                                        81.2956 us    33.7457 us    175.381 us 
+                                                                               
+std::set erase by iterator                     100             1     7.1143 ms 
+                                        50.0201 us    48.8081 us    52.6168 us 
+                                        8.61095 us    5.02943 us    15.8003 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Erase Operations
+  Erase range
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:153
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set erase range                             100             1    13.8894 ms 
+                                        133.466 us    129.703 us    137.398 us 
+                                        19.6661 us    17.8348 us    22.9489 us 
+                                                                               
+std::set erase range                           100             1     5.6888 ms 
+                                        57.0663 us     56.187 us    59.3009 us 
+                                         6.6818 us    3.23079 us    13.8711 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Find Operations
+  Find existing elements
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:174
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set find                                    100             1    19.0374 ms 
+                                        184.172 us    179.509 us    188.732 us 
+                                         23.583 us    21.3726 us    26.8898 us 
+                                                                               
+std::set find                                  100             1     6.6221 ms 
+                                        67.1561 us    66.4473 us    68.6139 us 
+                                        4.99048 us    3.00466 us    9.43596 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Find Operations
+  Find non-existing elements
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:194
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set find missing                            100             1      18.98 ms 
+                                        189.176 us    178.164 us    201.747 us 
+                                        60.0589 us    54.3652 us    66.0567 us 
+                                                                               
+std::set find missing                          100             1     9.2964 ms 
+                                        78.6518 us    75.6173 us    85.1996 us 
+                                        21.5574 us    12.5733 us    40.5259 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Find Operations
+  Random find pattern
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:214
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set find random                             100             1      20.78 ms 
+                                        209.141 us    203.961 us    216.322 us 
+                                        30.9209 us    23.7828 us    39.7978 us 
+                                                                               
+std::set find random                           100             1    10.9433 ms 
+                                        121.634 us    112.125 us    135.085 us 
+                                        57.1582 us    44.6748 us    86.8309 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Contains Operations
+  Contains existing elements
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:237
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set contains                                100             1      24.18 ms 
+                                        234.674 us    220.326 us    253.568 us 
+                                        83.8063 us    67.6478 us    103.086 us 
+                                                                               
+std::set contains                              100             1     7.4095 ms 
+                                        65.6072 us    64.8573 us    67.0351 us 
+                                        5.10031 us    3.18916 us    9.17032 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Count Operations
+  Count in set
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:260
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set count                                   100             1    18.5699 ms 
+                                        362.635 us    311.168 us    483.522 us 
+                                         379.84 us    196.654 us    749.669 us 
+                                                                               
+std::set count                                 100             1     7.2598 ms 
+                                        62.6796 us    59.7661 us    67.8946 us 
+                                        19.3218 us    12.2646 us    29.8975 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Count Operations
+  Count in multiset
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:276
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::multiset count                              100             1     16.642 ms 
+                                        164.566 us    159.968 us    179.064 us 
+                                        37.8086 us    14.1581 us    84.2589 us 
+                                                                               
+std::multiset count                            100             1     3.7199 ms 
+                                        39.0939 us    34.6238 us    51.6831 us 
+                                        33.6185 us    5.80656 us    70.7227 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Bound Operations
+  Lower bound
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:295
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set lower_bound                             100             1    15.7627 ms 
+                                        167.276 us    163.556 us    171.036 us 
+                                        19.0943 us     17.143 us    21.7656 us 
+                                                                               
+std::set lower_bound                           100             1     5.6878 ms 
+                                        62.8189 us    60.2954 us    68.0051 us 
+                                        17.7494 us    10.5425 us    33.0142 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Bound Operations
+  Upper bound
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:315
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set upper_bound                             100             1    17.2754 ms 
+                                        143.315 us    140.776 us    147.347 us 
+                                        16.0328 us    11.4704 us    27.2222 us 
+                                                                               
+std::set upper_bound                           100             1     5.5686 ms 
+                                         59.881 us    58.6813 us    61.5642 us 
+                                        7.17477 us    5.50298 us      9.371 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Bound Operations
+  Equal range
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:335
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set equal_range                             100             1    25.1589 ms 
+                                        254.198 us    246.653 us    273.535 us 
+                                        57.3792 us    22.6773 us    115.678 us 
+                                                                               
+std::set equal_range                           100             1     8.4831 ms 
+                                        92.2337 us    91.0954 us     93.911 us 
+                                        6.94303 us    5.10969 us    9.80006 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Bound Operations
+  Equal range in multiset
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:357
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::multiset equal_range                        100             1    17.2613 ms 
+                                        179.268 us    172.639 us    191.436 us 
+                                        44.5741 us     27.931 us    71.6108 us 
+                                                                               
+std::multiset equal_range                      100             1     3.6571 ms 
+                                         33.009 us    32.0522 us    34.8225 us 
+                                        6.46063 us     4.1406 us    11.5107 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Iteration Operations
+  Forward iteration
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:382
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set forward iter                            100             1    15.1442 ms 
+                                        122.429 us     120.42 us    124.842 us 
+                                        11.2309 us    9.45001 us    15.5619 us 
+                                                                               
+std::set forward iter                          100             1     5.3863 ms 
+                                        94.9779 us     84.206 us    113.627 us 
+                                        70.5576 us    48.2345 us    113.963 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Iteration Operations
+  Reverse iteration
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:398
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set reverse iter                            100             1    17.9595 ms 
+                                        156.717 us    150.555 us    174.944 us 
+                                        49.2145 us    16.4535 us    107.786 us 
+                                                                               
+std::set reverse iter                          100             1     5.8485 ms 
+                                        73.6462 us    69.8437 us    81.0931 us 
+                                        26.1723 us    16.3615 us    48.8312 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Iteration Operations
+  Range-based for loop
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:414
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set range-for                               100             1    22.3959 ms 
+                                        142.352 us    138.662 us    152.804 us 
+                                        29.2023 us     12.334 us    62.4781 us 
+                                                                               
+std::set range-for                             100             1    11.3935 ms 
+                                        69.2348 us    61.4182 us    87.5851 us 
+                                        57.4903 us    21.8828 us     100.22 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Memory/State Operations
+  Clear
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:433
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set clear                                   100             1    16.3712 ms 
+                                        141.601 us    134.718 us    156.528 us 
+                                        49.4266 us    27.0219 us    89.2404 us 
+                                                                               
+std::set clear                                 100             1     7.1902 ms 
+                                        98.3077 us    96.5176 us    100.793 us 
+                                         10.694 us    8.37897 us    13.5639 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Memory/State Operations
+  Swap
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:447
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set swap                                    100             1    39.2697 ms 
+                                        306.022 us    285.819 us    334.724 us 
+                                        122.198 us    97.6461 us    172.029 us 
+                                                                               
+std::set swap                                  100             1    14.8219 ms 
+                                        175.532 us    166.435 us    184.886 us 
+                                         46.992 us    41.2947 us    55.2731 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Copy/Move Operations
+  Copy construction
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:466
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set copy construct                          100             1    57.3265 ms 
+                                        373.698 us    349.616 us    412.405 us 
+                                        152.513 us    107.299 us    226.169 us 
+                                                                               
+std::set copy construct                        100             1     9.8919 ms 
+                                        82.2949 us    78.4229 us    87.7739 us 
+                                        23.3305 us    17.9896 us    29.8288 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Copy/Move Operations
+  Move construction
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:480
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set move construct                          100             1    19.8455 ms 
+                                        232.876 us    218.276 us    261.262 us 
+                                        100.401 us     62.452 us    194.684 us 
+                                                                               
+std::set move construct                        100             1     8.3415 ms 
+                                         54.645 us    54.0052 us    55.8477 us 
+                                        4.31886 us    2.77736 us     8.1389 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Copy/Move Operations
+  Copy assignment
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:494
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set copy assign                             100             1    42.1847 ms 
+                                        527.154 us    481.961 us    582.114 us 
+                                        253.496 us    215.461 us    369.797 us 
+                                                                               
+std::set copy assign                           100             1    10.4151 ms 
+                                        80.4169 us    77.6008 us     87.199 us 
+                                        20.9837 us    9.87836 us    40.4968 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Copy/Move Operations
+  Move assignment
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:508
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set move assign                             100             1    18.1646 ms 
+                                        137.889 us    127.335 us    172.551 us 
+                                        86.3758 us    26.8121 us     190.17 us 
+                                                                               
+std::set move assign                           100             1     7.4156 ms 
+                                        52.8049 us    50.3022 us    62.0783 us 
+                                        20.9322 us    2.78503 us    47.7596 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Construction Variants
+  Range construction
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:527
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set range construct                         100             1    26.2711 ms 
+                                        149.689 us    143.548 us    164.956 us 
+                                        45.9308 us    14.6034 us    81.9227 us 
+                                                                               
+std::set range construct                       100             1     5.3372 ms 
+                                         31.222 us    29.1179 us    39.3359 us 
+                                        19.0194 us    3.28312 us    44.7089 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Construction Variants
+  Initializer list construction
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:537
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set initializer_list construct              100             3     2.5692 ms 
+                                        10.5504 us    9.50261 us    12.9928 us 
+                                        7.70257 us    3.93027 us    14.4636 us 
+                                                                               
+std::set initializer_list construct            100            66      1.749 ms 
+                                        189.246 ns    185.778 ns    196.395 ns 
+                                        24.4412 ns    13.7054 ns    46.1164 ns 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Insert Range Operations
+  Insert iterator range
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:552
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert range                            100             1     3.8912 ms 
+                                        21.8537 us    19.4963 us    28.3879 us 
+                                        18.2369 us    7.40997 us    37.9002 us 
+                                                                               
+std::set insert range                          100             4     2.0104 ms 
+                                        2.24503 us    2.11064 us    2.82358 us 
+                                        1.20331 us    85.3786 ns    2.82799 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Insert Range Operations
+  Insert initializer_list
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:564
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert ilist                            100             3     2.2788 ms 
+                                        7.14078 us    6.32471 us    10.2541 us 
+                                        7.14956 us    1.75922 us    16.5115 us 
+                                                                               
+std::set insert ilist                          100            74     1.7538 ms 
+                                        178.686 ns    174.093 ns    183.262 ns 
+                                        23.4337 ns    21.8958 ns    25.8317 ns 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Extract Operations
+  Extract by iterator
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:579
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set extract iterator                        100             1    15.4731 ms 
+                                        136.095 us    132.469 us    145.709 us 
+                                         27.886 us    11.9836 us    58.2176 us 
+                                                                               
+std::set extract iterator                      100             1     5.3802 ms 
+                                        62.0743 us    57.4669 us     70.301 us 
+                                        30.5045 us    19.4499 us    47.1429 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Extract Operations
+  Extract by key
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:601
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set extract key                             100             1    15.8079 ms 
+                                        125.458 us    122.402 us    130.663 us 
+                                        19.9197 us     12.311 us    31.6498 us 
+                                                                               
+std::set extract key                           100             1     8.6788 ms 
+                                        70.9634 us    68.9099 us    75.0895 us 
+                                        14.3176 us    8.33471 us    26.4731 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Node Handle Insert
+  Insert node_type
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:626
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert node_type                        100             1    15.2653 ms 
+                                        178.525 us    170.702 us    191.762 us 
+                                        50.6693 us     34.195 us    77.9656 us 
+                                                                               
+std::set insert node_type                      100             1     6.8249 ms 
+                                        56.6031 us    53.5641 us    62.9838 us 
+                                        21.4702 us     11.197 us    36.6321 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Merge Operations
+  Merge set to set
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:657
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set merge                                   100             1       14.8 ms 
+                                        131.345 us    127.521 us    140.128 us 
+                                        27.8653 us    14.2557 us    53.6894 us 
+                                                                               
+std::set merge                                 100             1     6.3249 ms 
+                                        57.8862 us    56.5305 us    62.9339 us 
+                                        11.8251 us    3.09596 us    27.2314 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Merge Operations
+  Merge multiset to multiset
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:691
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::multiset merge                              100             1    16.4579 ms 
+                                        151.081 us    147.875 us    156.149 us 
+                                        20.2013 us    13.2044 us    31.0789 us 
+                                                                               
+std::multiset merge                            100             1     5.1633 ms 
+                                        55.3656 us    53.9741 us    61.0284 us 
+                                        12.2998 us    2.29181 us    28.5831 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Algorithm Integration
+  std::find
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:710
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set std::find                               100             1    65.4498 ms 
+                                        655.612 us    623.004 us    700.624 us 
+                                         194.14 us    152.452 us    248.349 us 
+                                                                               
+std::set std::find                             100             1    41.7852 ms 
+                                        395.791 us    380.247 us    413.377 us 
+                                        84.3154 us    75.2816 us    96.0921 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Algorithm Integration
+  std::accumulate
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:734
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set std::accumulate                         100             1     16.725 ms 
+                                        179.095 us    165.197 us    200.213 us 
+                                        86.1966 us     65.187 us    127.139 us 
+                                                                               
+std::set std::accumulate                       100             1     9.4899 ms 
+                                        93.4797 us    82.0011 us     124.18 us 
+                                        88.3603 us    38.5411 us    182.412 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Algorithm Integration
+  std::count_if
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:746
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set std::count_if                           100             1    20.6054 ms 
+                                        196.723 us    181.694 us    227.389 us 
+                                        104.935 us     55.191 us    173.745 us 
+                                                                               
+std::set std::count_if                         100             1     6.9271 ms 
+                                          70.11 us    65.9429 us    77.6914 us 
+                                        27.8711 us    18.1898 us    42.9999 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Mixed Operations Pattern
+  Interleaved insert/erase
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:761
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert/erase mix                        100             1    14.3884 ms 
+                                        201.379 us    191.698 us    214.434 us 
+                                        56.9278 us    44.6996 us    74.1435 us 
+                                                                               
+std::set insert/erase mix                      100             1    11.4172 ms 
+                                        58.0337 us    55.8792 us    66.3756 us 
+                                        18.8786 us    4.64223 us    43.6419 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Mixed Operations Pattern
+  Interleaved insert/find
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:779
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert/find mix                         100             1    21.4116 ms 
+                                        165.779 us    160.268 us    172.926 us 
+                                        31.9193 us    25.9719 us    39.8937 us 
+                                                                               
+std::set insert/find mix                       100             1     5.2926 ms 
+                                         50.426 us    48.9238 us    54.7341 us 
+                                        11.7633 us    2.90591 us    24.9359 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Large Scale Operations
+  Large insert sequential
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:803
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set large insert seq                        100             1    130.329 ms 
+                                        1.33251 ms    1.29505 ms    1.37834 ms 
+                                        210.962 us    174.456 us    277.503 us 
+                                                                               
+std::set large insert seq                      100             1    60.3102 ms 
+                                        610.026 us    587.455 us    642.564 us 
+                                        137.071 us    102.893 us    188.023 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Large Scale Operations
+  Large insert random
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:815
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set large insert random                     100             1    207.523 ms 
+                                        2.36164 ms     2.2432 ms    2.59394 ms 
+                                        816.353 us    484.217 us    1.29679 ms 
+                                                                               
+std::set large insert random                   100             1    136.859 ms 
+                                        1.28285 ms    1.21478 ms    1.36391 ms 
+                                        379.411 us    332.125 us     433.87 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Large Scale Operations
+  Large find operations
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:827
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set large find                              100             1    243.735 ms 
+                                        2.26425 ms    2.19188 ms    2.36374 ms 
+                                        431.795 us    343.593 us    574.693 us 
+                                                                               
+std::set large find                            100             1     95.644 ms 
+                                        986.154 us    936.257 us    1.05614 ms 
+                                        299.138 us    235.709 us    412.547 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Large Scale Operations
+  Large iteration
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:847
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set large iterate                           100             1    183.691 ms 
+                                        1.86936 ms      1.776 ms    1.99089 ms 
+                                        539.383 us    439.237 us    748.723 us 
+                                                                               
+std::set large iterate                         100             1    91.7501 ms 
+                                         746.87 us    725.164 us    811.331 us 
+                                          173.5 us    68.5864 us     376.13 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Multiset Specific Operations
+  Multiset duplicate inserts
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:866
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::multiset many duplicates                    100             1    18.8249 ms 
+                                        207.202 us    185.653 us    243.777 us 
+                                        139.708 us    98.4883 us    234.066 us 
+                                                                               
+std::multiset many duplicates                  100             1     5.3834 ms 
+                                        50.3786 us    47.2583 us    61.3043 us 
+                                         26.077 us    4.81112 us    58.6148 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Multiset Specific Operations
+  Multiset count duplicates
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:878
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::multiset count duplicates                   100             1    21.4896 ms 
+                                        473.535 us     395.54 us    621.593 us 
+                                        528.756 us    322.427 us    835.767 us 
+                                                                               
+std::multiset count duplicates                 100             1     6.1818 ms 
+                                        44.9395 us     42.523 us     54.486 us 
+                                         21.701 us    3.82725 us    50.8748 us 
+                                                                               
+
+-------------------------------------------------------------------------------
+Set Benchmarks: Multiset Specific Operations
+  Multiset erase all duplicates
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/benchmark/bench_set.cpp:894
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::multiset erase all dupes                    100             1    22.7671 ms 
+                                        191.937 us    182.654 us    207.589 us 
+                                        60.1737 us    41.0635 us    87.7606 us 
+                                                                               
+std::multiset erase all dupes                  100             1     5.8446 ms 
+                                        56.3264 us    51.3606 us     64.714 us 
+                                        32.1838 us    21.6778 us    46.9223 us 
+                                                                               
+
+===============================================================================
+test cases: 19 | 19 passed
+assertions:  0 |  0 passed
+
