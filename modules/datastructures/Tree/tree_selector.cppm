@@ -16,11 +16,11 @@ export struct use_skip_list {};
 struct use_avl_tree {};
 
 template <class Traits, class Selector> struct select_tree {
-    using type = skip_list<Traits, false>;
+    using type = skip_list<Traits>;
 };
 
 template <class Traits> struct select_tree<Traits, use_skip_list> {
-    using type = skip_list<Traits, true>;
+    using type = skip_list<Traits>;
 };
 
 template <class Traits> struct select_tree<Traits, use_red_black_tree> {
