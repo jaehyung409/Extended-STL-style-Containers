@@ -1,5 +1,4 @@
-SKIP_LISE GEN SEED 12345
-Randomness seeded to: 2309233630
+Randomness seeded to: 2809567248
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 bench_skip_list_version is a Catch2 v3.11.0 host application.
@@ -16,25 +15,22 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set insert (no selector - false)            100             1    26.6481 ms 
-                                         234.29 us    231.981 us    237.103 us 
-                                        12.9477 us     10.841 us    16.4374 us 
-                                                                               
-j::set insert (with selector -                                                 
-true)                                          100             1    24.4608 ms 
-                                        234.941 us    232.842 us    237.596 us 
-                                        12.0498 us    9.79041 us    15.5308 us 
-                                                                               
-j::multiset insert (no selector -                                              
-false)                                         100             1    26.5485 ms 
-                                        245.684 us    241.862 us    252.141 us 
-                                        24.9407 us    17.0905 us    42.1526 us 
-                                                                               
-j::multiset insert (with selector -                                            
-true)                                          100             1    25.7189 ms 
-                                        277.581 us    269.478 us    289.247 us 
-                                        49.1002 us    37.3026 us     65.772 us 
-                                                                               
+j::set insert (general)                        100             1     18.1007 s
+                                        188.527 ms    184.482 ms    193.065 ms
+                                        21.7656 ms    18.5654 ms    25.8981 ms
+
+j::set insert (numeric)                        100             1     16.3499 s
+                                        182.082 ms    178.448 ms    186.839 ms
+                                        21.0746 ms      16.52 ms    27.6388 ms
+
+j::multiset insert (general)                   100             1     45.3301 s
+                                         1.32764 s      1.3001 s     1.35221 s
+                                        133.226 ms    105.863 ms    170.749 ms
+
+j::multiset insert (numeric)                   100             1      47.728 s
+                                         1.33379 s     1.30864 s     1.35214 s
+                                        109.118 ms    79.9369 ms    173.338 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Insert Operations
@@ -47,16 +43,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set insert with hint (no                                                    
-selector - false)                              100             1    29.4021 ms 
-                                        271.495 us    266.745 us    277.736 us 
-                                        27.5665 us    22.5304 us    38.1401 us 
-                                                                               
-j::set insert with hint (with                                                  
-selector - true)                               100             1    26.8778 ms 
-                                         270.11 us    263.808 us    290.281 us 
-                                        52.4425 us    19.2454 us    116.873 us 
-                                                                               
+j::set insert with hint (general)              100             1     14.7413 s
+                                        188.558 ms    184.182 ms    193.749 ms
+                                         24.267 ms    20.3884 ms    29.5371 ms
+
+j::set insert with hint (numeric)              100             1     16.2811 s
+                                        196.482 ms    193.417 ms     199.76 ms
+                                        16.2273 ms    14.1404 ms    18.7741 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Insert Operations
@@ -69,16 +63,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set insert random (no selector -                                            
-false)                                         100             1    34.1129 ms 
-                                        322.347 us     294.15 us    450.475 us 
-                                        263.071 us    28.0214 us    624.182 us 
-                                                                               
-j::set insert random (with selector                                            
-- true)                                        100             1    30.1446 ms 
-                                        284.715 us    281.502 us    288.546 us 
-                                         17.983 us     15.246 us    21.4178 us 
-                                                                               
+j::set insert random (general)                 100             1     20.5975 s
+                                        226.289 ms    223.573 ms    229.276 ms
+                                        14.4568 ms    12.2497 ms    17.3245 ms
+
+j::set insert random (numeric)                 100             1     20.5942 s
+                                        218.418 ms    216.009 ms    221.306 ms
+                                        13.4447 ms    11.0574 ms    17.5541 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Emplace Operations
@@ -91,26 +83,22 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set emplace (no selector -                                                  
-false)                                         100             1    24.6565 ms 
-                                        240.307 us    236.989 us    246.599 us 
-                                        22.6108 us    14.3375 us     40.945 us 
-                                                                               
-j::set emplace (with selector -                                                
-true)                                          100             1    31.5067 ms 
-                                        333.549 us    320.696 us    350.454 us 
-                                         74.973 us    60.1031 us     101.42 us 
-                                                                               
-j::multiset emplace (no selector -                                             
-false)                                         100             1    39.2774 ms 
-                                        354.953 us    348.508 us    364.257 us 
-                                        39.2324 us    29.3495 us    51.0511 us 
-                                                                               
-j::multiset emplace (with selector                                             
-- true)                                        100             1    36.8895 ms 
-                                        445.731 us    413.022 us    520.433 us 
-                                        239.137 us    130.586 us    469.213 us 
-                                                                               
+j::set emplace (general)                       100             1     14.6788 s
+                                        199.997 ms    195.279 ms    205.658 ms
+                                        26.2938 ms    21.6254 ms    32.7329 ms
+
+j::set emplace (numeric)                       100             1     16.6444 s
+                                        198.214 ms    193.987 ms    203.522 ms
+                                        23.8715 ms    19.6317 ms    29.3567 ms
+
+j::multiset emplace (general)                  100             1     51.9748 s
+                                         1.33295 s     1.30036 s     1.35703 s
+                                        141.701 ms     103.02 ms    203.571 ms
+
+j::multiset emplace (numeric)                  100             1     50.7855 s
+                                         1.32152 s     1.30359 s      1.3381 s
+                                        87.3057 ms    62.2494 ms    130.933 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Emplace Operations
@@ -123,16 +111,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set emplace_hint (no selector -                                             
-false)                                         100             1     43.741 ms 
-                                        456.055 us    443.833 us    472.257 us 
-                                        71.5987 us    57.2901 us    89.6299 us 
-                                                                               
-j::set emplace_hint (with selector                                             
-- true)                                        100             1    63.3623 ms 
-                                        711.216 us    636.475 us    908.721 us 
-                                        576.622 us    265.529 us    1.20218 ms 
-                                                                               
+j::set emplace_hint (general)                  100             1     17.3306 s
+                                        186.281 ms    182.683 ms    190.648 ms
+                                        20.2068 ms    16.7998 ms    24.5274 ms
+
+j::set emplace_hint (numeric)                  100             1     16.1982 s
+                                        187.256 ms     183.68 ms    191.795 ms
+                                         20.459 ms    16.5492 ms    25.7385 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Erase Operations
@@ -145,26 +131,22 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set erase by key (no selector -                                             
-false)                                         100             1    59.5558 ms 
-                                        504.438 us    488.953 us    537.268 us 
-                                        110.167 us    62.8741 us    207.657 us 
-                                                                               
-j::set erase by key (with selector                                             
-- true)                                        100             1    41.6245 ms 
-                                        374.358 us    356.223 us    412.093 us 
-                                        127.156 us    67.5565 us    210.732 us 
-                                                                               
-j::multiset erase by key (no                                                   
-selector - false)                              100             1    30.2629 ms 
-                                        287.153 us    277.696 us    309.605 us 
-                                        69.8069 us    28.2393 us     131.64 us 
-                                                                               
-j::multiset erase by key (with                                                 
-selector - true)                               100             1    28.5107 ms 
-                                        334.995 us    316.026 us    374.163 us 
-                                        133.064 us    71.6742 us     229.83 us 
-                                                                               
+j::set erase by key (general)                  100             1     21.3005 s
+                                        212.364 ms    208.527 ms    217.081 ms
+                                        21.5525 ms    17.6571 ms    26.9795 ms
+
+j::set erase by key (numeric)                  100             1      17.946 s
+                                        211.632 ms    207.025 ms    217.125 ms
+                                        25.4241 ms    21.5645 ms    30.4138 ms
+
+j::multiset erase by key (general)             100             1     50.2142 s
+                                         1.40934 s     1.38939 s     1.42875 s
+                                        100.583 ms    84.2313 ms    131.075 ms
+
+j::multiset erase by key (numeric)             100             1     49.6117 s
+                                         1.33134 s     1.31297 s     1.35237 s
+                                        99.7494 ms    80.4402 ms    135.254 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Erase Operations
@@ -177,16 +159,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set erase by iterator (no                                                   
-selector - false)                              100             1    26.6785 ms 
-                                        240.363 us    233.788 us    253.208 us 
-                                        45.2146 us    27.9088 us    77.4965 us 
-                                                                               
-j::set erase by iterator (with                                                 
-selector - true)                               100             1    23.0223 ms 
-                                        210.745 us    205.715 us    222.551 us 
-                                        37.0793 us    15.6039 us    66.3111 us 
-                                                                               
+j::set erase by iterator (general)             100             1     19.5603 s
+                                        215.047 ms    210.084 ms    220.604 ms
+                                        26.7571 ms    23.5044 ms    30.9924 ms
+
+j::set erase by iterator (numeric)             100             1     19.1114 s
+                                        214.061 ms    210.476 ms    218.052 ms
+                                        19.3991 ms    16.9074 ms    22.8104 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Erase Operations
@@ -199,16 +179,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set erase range (no selector -                                              
-false)                                         100             1    22.4283 ms 
-                                        223.723 us    216.999 us    234.244 us 
-                                          42.26 us    30.7945 us    59.9803 us 
-                                                                               
-j::set erase range (with selector -                                            
-true)                                          100             1    50.8876 ms 
-                                        288.998 us    271.378 us    317.549 us 
-                                        112.131 us    78.3818 us    159.622 us 
-                                                                               
+j::set erase range (general)                   100             1     23.2403 s
+                                        209.638 ms    204.934 ms    214.921 ms
+                                        25.3775 ms    21.8735 ms    31.0492 ms
+
+j::set erase range (numeric)                   100             1     17.8713 s
+                                        201.295 ms    196.843 ms     206.88 ms
+                                        25.3541 ms    20.8997 ms    32.2296 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Find Operations
@@ -221,14 +199,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set find (no selector - false)              100             1    46.9203 ms 
-                                        336.434 us    333.702 us    339.881 us 
-                                        15.5907 us    12.7093 us     19.931 us 
-                                                                               
-j::set find (with selector - true)             100             1    40.9686 ms 
-                                         408.75 us    380.591 us    473.226 us 
-                                        205.965 us    113.231 us    402.057 us 
-                                                                               
+j::set find (general)                          100             1     21.0975 s
+                                        290.108 ms    285.532 ms    295.137 ms
+                                        24.4009 ms     21.177 ms    28.6323 ms
+
+j::set find (numeric)                          100             1     24.8968 s
+                                        298.113 ms    293.078 ms    303.617 ms
+                                        26.8812 ms    23.0877 ms    32.2691 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Find Operations
@@ -241,16 +219,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set find missing (no selector -                                             
-false)                                         100             1    34.6673 ms 
-                                        324.229 us    318.375 us    332.898 us 
-                                        35.6973 us    26.5998 us    58.5529 us 
-                                                                               
-j::set find missing (with selector                                             
-- true)                                        100             1    31.9018 ms 
-                                        298.823 us    292.524 us    309.421 us 
-                                         40.738 us    27.5826 us    68.5602 us 
-                                                                               
+j::set find missing (general)                  100             1     20.0351 s
+                                        229.904 ms    224.948 ms     235.68 ms
+                                        27.2336 ms    23.0932 ms    35.0429 ms
+
+j::set find missing (numeric)                  100             1     20.9526 s
+                                        229.671 ms    225.731 ms    233.954 ms
+                                        20.9173 ms    18.0922 ms    25.0031 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Contains Operations
@@ -263,16 +239,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set contains (no selector -                                                 
-false)                                         100             1    43.5018 ms 
-                                        414.831 us    397.533 us    440.132 us 
-                                        105.621 us    78.7288 us    142.171 us 
-                                                                               
-j::set contains (with selector -                                               
-true)                                          100             1    42.4263 ms 
-                                        382.598 us    377.637 us    389.904 us 
-                                         30.464 us    22.8549 us    44.5448 us 
-                                                                               
+j::set contains (general)                      100             1     32.2844 s
+                                         291.76 ms    287.252 ms    296.596 ms
+                                        23.7027 ms    19.9837 ms    28.8768 ms
+
+j::set contains (numeric)                      100             1     30.0509 s
+                                        293.351 ms    287.777 ms    299.744 ms
+                                        30.5761 ms    26.1114 ms    37.0185 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Count Operations
@@ -285,14 +259,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set count (no selector - false)             100             1    36.2064 ms 
-                                        357.775 us    351.587 us    367.068 us 
-                                         38.188 us    28.3882 us    55.9546 us 
-                                                                               
-j::set count (with selector - true)            100             1    35.9699 ms 
-                                        359.216 us    342.399 us    400.731 us 
-                                        123.802 us    28.5624 us    230.436 us 
-                                                                               
+j::set count (general)                         100             1     30.9982 s
+                                        293.805 ms    288.845 ms     299.62 ms
+                                         27.224 ms    22.6936 ms    33.8273 ms
+
+j::set count (numeric)                         100             1     28.5247 s
+                                        291.183 ms    286.923 ms    295.679 ms
+                                        22.2722 ms    19.5667 ms    25.5753 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Count Operations
@@ -305,16 +279,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::multiset count (no selector -                                               
-false)                                         100             1      28.43 ms 
-                                        277.641 us    271.364 us    290.799 us 
-                                        44.4341 us    26.4786 us    83.8748 us 
-                                                                               
-j::multiset count (with selector -                                             
-true)                                          100             1    26.0673 ms 
-                                        234.481 us    230.881 us    240.667 us 
-                                        23.3557 us    15.3647 us    36.2429 us 
-                                                                               
+j::multiset count (general)                    100             1     57.7287 s
+                                         1.38085 s     1.37057 s     1.39116 s
+                                        52.4431 ms    43.9595 ms    66.0606 ms
+
+j::multiset count (numeric)                    100             1     1.20677 m
+                                         1.36864 s     1.34134 s     1.38416 s
+                                        101.843 ms    63.4759 ms    184.023 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Bound Operations
@@ -327,16 +299,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set lower_bound (no selector -                                              
-false)                                         100             1    24.1602 ms 
-                                        218.736 us    215.093 us    224.053 us 
-                                        22.1733 us    16.7648 us    31.9177 us 
-                                                                               
-j::set lower_bound (with selector -                                            
-true)                                          100             1    26.1065 ms 
-                                        278.565 us    264.265 us    304.922 us 
-                                        95.7183 us    59.4429 us    151.542 us 
-                                                                               
+j::set lower_bound (general)                   100             1     21.3382 s
+                                        254.153 ms    249.609 ms    259.681 ms
+                                        25.5217 ms     21.392 ms    31.7125 ms
+
+j::set lower_bound (numeric)                   100             1     22.7884 s
+                                        252.399 ms     247.44 ms    258.983 ms
+                                        28.9522 ms    23.3849 ms    40.2378 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Bound Operations
@@ -349,16 +319,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set upper_bound (no selector -                                              
-false)                                         100             1    40.0257 ms 
-                                        380.805 us    357.405 us    419.141 us 
-                                        149.682 us    102.401 us    216.718 us 
-                                                                               
-j::set upper_bound (with selector -                                            
-true)                                          100             1    38.6382 ms 
-                                        357.797 us    341.219 us    394.561 us 
-                                        119.386 us    66.3629 us    213.204 us 
-                                                                               
+j::set upper_bound (general)                   100             1      22.054 s
+                                        260.323 ms    255.655 ms    265.888 ms
+                                        25.7656 ms    21.5078 ms    31.5381 ms
+
+j::set upper_bound (numeric)                   100             1     23.7356 s
+                                        257.602 ms    252.907 ms    263.599 ms
+                                        26.9786 ms    22.1345 ms    34.5128 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Bound Operations
@@ -371,16 +339,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set equal_range (no selector -                                              
-false)                                         100             1    47.7232 ms 
-                                        572.047 us    557.961 us    593.493 us 
-                                        87.0776 us    64.7819 us    133.865 us 
-                                                                               
-j::set equal_range (with selector -                                            
-true)                                          100             1    58.2148 ms 
-                                        528.626 us     517.39 us    548.891 us 
-                                        74.5095 us     49.318 us    125.965 us 
-                                                                               
+j::set equal_range (general)                   100             1     33.1975 s
+                                        352.073 ms    345.744 ms    359.283 ms
+                                        34.4189 ms    30.1438 ms    40.0548 ms
+
+j::set equal_range (numeric)                   100             1     32.6055 s
+                                        351.537 ms    346.331 ms    357.915 ms
+                                        29.2393 ms     24.319 ms    37.7228 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Iteration Operations
@@ -393,16 +359,14 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set forward iteration (no                                                   
-selector - false)                              100             1     29.937 ms 
-                                        329.314 us    315.053 us    350.341 us 
-                                        87.4985 us    63.7707 us    120.693 us 
-                                                                               
-j::set forward iteration (with                                                 
-selector - true)                               100             1    30.4601 ms 
-                                        290.038 us    284.706 us    296.887 us 
-                                        30.7249 us     25.002 us    37.6028 us 
-                                                                               
+j::set forward iteration (general)             100             1     18.4915 s
+                                        224.641 ms    218.794 ms    230.873 ms
+                                        30.8784 ms    27.3325 ms    35.4071 ms
+
+j::set forward iteration (numeric)             100             1     20.3478 s
+                                        219.716 ms    215.136 ms    224.953 ms
+                                        24.9835 ms    20.7986 ms    30.9566 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Iteration Operations
@@ -415,16 +379,15 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set reverse iteration (no                                                   
-selector - false)                              100             1    26.4654 ms 
-                                        253.655 us    245.808 us    271.067 us 
-                                        56.6453 us    26.5332 us    99.0754 us 
-                                                                               
-j::set reverse iteration (with                                                 
-selector - true)                               100             1    25.5379 ms 
-                                        269.558 us    260.252 us    283.234 us 
-                                         56.991 us    43.1251 us    78.7499 us 
-                                                                               
+j::set reverse iteration (general)
+(general)                                      100             1      20.518 s
+                                        214.387 ms    209.347 ms    220.202 ms
+                                        27.5495 ms     23.637 ms    33.5088 ms
+
+j::set reverse iteration (numeric)             100             1     17.1354 s
+                                         221.05 ms    216.176 ms    226.327 ms
+                                        25.8751 ms    22.5756 ms    30.3885 ms
+
 
 -------------------------------------------------------------------------------
 Skip List O vs N: Mixed Operations Pattern
@@ -437,15 +400,13 @@ benchmark name                       samples       iterations    est run time
                                      mean          low mean      high mean
                                      std dev       low std dev   high std dev
 -------------------------------------------------------------------------------
-j::set mixed operations (no                                                    
-selector - false)                              100             1    12.4581 ms 
-                                        129.107 us      126.7 us    132.179 us 
-                                        13.7653 us      11.28 us    17.6251 us 
-                                                                               
-j::set mixed operations (with                                                  
-selector - true)                               100             1    12.1662 ms 
-                                        126.408 us    123.463 us    129.989 us 
-                                          16.53 us    14.1247 us    20.0457 us 
+j::set mixed operations (general)              100             1     9.44227 s
+                                        126.622 ms    123.004 ms    130.769 ms
+                                         19.728 ms    16.2179 ms    25.9165 ms
+
+j::set mixed operations (numeric)              100             1     9.07961 s
+                                        128.112 ms    124.201 ms    132.718 ms
+                                        21.6177 ms    18.4868 ms    27.3969 ms
                                                                                
 
 ===============================================================================
