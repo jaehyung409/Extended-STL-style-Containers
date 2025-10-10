@@ -24,7 +24,7 @@ import :vector;
 import :array;
 
 namespace j {
-template <class Traits> class skip_list<Traits> {
+template <class Traits> class skip_list {
   private:
     class _iterator;
     class _const_iterator;
@@ -36,7 +36,7 @@ template <class Traits> class skip_list<Traits> {
     using key_type = typename Traits::key_type;
     using mapped_type = typename Traits::mapped_type;
     using key_compare = typename Traits::key_compare;
-    using value_compare = typename Traits::value_compare; //
+    using value_compare = typename Traits::value_compare;
     using allocator_type = typename Traits::allocator_type;
     using pointer = typename std::allocator_traits<allocator_type>::pointer;
     using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
@@ -762,8 +762,7 @@ void skip_list<Traits>::_update_predecessors(key_type key, array<node_ptr, MAX_L
 }
 
 // Incrementally updates the 'predecessors' array from prev(position) to position.
-template <class Traits>
-void skip_list<Traits>::_advance_predecessors(array<node_ptr, MAX_LEVEL + 1> &predecessors) {
+template <class Traits> void skip_list<Traits>::_advance_predecessors(array<node_ptr, MAX_LEVEL + 1> &predecessors) {
     node_ptr current_node = predecessors[0]->_forward[0];
 
     for (size_type i = 0; i <= current_node->_level; ++i) {
@@ -889,8 +888,7 @@ skip_list<Traits>::const_iterator skip_list<Traits>::_find_upper_bound(K &&key) 
 
 template <class Traits>
 skip_list<Traits>::node_ptr
-skip_list<Traits>::_extract_node(const_iterator position,
-                                        const array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept {
+skip_list<Traits>::_extract_node(const_iterator position, const array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept {
     const size_type pos_level = position._ptr->_level;
     for (size_type i = 0; i <= pos_level; ++i) {
         predecessors[i]->_forward[i] = position._ptr->_forward[i];
@@ -920,8 +918,7 @@ void skip_list<Traits>::_insert_node(node_ptr new_node, array<node_ptr, MAX_LEVE
 template <class Traits>
 template <class... Args>
     requires std::constructible_from<typename Traits::value_type, Args &&...>
-std::pair<typename skip_list<Traits>::iterator, bool> skip_list<Traits>::_emplace(size_type level,
-                                                                                                Args &&...args) {
+std::pair<typename skip_list<Traits>::iterator, bool> skip_list<Traits>::_emplace(size_type level, Args &&...args) {
     value_type val(std::forward<Args>(args)...);
     key_type key;
     if constexpr (_IS_SET) {
@@ -1003,8 +1000,9 @@ template <class Traits> skip_list<Traits> &skip_list<Traits>::operator=(const sk
 }
 
 template <class Traits>
-skip_list<Traits> &skip_list<Traits>::operator=(skip_list &&x) noexcept(
-    std::allocator_traits<allocator_type>::is_always_equal::value && std::is_nothrow_move_assignable_v<key_compare>) {
+skip_list<Traits> &
+skip_list<Traits>::operator=(skip_list &&x) noexcept(std::allocator_traits<allocator_type>::is_always_equal::value &&
+                                                     std::is_nothrow_move_assignable_v<key_compare>) {
     if (this == std::addressof(x)) {
         return *this;
     }
@@ -1063,8 +1061,7 @@ template <class Traits> skip_list<Traits>::size_type skip_list<Traits>::max_size
     return std::allocator_traits<allocator_type>::max_size(get_allocator());
 }
 
-template <class Traits>
-skip_list<Traits>::allocator_type skip_list<Traits>::get_allocator() const noexcept {
+template <class Traits> skip_list<Traits>::allocator_type skip_list<Traits>::get_allocator() const noexcept {
     return allocator_type(_node_alloc);
 }
 
@@ -1158,8 +1155,7 @@ template <class Traits> skip_list<Traits>::insert_return_type skip_list<Traits>:
     return {iterator(predecessors[0]->_forward[0]), true, std::move(nh)};
 }
 
-template <class Traits>
-skip_list<Traits>::iterator skip_list<Traits>::insert(const_iterator position, node_type &&nh) {
+template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::insert(const_iterator position, node_type &&nh) {
     size_type new_node_level = nh._ptr->_level;
     key_type key = nh._ptr->_key();
 
@@ -1199,8 +1195,8 @@ skip_list<Traits>::iterator skip_list<Traits>::erase(const_iterator first, const
 }
 
 template <class Traits>
-void skip_list<Traits>::swap(skip_list &x) noexcept(
-    std::allocator_traits<allocator_type>::is_always_equal::value && std::is_nothrow_swappable_v<key_compare>) {
+void skip_list<Traits>::swap(skip_list &x) noexcept(std::allocator_traits<allocator_type>::is_always_equal::value &&
+                                                    std::is_nothrow_swappable_v<key_compare>) {
     using std::swap;
     if constexpr (std::allocator_traits<typename Traits::allocator_type>::propagate_on_container_swap::value) {
         swap(_node_alloc, x._node_alloc);
