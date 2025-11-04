@@ -58,7 +58,7 @@ template <class Traits> class skip_list {
     using Node = _skip_list_node;
     using node_ptr = Node *;
     using node_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
-    mutable std::mt19937 rng{12345};
+    mutable std::mt19937 rng{std::random_device{}()};
     mutable std::bernoulli_distribution coin_flip{0.5}; // later, make it customizable
 
     class node_forward_guard;
