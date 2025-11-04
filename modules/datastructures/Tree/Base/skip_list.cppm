@@ -180,23 +180,23 @@ template <class Traits> class skip_list {
     // Defined inline because clang has trouble matching with a separate declaration/definition.
     template <class K, class... Args>
         requires detail::TryEmplaceConstraint<skip_list, K, Args...>
-    iterator _try_emplace(K &&key, size_type level, Args &&...args) {
+    std::pair<iterator, bool> _try_emplace(K &&key, size_type level, Args &&...args) {
         auto predecessors = _find_predecessors(key);
 
         if (_is_duplicate(key, predecessors[0])) {
-            return iterator(predecessors[0]);
+            return {iterator(predecessors[0]), false};
         }
 
-        node_forward_guard new_node_guard(
-            std::move(_init_node(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                                 std::forward_as_tuple(std::forward<Args>(args)...), level)));
+        auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
+                                 std::forward_as_tuple(std::forward<Args>(args)...));
+        auto new_node_guard(std::move(_init_node(val, level)));
         _insert_node(new_node_guard.get(), predecessors);
-        return iterator(new_node_guard.release());
+        return {iterator(new_node_guard.release()), true};
     }
 
     template <class K, class M>
         requires detail::InsertOrAssignConstraint<skip_list, K, M>
-    iterator _insert_or_assign(K &&key, M &&obj, size_type level) {
+    std::pair<iterator, bool> _insert_or_assign(K &&key, M &&obj, size_type level) {
         auto predecessors = _find_predecessors(key);
         if (_is_duplicate(key, predecessors[0])) {
             if constexpr (!std::is_const_v<typename std::remove_reference<M>::type>) {
@@ -204,13 +204,13 @@ template <class Traits> class skip_list {
             } else {
                 predecessors[0]->_value.second = obj;
             }
-            return iterator(predecessors[0]);
+            return {iterator(predecessors[0]), false};
         }
-        node_forward_guard new_node_guard(
-            std::move(_init_node(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                                 std::forward_as_tuple(std::forward<M>(obj)), level)));
+        auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
+                                 std::forward_as_tuple(std::forward<M>(obj)));
+        auto new_node_guard(std::move(_init_node(val, level)));
         _insert_node(new_node_guard.get(), predecessors);
-        return iterator(new_node_guard.release());
+        return {iterator(new_node_guard.release()), true};
     }
 
   public:
@@ -264,14 +264,14 @@ template <class Traits> class skip_list {
     // Defined inline because clang has trouble matching with a separate declaration/definition.
     template <class K, class... Args>
         requires detail::TryEmplaceConstraint<skip_list, K, Args...>
-    iterator try_emplace(K &&key, Args &&...args) {
+    std::pair<iterator, bool> try_emplace(K &&key, Args &&...args) {
         size_type new_node_level = _random_level();
         return _try_emplace(std::forward<K>(key), new_node_level, std::forward<Args>(args)...);
     }
 
     template <class K, class... Args>
         requires detail::TryEmplaceConstraint<skip_list, K, Args...>
-    iterator try_emplace(const_iterator position, K &&key, Args &&...args) {
+    std::pair<iterator, bool> try_emplace(const_iterator position, K &&key, Args &&...args) {
         size_type new_node_level = _random_level();
 
         if (position != cbegin()) {
@@ -279,15 +279,15 @@ template <class Traits> class skip_list {
             if (!_key_comp(key, prev._ptr->_key()) && _key_comp(key, position._ptr->_key()) &&
                 prev._ptr->_level >= new_node_level) {
                 if (key == prev._ptr->_key()) { // not check _MULTI (try_emplace for map only)
-                    return iterator(prev._ptr);
+                    return {iterator(prev._ptr), false};
                 }
                 array<node_ptr, MAX_LEVEL + 1> predecessors;
-                std::fill(predecessors.begin(), new_node_level + 1, prev._ptr);
-                auto new_node_guard(
-                    std::move(_init_node(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                                         std::forward_as_tuple(std::forward<Args>(args)...), new_node_level)));
+                std::fill_n(predecessors.begin(), new_node_level + 1, prev._ptr);
+                auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
+                                         std::forward_as_tuple(std::forward<Args>(args)...));
+                auto new_node_guard(std::move(_init_node(val, new_node_level)));
                 _insert_node(new_node_guard.get(), predecessors);
-                return iterator(new_node_guard.release());
+                return {iterator(new_node_guard.release()), true};
             }
         }
 
@@ -296,14 +296,14 @@ template <class Traits> class skip_list {
 
     template <class K, class M>
         requires detail::InsertOrAssignConstraint<skip_list, K, M>
-    iterator insert_or_assign(K &&key, M &&obj) {
+    std::pair<iterator, bool> insert_or_assign(K &&key, M &&obj) {
         size_type new_node_level = _random_level();
         return _insert_or_assign(std::forward<K>(key), std::forward<M>(obj), new_node_level);
     }
 
     template <class K, class M>
         requires detail::InsertOrAssignConstraint<skip_list, K, M>
-    iterator insert_or_assign(const_iterator position, K &&key, M &&obj) {
+    std::pair<iterator, bool> insert_or_assign(const_iterator position, K &&key, M &&obj) {
         size_type new_node_level = _random_level();
         if (position != cbegin()) {
             auto prev = std::prev(position);
@@ -315,7 +315,7 @@ template <class Traits> class skip_list {
                     } else {
                         prev._ptr->_value.second = obj;
                     }
-                    return iterator(prev._ptr);
+                    return {iterator(prev._ptr), false};
                 }
             }
         }
