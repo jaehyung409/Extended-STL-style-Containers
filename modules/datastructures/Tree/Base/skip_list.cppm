@@ -673,7 +673,7 @@ template <class Traits> class skip_list<Traits>::copy_guard {
 namespace j {
 template <class Traits> skip_list<Traits>::size_type skip_list<Traits>::_random_level() const {
     size_type level = 0;
-    while (coin_flip(rng) && level <= MAX_LEVEL) {
+    while (coin_flip(rng) && level < MAX_LEVEL) {
         ++level;
     }
     return level;
