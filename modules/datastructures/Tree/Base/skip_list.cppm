@@ -32,11 +32,11 @@ template <class Traits> class skip_list {
     static constexpr bool _IS_SET = std::is_same_v<typename Traits::key_type, typename Traits::value_type>;
 
   public:
-    using value_type = typename Traits::value_type;
     using key_type = typename Traits::key_type;
-    using mapped_type = typename Traits::mapped_type;
     using key_compare = typename Traits::key_compare;
-    using value_compare = typename Traits::value_compare; //
+    using mapped_type = typename Traits::mapped_type;
+    using value_type = typename Traits::value_type;
+    using value_compare = typename Traits::value_compare;
     using allocator_type = typename Traits::allocator_type;
     using pointer = typename std::allocator_traits<allocator_type>::pointer;
     using const_pointer = typename std::allocator_traits<allocator_type>::const_pointer;
@@ -46,8 +46,6 @@ template <class Traits> class skip_list {
     using difference_type = typename std::allocator_traits<allocator_type>::difference_type;
     using iterator = std::conditional_t<_IS_SET, _const_iterator, _iterator>;
     using const_iterator = _const_iterator;
-    // using reverse_iterator       = std::reverse_iterator<iterator>;
-    // using const_reverse_iterator = std::reverse_iterator<const_iterator>;
     struct node_type;
     struct insert_return_type { // temp
         iterator position;
@@ -55,6 +53,167 @@ template <class Traits> class skip_list {
         node_type node;
     };
 
+  private:
+    struct _skip_list_node;
+    using Node = _skip_list_node;
+    using node_ptr = Node *;
+    using node_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
+    mutable std::mt19937 rng{std::random_device{}()};
+    mutable std::bernoulli_distribution coin_flip{0.5}; // later, make it customizable
+
+    class node_forward_guard;
+    struct _strategy_copy {
+        static constexpr bool copy = true;
+    };
+    struct _strategy_move {
+        static constexpr bool copy = false;
+    };
+    class copy_guard;
+    class _const_iterator {
+        friend skip_list;
+        friend _iterator;
+
+      public:
+        using iterator_concept = std::bidirectional_iterator_tag;
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = typename skip_list::value_type;
+        using difference_type = typename skip_list::difference_type;
+        using pointer = typename skip_list::pointer;
+        using reference = typename skip_list::reference;
+
+      private:
+        using node_pointer = Node *;
+        node_pointer _ptr;
+
+      public:
+        explicit _const_iterator(node_pointer ptr = nullptr) noexcept : _ptr(ptr) {}
+        _const_iterator(const _iterator &other) noexcept : _ptr(other._ptr) {}
+        _const_iterator &operator=(const _const_iterator &other) noexcept {
+            _ptr = other._ptr;
+            return *this;
+        }
+
+        const_reference operator*() const noexcept {
+            return _ptr->_value;
+        }
+        const_pointer operator->() const noexcept {
+            return &(_ptr->_value);
+        }
+
+        _const_iterator &operator++() noexcept {
+            _ptr = _ptr->_forward[0];
+            return *this;
+        }
+
+        _const_iterator operator++(int) noexcept {
+            _const_iterator temp = *this;
+            ++(*this);
+            return temp;
+        }
+
+        _const_iterator &operator--() noexcept {
+            _ptr = _ptr->_backward;
+            return *this;
+        }
+
+        _const_iterator operator--(int) noexcept {
+            _const_iterator temp = *this;
+            --(*this);
+            return temp;
+        }
+
+        bool operator==(const _const_iterator &other) const noexcept {
+            return _ptr == other._ptr;
+        }
+
+        template <class T>
+        friend bool operator==(const skip_list<T>::_iterator &lhs, const skip_list<T>::_const_iterator &rhs) noexcept;
+    };
+
+    static const size_type MAX_LEVEL = 32; // MAX_LEVELS - 1
+    size_type _max_level; // update only when inserting a new node with higher level (not decrease)
+    node_ptr _dummy;
+    node_allocator_type _node_alloc;
+    size_type _size;
+    [[no_unique_address]] key_compare _key_comp;
+
+    size_type _random_level() const;
+    // Calling `construct` with a level-only constructor would complicate safe initialization and could cause UB.
+    // Therefore, we treat Node as POD-like and manually initialize `_level` (and '_forward').
+    [[nodiscard]] auto _construct_node(size_type level) -> node_forward_guard;
+    void _deallocate_dummy_node() noexcept;
+    void _deallocate_node(node_ptr node) noexcept;
+    template <class K>
+        requires IsTransparentlyComparable<K, key_type, key_compare>
+    auto _find_predecessors(K &&key) const -> array<node_ptr, MAX_LEVEL + 1>;
+    template <class K>
+        requires IsTransparentlyComparable<K, key_type, key_compare>
+    auto _find_predecessors_lower(K &&key) const -> array<node_ptr, MAX_LEVEL + 1>;
+    auto _find_predecessors(const_iterator position) const -> array<node_ptr, MAX_LEVEL + 1>;
+    void _update_predecessors(key_type key, array<node_ptr, MAX_LEVEL + 1> &predecessors);
+    void _advance_predecessors(array<node_ptr, MAX_LEVEL + 1> &predecessors);
+    template <class K>
+        requires IsTransparentlyComparable<K, key_type, key_compare>
+    bool _is_duplicate(K &&key, node_ptr next) const;
+    template <class V>
+        requires std::constructible_from<value_type, V>
+    auto _init_node(V &&value, size_type level) -> node_forward_guard;
+    void _init_dummy();
+    void _move_state(skip_list &&x);
+    template <class Strategy> void _clone_tree(const skip_list &x);
+    void _destroy_tree() noexcept;
+
+    template <class K>
+        requires IsTransparentlyComparable<K, key_type, key_compare>
+    const_iterator _find_lower_bound(K &&key) const;
+    template <class K>
+        requires IsTransparentlyComparable<K, key_type, key_compare>
+    const_iterator _find_upper_bound(K &&key) const;
+
+    node_ptr _extract_node(const_iterator position, const array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept;
+    void _insert_node(node_ptr new_node, array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept;
+
+    template <class... Args>
+        requires std::constructible_from<value_type, Args &&...>
+    std::pair<iterator, bool> _emplace(size_type level, Args &&...args);
+
+    // Defined inline because clang has trouble matching with a separate declaration/definition.
+    template <class K, class... Args>
+        requires detail::TryEmplaceConstraint<skip_list, K, Args...>
+    std::pair<iterator, bool> _try_emplace(K &&key, size_type level, Args &&...args) {
+        auto predecessors = _find_predecessors(key);
+
+        if (_is_duplicate(key, predecessors[0])) {
+            return {iterator(predecessors[0]), false};
+        }
+
+        auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
+                                 std::forward_as_tuple(std::forward<Args>(args)...));
+        auto new_node_guard(std::move(_init_node(val, level)));
+        _insert_node(new_node_guard.get(), predecessors);
+        return {iterator(new_node_guard.release()), true};
+    }
+
+    template <class K, class M>
+        requires detail::InsertOrAssignConstraint<skip_list, K, M>
+    std::pair<iterator, bool> _insert_or_assign(K &&key, M &&obj, size_type level) {
+        auto predecessors = _find_predecessors(key);
+        if (_is_duplicate(key, predecessors[0])) {
+            if constexpr (!std::is_const_v<typename std::remove_reference<M>::type>) {
+                predecessors[0]->_value.second = std::forward<M>(obj);
+            } else {
+                predecessors[0]->_value.second = obj;
+            }
+            return {iterator(predecessors[0]), false};
+        }
+        auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
+                                 std::forward_as_tuple(std::forward<M>(obj)));
+        auto new_node_guard(std::move(_init_node(val, level)));
+        _insert_node(new_node_guard.get(), predecessors);
+        return {iterator(new_node_guard.release()), true};
+    }
+
+  public:
     skip_list(const key_compare &comp, const allocator_type &alloc);
     skip_list(const skip_list &other);
     skip_list(const skip_list &other, const std::type_identity_t<allocator_type> &alloc);
@@ -82,7 +241,8 @@ template <class Traits> class skip_list {
         requires std::constructible_from<value_type, Args &&...>
     iterator emplace_hint(const_iterator position, Args &&...args);
     template <class InputIter>
-        requires std::input_iterator<InputIter>
+        requires(std::input_iterator<InputIter> &&
+                 std::constructible_from<value_type, std::iter_reference_t<InputIter>>)
     void insert(InputIter first, InputIter last);
     node_type extract(const_iterator position);
 
@@ -101,18 +261,66 @@ template <class Traits> class skip_list {
     insert_return_type insert(node_type &&nh);
     iterator insert(const_iterator hint, node_type &&nh);
 
+    // Defined inline because clang has trouble matching with a separate declaration/definition.
     template <class K, class... Args>
         requires detail::TryEmplaceConstraint<skip_list, K, Args...>
-    iterator try_emplace(K &&key, Args &&...args);
+    std::pair<iterator, bool> try_emplace(K &&key, Args &&...args) {
+        size_type new_node_level = _random_level();
+        return _try_emplace(std::forward<K>(key), new_node_level, std::forward<Args>(args)...);
+    }
+
     template <class K, class... Args>
         requires detail::TryEmplaceConstraint<skip_list, K, Args...>
-    iterator try_emplace(const_iterator position, K &&key, Args &&...args);
+    std::pair<iterator, bool> try_emplace(const_iterator position, K &&key, Args &&...args) {
+        size_type new_node_level = _random_level();
+
+        if (position != cbegin()) {
+            auto prev = std::prev(position);
+            if (!_key_comp(key, prev._ptr->_key()) && _key_comp(key, position._ptr->_key()) &&
+                prev._ptr->_level >= new_node_level) {
+                if (key == prev._ptr->_key()) { // not check _MULTI (try_emplace for map only)
+                    return {iterator(prev._ptr), false};
+                }
+                array<node_ptr, MAX_LEVEL + 1> predecessors;
+                std::fill_n(predecessors.begin(), new_node_level + 1, prev._ptr);
+                auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
+                                         std::forward_as_tuple(std::forward<Args>(args)...));
+                auto new_node_guard(std::move(_init_node(val, new_node_level)));
+                _insert_node(new_node_guard.get(), predecessors);
+                return {iterator(new_node_guard.release()), true};
+            }
+        }
+
+        return _try_emplace(std::forward<K>(key), new_node_level, std::forward<Args>(args)...);
+    }
+
     template <class K, class M>
         requires detail::InsertOrAssignConstraint<skip_list, K, M>
-    iterator insert_or_assign(K &&key, M &&obj);
+    std::pair<iterator, bool> insert_or_assign(K &&key, M &&obj) {
+        size_type new_node_level = _random_level();
+        return _insert_or_assign(std::forward<K>(key), std::forward<M>(obj), new_node_level);
+    }
+
     template <class K, class M>
         requires detail::InsertOrAssignConstraint<skip_list, K, M>
-    iterator insert_or_assign(const_iterator position, K &&key, M &&obj);
+    std::pair<iterator, bool> insert_or_assign(const_iterator position, K &&key, M &&obj) {
+        size_type new_node_level = _random_level();
+        if (position != cbegin()) {
+            auto prev = std::prev(position);
+            if (!_key_comp(key, prev._ptr->_key()) && _key_comp(key, position._ptr->_key()) &&
+                prev._ptr->_level >= new_node_level) {
+                if (key == prev._ptr->_key()) { // not check _MULTI (insert_or_assign for map only)
+                    if constexpr (!std::is_const_v<typename std::remove_reference<M>::type>) {
+                        prev._ptr->_value.second = std::forward<M>(obj);
+                    } else {
+                        prev._ptr->_value.second = obj;
+                    }
+                    return {iterator(prev._ptr), false};
+                }
+            }
+        }
+        return _insert_or_assign(std::forward<K>(key), std::forward<M>(obj), new_node_level);
+    }
 
     iterator erase(const_iterator position);
 
@@ -122,12 +330,21 @@ template <class Traits> class skip_list {
                  !std::is_convertible_v<std::remove_cvref_t<K>, iterator> &&
                  !std::is_convertible_v<std::remove_cvref_t<K>, const_iterator>)
     size_type erase(K &&key) {
+        auto lower = _find_lower_bound(std::forward<K>(key));
+        if (lower == end() || _key_comp(key, lower._ptr->_key())) {
+            return 0;
+        }
+
         size_type count = 0;
-        auto range = equal_range(std::forward<K>(key));
-        while (range.first != range.second) {
-            range.first = erase(range.first);
+        array<node_ptr, MAX_LEVEL + 1> predecessors = _find_predecessors_lower(std::forward<K>(key));
+
+        while (lower._ptr != _dummy && !_key_comp(key, lower._ptr->_key())) {
+            auto next_it = std::next(lower);
+            _deallocate_node(_extract_node(lower, predecessors));
+            lower = next_it;
             ++count;
         }
+
         return count;
     }
 
@@ -180,73 +397,6 @@ template <class Traits> class skip_list {
     template <class K>
         requires IsTransparentlyComparable<K, key_type, key_compare>
     std::pair<const_iterator, const_iterator> equal_range(K &&key) const;
-
-  private:
-    struct _skip_list_node;
-    using Node = _skip_list_node;
-    using node_ptr = Node *;
-    using node_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
-    mutable std::mt19937 rng;
-    mutable std::bernoulli_distribution coin_flip{0.5}; // later, make it customizable
-
-    class node_forward_guard;
-    struct _strategy_copy {
-        static constexpr bool copy = true;
-    };
-    struct _strategy_move {
-        static constexpr bool copy = false;
-    };
-    class copy_guard;
-
-    static const size_type MAX_LEVEL = 32;
-    size_type _max_level; // update only when inserting a new node with higher level (not decrease)
-    node_ptr _dummy;
-    node_allocator_type _node_alloc;
-    size_type _size;
-    [[no_unique_address]] key_compare _key_comp;
-
-    size_type _random_level() const;
-    // Calling `construct` with a level-only constructor would complicate safe initialization and could cause UB.
-    // Therefore, we treat Node as POD-like and manually initialize `_level` (and '_forward').
-    [[nodiscard]] auto _construct_node(size_type level) -> node_forward_guard;
-    void _deallocate_dummy_node() noexcept;
-    void _deallocate_node(node_ptr node) noexcept;
-    template <class K>
-        requires IsTransparentlyComparable<K, key_type, key_compare>
-    auto _find_predecessors(K &&key) const -> array<node_ptr, MAX_LEVEL + 1>;
-    void _update_predecessors(const key_type key, array<node_ptr, MAX_LEVEL + 1> &predecessors);
-    template <class K>
-        requires IsTransparentlyComparable<K, key_type, key_compare>
-    bool _is_duplicate(K &&key, node_ptr next) const;
-    template <class V>
-        requires std::constructible_from<value_type, V>
-    auto _init_node(V &&value, size_type level) -> node_forward_guard;
-    void _init_dummy();
-    void _move_state(skip_list &&x);
-    template <class Strategy> void _clone_tree(const skip_list &x);
-    void _destroy_tree() noexcept;
-
-    template <class K>
-        requires IsTransparentlyComparable<K, key_type, key_compare>
-    const_iterator _find_lower_bound(K &&key) const;
-    template <class K>
-        requires IsTransparentlyComparable<K, key_type, key_compare>
-    const_iterator _find_upper_bound(K &&key) const;
-
-    node_ptr _extract_node(const_iterator position);
-    void _insert_node(node_ptr new_node, array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept;
-
-    template <class... Args>
-        requires std::constructible_from<value_type, Args &&...>
-    std::pair<iterator, bool> _emplace(size_type level, Args &&...args);
-
-    template <class K, class... Args>
-        requires detail::TryEmplaceConstraint<skip_list<Traits>, K, Args...>
-    iterator _try_emplace(K &&key, size_type level, Args &&...args);
-
-    template <class K, class M>
-        requires detail::InsertOrAssignConstraint<skip_list<Traits>, K, M>
-    iterator _insert_or_assign(K &&key, M &&obj, size_type level);
 };
 
 template <class Traits> struct skip_list<Traits>::_skip_list_node {
@@ -334,70 +484,8 @@ template <class Traits> class skip_list<Traits>::_iterator {
     }
 };
 
-template <class Traits> class skip_list<Traits>::_const_iterator {
-    friend skip_list;
-    friend _iterator;
-
-  public:
-    using iterator_concept = std::bidirectional_iterator_tag;
-    using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = typename skip_list::value_type;
-    using difference_type = typename skip_list::difference_type;
-    using pointer = typename skip_list::pointer;
-    using reference = typename skip_list::reference;
-
-  private:
-    using node_pointer = Node *;
-    node_pointer _ptr;
-
-  public:
-    explicit _const_iterator(node_pointer ptr = nullptr) noexcept : _ptr(ptr) {}
-    _const_iterator(const _iterator &other) noexcept : _ptr(other._ptr) {}
-    _const_iterator &operator=(const _const_iterator &other) noexcept {
-        _ptr = other._ptr;
-        return *this;
-    }
-
-    const_reference operator*() const noexcept {
-        return _ptr->_value;
-    }
-    const_pointer operator->() const noexcept {
-        return &(_ptr->_value);
-    }
-
-    _const_iterator &operator++() noexcept {
-        _ptr = _ptr->_forward[0];
-        return *this;
-    }
-
-    _const_iterator operator++(int) noexcept {
-        _const_iterator temp = *this;
-        ++(*this);
-        return temp;
-    }
-
-    _const_iterator &operator--() noexcept {
-        _ptr = _ptr->_backward;
-        return *this;
-    }
-
-    _const_iterator operator--(int) noexcept {
-        _const_iterator temp = *this;
-        --(*this);
-        return temp;
-    }
-
-    bool operator==(const _const_iterator &other) const noexcept {
-        return _ptr == other._ptr;
-    }
-
-    template <class T>
-    friend bool operator==(const skip_list<T>::_iterator &lhs, const skip_list<T>::_const_iterator &rhs) noexcept;
-};
-
-template <class Traits>
-struct skip_list<Traits>::node_type { // Node handler implementation is incorrect.
-                                      // https://en.cppreference.com/w/cpp/container/node_handle.html
+template <class Traits> struct skip_list<Traits>::node_type { // Node handler implementation is incorrect.
+    // https://en.cppreference.com/w/cpp/container/node_handle.html
     friend skip_list;
 
   public:
@@ -537,6 +625,7 @@ template <class Traits> class skip_list<Traits>::node_forward_guard {
 template <class Traits> class skip_list<Traits>::copy_guard {
   private:
     std::unordered_map<node_ptr, node_ptr> _node_map; // later, use custom hash function
+    vector<node_ptr> _owned_nodes;
     node_allocator_type _node_alloc;
 
   public:
@@ -546,7 +635,7 @@ template <class Traits> class skip_list<Traits>::copy_guard {
     copy_guard(copy_guard &&) = delete;
     copy_guard &operator=(copy_guard &&) = delete;
     ~copy_guard() {
-        for (auto &[old_node, new_node] : _node_map) {
+        for (auto new_node : _owned_nodes) {
             if (new_node) {
                 std::allocator_traits<node_allocator_type>::destroy(_node_alloc, &new_node->_value);
                 std::allocator_traits<node_allocator_type>::destroy(_node_alloc, new_node);
@@ -556,7 +645,16 @@ template <class Traits> class skip_list<Traits>::copy_guard {
         }
     }
 
+    void reserve(size_type n) {
+        _owned_nodes.reserve(n);
+    }
+
     void insert(node_ptr old_node, node_ptr new_node) {
+        _node_map[old_node] = new_node;
+        _owned_nodes.push_back(new_node);
+    }
+
+    void insert_without_owning(node_ptr old_node, node_ptr new_node) {
         _node_map[old_node] = new_node;
     }
 
@@ -566,7 +664,7 @@ template <class Traits> class skip_list<Traits>::copy_guard {
     }
 
     void release() {
-        _node_map.clear();
+        _owned_nodes.clear();
     }
 };
 
@@ -575,11 +673,11 @@ template <class Traits> class skip_list<Traits>::copy_guard {
 namespace j {
 template <class Traits> skip_list<Traits>::size_type skip_list<Traits>::_random_level() const {
     size_type level = 0;
-    while (coin_flip(rng) && level <= MAX_LEVEL) {
+    while (coin_flip(rng) && level < MAX_LEVEL) {
         ++level;
     }
     return level;
-}
+} // opt
 
 template <class Traits> auto skip_list<Traits>::_construct_node(size_type level) -> node_forward_guard {
     node_forward_guard node_guard(std::allocator_traits<node_allocator_type>::allocate(_node_alloc, 1), _node_alloc,
@@ -599,7 +697,7 @@ template <class Traits> void skip_list<Traits>::_deallocate_dummy_node() noexcep
     std::allocator_traits<node_allocator_type>::deallocate(_node_alloc, _dummy, 1);
 }
 
-template <class Traits> void skip_list<Traits>::_deallocate_node(Node *node) noexcept {
+template <class Traits> void skip_list<Traits>::_deallocate_node(node_ptr node) noexcept {
     std::allocator_traits<node_allocator_type>::destroy(_node_alloc, &node->_value);
     using node_ptr_allocator = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<node_ptr>;
     node_ptr_allocator _node_ptr_alloc(_node_alloc);
@@ -612,7 +710,22 @@ template <class K>
     requires IsTransparentlyComparable<K, typename Traits::key_type, typename Traits::key_compare>
 auto skip_list<Traits>::_find_predecessors(K &&key) const -> array<node_ptr, MAX_LEVEL + 1> {
     array<node_ptr, MAX_LEVEL + 1> predecessors;
-    Node *current = _dummy;
+    node_ptr current = _dummy;
+    for (size_type i = _max_level + 1; i > 0; --i) { // avoid unsigned int underflow
+        while (current->_forward[i - 1] != _dummy && !_key_comp(key, current->_forward[i - 1]->_key())) {
+            current = current->_forward[i - 1];
+        }
+        predecessors[i - 1] = current;
+    }
+    return predecessors;
+}
+
+template <class Traits>
+template <class K>
+    requires IsTransparentlyComparable<K, typename Traits::key_type, typename Traits::key_compare>
+auto skip_list<Traits>::_find_predecessors_lower(K &&key) const -> array<node_ptr, MAX_LEVEL + 1> {
+    array<node_ptr, MAX_LEVEL + 1> predecessors;
+    node_ptr current = _dummy;
     for (size_type i = _max_level + 1; i > 0; --i) { // avoid unsigned int underflow
         while (current->_forward[i - 1] != _dummy && _key_comp(current->_forward[i - 1]->_key(), key)) {
             current = current->_forward[i - 1];
@@ -622,9 +735,24 @@ auto skip_list<Traits>::_find_predecessors(K &&key) const -> array<node_ptr, MAX
     return predecessors;
 }
 
+template <class Traits>
+auto skip_list<Traits>::_find_predecessors(const_iterator position) const -> array<node_ptr, MAX_LEVEL + 1> {
+    array<node_ptr, MAX_LEVEL + 1> predecessors = _find_predecessors_lower(position._ptr->_key());
+    node_ptr current_node = predecessors[0]->_forward[0];
+
+    while (current_node != position._ptr) {
+        for (size_type i = 0; i <= current_node->_level; ++i) {
+            predecessors[i] = current_node;
+        }
+        current_node = current_node->_forward[0];
+    }
+
+    return predecessors;
+}
+
 // If we already know the predecessors and want to insert a new node after them,
 template <class Traits>
-void skip_list<Traits>::_update_predecessors(const key_type key, array<Node *, MAX_LEVEL + 1> &predecessors) {
+void skip_list<Traits>::_update_predecessors(key_type key, array<node_ptr, MAX_LEVEL + 1> &predecessors) {
     for (size_type i = _max_level + 1; i > 0; --i) {
         while (predecessors[i - 1]->_forward[i - 1] != _dummy &&
                !_key_comp(key, predecessors[i - 1]->_forward[i - 1]->_key())) {
@@ -633,10 +761,19 @@ void skip_list<Traits>::_update_predecessors(const key_type key, array<Node *, M
     }
 }
 
+// Incrementally updates the 'predecessors' array from prev(position) to position.
+template <class Traits> void skip_list<Traits>::_advance_predecessors(array<node_ptr, MAX_LEVEL + 1> &predecessors) {
+    node_ptr current_node = predecessors[0]->_forward[0];
+
+    for (size_type i = 0; i <= current_node->_level; ++i) {
+        predecessors[i] = current_node;
+    }
+}
+
 template <class Traits>
 template <class K>
     requires IsTransparentlyComparable<K, typename Traits::key_type, typename Traits::key_compare>
-bool skip_list<Traits>::_is_duplicate(K &&key, Node *next) const {
+bool skip_list<Traits>::_is_duplicate(K &&key, node_ptr next) const {
     return next != _dummy && !_key_comp(key, next->_key()) && !_key_comp(next->_key(), key);
 }
 
@@ -676,11 +813,11 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
         return;
     }
 
+    _init_dummy();
     copy_guard guard(_node_alloc);
-    node_forward_guard init_guard(std::move(_construct_node(MAX_LEVEL)));
-    guard.insert(other._dummy, init_guard.get());
-    init_guard.release();
+    guard.reserve(other._size - 1); // excluding dummy node
 
+    guard.insert_without_owning(other._dummy, _dummy);
     node_ptr current_other = other._dummy->_forward[0];
     while (current_other != other._dummy) {
         if constexpr (Strategy::copy) {
@@ -695,6 +832,7 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
         }
         current_other = current_other->_forward[0];
     }
+    // now all nodes are created, we need to set forward and backward pointers (noexception)
     // current_other is now other._dummy
     do {
         node_ptr new_node = guard.get_new_node(current_other);
@@ -707,7 +845,6 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
         current_other = current_other->_forward[0];
     } while (current_other != other._dummy);
 
-    _dummy = guard.get_new_node(other._dummy);
     guard.release();
     _max_level = other._max_level;
     _size = other._size;
@@ -727,7 +864,7 @@ template <class Traits>
 template <class K>
     requires IsTransparentlyComparable<K, typename Traits::key_type, typename Traits::key_compare>
 skip_list<Traits>::const_iterator skip_list<Traits>::_find_lower_bound(K &&key) const {
-    Node *current = _dummy;
+    node_ptr current = _dummy;
     for (size_type i = _max_level + 1; i > 0; --i) {
         while (current->_forward[i - 1] != _dummy && _key_comp(current->_forward[i - 1]->_key(), key)) {
             current = current->_forward[i - 1];
@@ -740,7 +877,7 @@ template <class Traits>
 template <class K>
     requires IsTransparentlyComparable<K, typename Traits::key_type, typename Traits::key_compare>
 skip_list<Traits>::const_iterator skip_list<Traits>::_find_upper_bound(K &&key) const {
-    Node *current = _dummy;
+    node_ptr current = _dummy;
     for (size_type i = _max_level + 1; i > 0; --i) {
         while (current->_forward[i - 1] != _dummy && !_key_comp(key, current->_forward[i - 1]->_key())) {
             current = current->_forward[i - 1];
@@ -749,9 +886,11 @@ skip_list<Traits>::const_iterator skip_list<Traits>::_find_upper_bound(K &&key) 
     return const_iterator(current->_forward[0]);
 }
 
-template <class Traits> skip_list<Traits>::node_ptr skip_list<Traits>::_extract_node(const_iterator position) {
-    auto predecessors = _find_predecessors(position._ptr->_key());
-    for (size_type i = 0; i <= position._ptr->_level; ++i) {
+template <class Traits>
+skip_list<Traits>::node_ptr
+skip_list<Traits>::_extract_node(const_iterator position, const array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept {
+    const size_type pos_level = position._ptr->_level;
+    for (size_type i = 0; i <= pos_level; ++i) {
         predecessors[i]->_forward[i] = position._ptr->_forward[i];
     }
     position._ptr->_forward[0]->_backward = position._ptr->_backward;
@@ -760,7 +899,7 @@ template <class Traits> skip_list<Traits>::node_ptr skip_list<Traits>::_extract_
 }
 
 template <class Traits>
-void skip_list<Traits>::_insert_node(Node *new_node, array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept {
+void skip_list<Traits>::_insert_node(node_ptr new_node, array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept {
     if (new_node->_level > _max_level) {
         std::fill(predecessors.begin() + _max_level + 1, predecessors.begin() + new_node->_level + 1, _dummy);
         _max_level = new_node->_level;
@@ -789,53 +928,13 @@ std::pair<typename skip_list<Traits>::iterator, bool> skip_list<Traits>::_emplac
     }
     auto predecessors = _find_predecessors(key);
     if constexpr (!_MULTI) {
-        auto dup_check = predecessors[0] == _dummy ? _dummy->_backward : predecessors[0];
-        if (_is_duplicate(key, dup_check)) {
-            return {iterator(dup_check), false};
+        if (_is_duplicate(key, predecessors[0])) {
+            return {iterator(predecessors[0]), false};
         }
     }
     node_forward_guard new_node_guard(std::move(_init_node(std::move(val), level)));
     _insert_node(new_node_guard.get(), predecessors);
     return {iterator(new_node_guard.release()), true};
-}
-
-template <class Traits>
-template <class K, class... Args>
-    requires detail::TryEmplaceConstraint<skip_list<Traits>, K, Args...>
-skip_list<Traits>::iterator skip_list<Traits>::_try_emplace(K &&key, size_type level, Args &&...args) {
-    auto predecessors = _find_predecessors(key);
-
-    auto dup_check = predecessors[0] == _dummy ? _dummy->_backward : predecessors[0];
-    if (_is_duplicate(key, dup_check)) {
-        return iterator(dup_check);
-    }
-
-    node_forward_guard new_node_guard(
-        std::move(_init_node(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                             std::forward_as_tuple(std::forward<Args>(args)...), level)));
-    _insert_node(new_node_guard.get(), predecessors);
-    return iterator(new_node_guard.release());
-}
-
-template <class Traits>
-template <class K, class M>
-    requires detail::InsertOrAssignConstraint<skip_list<Traits>, K, M>
-skip_list<Traits>::iterator skip_list<Traits>::_insert_or_assign(K &&key, M &&obj, size_type level) {
-    auto predecessors = _find_predecessors(key);
-    auto dup_check = predecessors[0] == _dummy ? _dummy->_backward : predecessors[0];
-    if (_is_duplicate(key, dup_check)) {
-        if constexpr (!std::is_const_v<typename std::remove_reference<M>::type>) {
-            dup_check->_value.second = std::forward<M>(obj);
-        } else {
-            dup_check->_value.second = obj;
-        }
-        return iterator(dup_check);
-    }
-    node_forward_guard new_node_guard(
-        std::move(_init_node(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                             std::forward_as_tuple(std::forward<M>(obj)), level)));
-    _insert_node(new_node_guard.get(), predecessors);
-    return iterator(new_node_guard.release());
 }
 
 template <class Traits>
@@ -1005,12 +1104,13 @@ skip_list<Traits>::iterator skip_list<Traits>::emplace_hint(const_iterator posit
 
 template <class Traits>
 template <class InputIter>
-    requires std::input_iterator<InputIter>
+    requires(std::input_iterator<InputIter> &&
+             std::constructible_from<typename Traits::value_type, std::iter_reference_t<InputIter>>)
 void skip_list<Traits>::insert(InputIter first, InputIter last) {
     if (first == last)
         return;
 
-    array<Node *, MAX_LEVEL + 1> predecessors;
+    array<node_ptr, MAX_LEVEL + 1> predecessors;
     predecessors.fill(_dummy);
 
     key_type key;
@@ -1029,8 +1129,7 @@ void skip_list<Traits>::insert(InputIter first, InputIter last) {
             std::fill(predecessors.begin() + _max_level + 1, predecessors.end(), _dummy);
         }
         if constexpr (!_MULTI) {
-            auto dup_check = predecessors[0] == _dummy ? _dummy->_backward : predecessors[0];
-            if (_is_duplicate(key, dup_check)) {
+            if (_is_duplicate(key, predecessors[0])) {
                 continue;
             }
         }
@@ -1041,15 +1140,14 @@ void skip_list<Traits>::insert(InputIter first, InputIter last) {
 } // Should benchmark.
 
 template <class Traits> skip_list<Traits>::node_type skip_list<Traits>::extract(const_iterator position) {
-    return node_type{_extract_node(position), get_allocator()};
+    return node_type{_extract_node(position, _find_predecessors(position)), get_allocator()};
 }
 
 template <class Traits> skip_list<Traits>::insert_return_type skip_list<Traits>::insert(node_type &&nh) {
     auto predecessors = _find_predecessors(nh._ptr->_key());
     if constexpr (!_MULTI) {
-        auto dup_check = predecessors[0] == _dummy ? _dummy->_backward : predecessors[0];
-        if (_is_duplicate(nh._ptr->_key(), dup_check)) {
-            return {iterator(dup_check), false, std::move(nh)};
+        if (_is_duplicate(nh._ptr->_key(), predecessors[0])) {
+            return {iterator(predecessors[0]), false, std::move(nh)};
         }
     }
     _insert_node(nh._ptr, predecessors);
@@ -1077,83 +1175,23 @@ template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::insert(co
     return insert(std::move(nh)).first;
 }
 
-template <class Traits>
-template <class K, class... Args>
-    requires detail::TryEmplaceConstraint<skip_list<Traits>, K, Args...>
-skip_list<Traits>::iterator skip_list<Traits>::try_emplace(K &&key, Args &&...args) {
-    size_type new_node_level = _random_level();
-    return _try_emplace(std::forward<K>(key), new_node_level, std::forward<Args>(args)...);
-}
-
-template <class Traits>
-template <class K, class... Args>
-    requires detail::TryEmplaceConstraint<skip_list<Traits>, K, Args...>
-skip_list<Traits>::iterator skip_list<Traits>::try_emplace(const_iterator position, K &&key, Args &&...args) {
-    size_type new_node_level = _random_level();
-
-    if (position != cbegin()) {
-        auto prev = std::prev(position);
-        if (!_key_comp(key, prev._ptr->_key()) && _key_comp(key, position._ptr->_key()) &&
-            prev._ptr->_level >= new_node_level) {
-            if (key == prev._ptr->_key()) { // not check _MULTI (try_emplace for map only)
-                return iterator(prev._ptr);
-            }
-            array<node_ptr, MAX_LEVEL + 1> predecessors;
-            std::fill(predecessors.begin(), new_node_level + 1, prev._ptr);
-            auto new_node_guard(
-                std::move(_init_node(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                                     std::forward_as_tuple(std::forward<Args>(args)...), new_node_level)));
-            _insert_node(new_node_guard.get(), predecessors);
-            return iterator(new_node_guard.release());
-        }
-    }
-
-    return _try_emplace(std::forward<K>(key), new_node_level, std::forward<Args>(args)...);
-}
-
-template <class Traits>
-template <class K, class M>
-    requires detail::InsertOrAssignConstraint<skip_list<Traits>, K, M>
-skip_list<Traits>::iterator skip_list<Traits>::insert_or_assign(K &&key, M &&obj) {
-    size_type new_node_level = _random_level();
-    return _insert_or_assign(std::forward<K>(key), std::forward<M>(obj), new_node_level);
-}
-
-template <class Traits>
-template <class K, class M>
-    requires detail::InsertOrAssignConstraint<skip_list<Traits>, K, M>
-skip_list<Traits>::iterator skip_list<Traits>::insert_or_assign(const_iterator position, K &&key, M &&obj) {
-    size_type new_node_level = _random_level();
-    if (position != cbegin()) {
-        auto prev = std::prev(position);
-        if (!_key_comp(key, prev._ptr->_key()) && _key_comp(key, position._ptr->_key()) &&
-            prev._ptr->_level >= new_node_level) {
-            if (key == prev._ptr->_key()) { // not check _MULTI (insert_or_assign for map only)
-                if constexpr (!std::is_const_v<typename std::remove_reference<M>::type>) {
-                    prev._ptr->_value.second = std::forward<M>(obj);
-                } else {
-                    prev._ptr->_value.second = obj;
-                }
-                return iterator(prev._ptr);
-            }
-        }
-    }
-    return _insert_or_assign(std::forward<K>(key), std::forward<M>(obj), new_node_level);
-}
-
 template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::erase(const_iterator position) {
     auto next_it = iterator(position._ptr->_forward[0]);
-
-    _deallocate_node(_extract_node(position));
+    _deallocate_node(_extract_node(position, _find_predecessors(position)));
     return next_it;
 }
 
 template <class Traits>
 skip_list<Traits>::iterator skip_list<Traits>::erase(const_iterator first, const_iterator last) {
+    array<node_ptr, MAX_LEVEL + 1> predecessors = _find_predecessors(first);
+
     while (first != last) {
-        first = erase(first);
+        auto next_it = std::next(first);
+        _deallocate_node(_extract_node(first, predecessors));
+        first = next_it;
     }
-    return iterator(first._ptr);
+
+    return iterator(last._ptr);
 }
 
 template <class Traits>
@@ -1195,24 +1233,24 @@ template <class Traits> void skip_list<Traits>::merge(skip_list &source) {
     if (this == std::addressof(source) || source.empty()) {
         return;
     }
-    array<Node *, MAX_LEVEL + 1> predecessors;
+    array<node_ptr, MAX_LEVEL + 1> predecessors, source_predecessors;
     predecessors.fill(_dummy);
+    source_predecessors.fill(source._dummy);
 
-    auto end = source.end();
-    for (auto it = source.begin(); it != end;) {
-        auto next_it = std::next(it);
-        key_type key = it._ptr->_key();
-        size_type level = it._ptr->_level;
+    auto cend = source.cend();
+    for (auto cit = source.cbegin(); cit != cend;) {
+        auto next_it = std::next(cit);
+        key_type key = cit._ptr->_key();
         _update_predecessors(key, predecessors);
         if constexpr (!_MULTI) {
-            auto dup_check = predecessors[0] == _dummy ? _dummy->_backward : predecessors[0];
-            if (_is_duplicate(key, dup_check)) {
-                ++it;
+            if (_is_duplicate(key, predecessors[0])) {
+                source._advance_predecessors(source_predecessors);
+                ++cit;
                 continue;
             }
         }
-        _insert_node(source._extract_node(it), predecessors);
-        it = next_it;
+        _insert_node(source._extract_node(cit, source_predecessors), predecessors);
+        cit = next_it;
     }
 }
 

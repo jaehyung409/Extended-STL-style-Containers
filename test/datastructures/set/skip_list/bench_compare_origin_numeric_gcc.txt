@@ -1,0 +1,415 @@
+Randomness seeded to: 1710078339
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+bench_skip_list_version is a Catch2 v3.11.0 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Insert Operations
+  Insert single element
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:21
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert (general)                        100             1     18.5613 s
+                                        203.532 ms    199.891 ms    207.584 ms
+                                        19.6161 ms    17.0288 ms    22.7917 ms
+
+j::set insert (numeric)                        100             1     16.0101 s
+                                        188.147 ms    185.395 ms    191.518 ms
+                                        15.4693 ms    12.7238 ms    21.2657 ms
+
+j::multiset insert (general)                   100             1     44.2526 s
+                                         1.31561 s     1.29858 s     1.33144 s
+                                        83.7363 ms    70.3994 ms    114.377 ms
+
+j::multiset insert (numeric)                   100             1     46.8462 s
+                                         1.40009 s     1.36259 s     1.44339 s
+                                        205.415 ms    173.977 ms    243.793 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Insert Operations
+  Insert with hint
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:43
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert with hint (general)              100             1      24.084 s
+                                        250.287 ms    243.693 ms    257.926 ms
+                                        36.3078 ms    30.9582 ms    43.5171 ms
+
+j::set insert with hint (numeric)              100             1     17.9247 s
+                                        217.025 ms     213.22 ms    221.665 ms
+                                        21.5258 ms    17.6699 ms    27.6161 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Insert Operations
+  Insert random order
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:57
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set insert random (general)                 100             1     21.7207 s
+                                        235.948 ms    232.936 ms    240.656 ms
+                                        18.7184 ms    13.4399 ms    32.6508 ms
+
+j::set insert random (numeric)                 100             1     21.0368 s
+                                         228.37 ms    225.796 ms    231.539 ms
+                                         14.539 ms    12.1045 ms    19.2844 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Emplace Operations
+  Emplace single element
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:72
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set emplace (general)                       100             1     18.4742 s
+                                        189.367 ms     186.55 ms     192.54 ms
+                                         15.209 ms    13.0272 ms    18.1679 ms
+
+j::set emplace (numeric)                       100             1     22.3776 s
+                                        199.443 ms    196.487 ms    202.604 ms
+                                        15.6093 ms     13.576 ms    18.1204 ms
+
+j::multiset emplace (general)                  100             1     47.7836 s
+                                         1.33593 s     1.31986 s     1.35379 s
+                                        86.5338 ms    73.0944 ms    106.506 ms
+
+j::multiset emplace (numeric)                  100             1     54.8968 s
+                                         1.26356 s     1.24306 s     1.28291 s
+                                        101.344 ms    81.2645 ms    135.736 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Emplace Operations
+  Emplace with hint
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:94
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set emplace_hint (general)                  100             1     16.5928 s
+                                        197.479 ms    193.016 ms    202.317 ms
+                                        23.6854 ms    20.6889 ms    27.6051 ms
+
+j::set emplace_hint (numeric)                  100             1     16.4421 s
+                                        207.319 ms    203.536 ms    211.296 ms
+                                        19.7953 ms    17.3372 ms    22.7188 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Erase Operations
+  Erase by key
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:111
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set erase by key (general)                  100             1     22.9342 s
+                                        240.377 ms    236.251 ms    245.058 ms
+                                        22.3013 ms    19.5555 ms    25.8388 ms
+
+j::set erase by key (numeric)                  100             1     21.2825 s
+                                        237.221 ms    232.841 ms    242.258 ms
+                                        24.0475 ms    20.6804 ms    28.8535 ms
+
+j::multiset erase by key (general)             100             1     49.6911 s
+                                          1.3167 s     1.29336 s     1.33413 s
+                                          101.6 ms    76.5364 ms    157.921 ms
+
+j::multiset erase by key (numeric)             100             1     44.2966 s
+                                         1.23067 s     1.19516 s     1.25527 s
+                                        148.869 ms    106.405 ms    216.626 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Erase Operations
+  Erase by iterator
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:137
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set erase by iterator (general)             100             1     19.5923 s
+                                        213.182 ms    209.102 ms    218.509 ms
+                                        23.6738 ms    19.0501 ms    32.6678 ms
+
+j::set erase by iterator (numeric)             100             1     20.0517 s
+                                        211.326 ms    207.466 ms    216.093 ms
+                                        21.7971 ms    18.2502 ms     25.769 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Erase Operations
+  Erase range
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:151
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set erase range (general)                   100             1     17.4933 s
+                                        197.329 ms    192.974 ms    202.344 ms
+                                        23.7091 ms    20.4186 ms    27.7885 ms
+
+j::set erase range (numeric)                   100             1     18.1646 s
+                                        198.509 ms     194.22 ms    203.364 ms
+                                         23.279 ms    19.9997 ms    27.1769 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Find Operations
+  Find existing elements
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:172
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set find (general)                          100             1     22.3344 s
+                                        274.285 ms    269.337 ms     279.92 ms
+                                        26.8035 ms    23.0096 ms    31.9531 ms
+
+j::set find (numeric)                          100             1     24.9501 s
+                                        281.415 ms    277.002 ms    286.434 ms
+                                        24.0861 ms    20.6059 ms    28.9228 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Find Operations
+  Find non-existing elements
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:192
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set find missing (general)                  100             1     18.8319 s
+                                         220.05 ms    215.878 ms    225.257 ms
+                                        23.7037 ms    19.7027 ms     31.742 ms
+
+j::set find missing (numeric)                  100             1     19.2424 s
+                                         225.43 ms    221.809 ms    229.208 ms
+                                         18.851 ms    16.5662 ms    21.8625 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Contains Operations
+  Contains existing elements
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:215
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set contains (general)                      100             1     24.2062 s
+                                        281.082 ms     274.96 ms    288.066 ms
+                                        33.3701 ms    28.7496 ms    39.7262 ms
+
+j::set contains (numeric)                      100             1     24.7482 s
+                                        302.869 ms    297.124 ms    308.763 ms
+                                        29.6614 ms    26.6859 ms    33.8162 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Count Operations
+  Count in set
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:238
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set count (general)                         100             1     26.4971 s
+                                        276.512 ms    270.962 ms    282.742 ms
+                                        30.0887 ms    26.0282 ms    35.4566 ms
+
+j::set count (numeric)                         100             1     24.8258 s
+                                        291.209 ms    287.524 ms    295.259 ms
+                                        19.6491 ms    16.8748 ms    23.4958 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Count Operations
+  Count in multiset
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:258
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::multiset count (general)                    100             1     46.2878 s
+                                         1.38016 s     1.36332 s     1.39324 s
+                                        74.5839 ms    53.0808 ms    122.786 ms
+
+j::multiset count (numeric)                    100             1     47.3905 s
+                                         1.33838 s     1.31026 s     1.35842 s
+                                        119.754 ms     78.473 ms     182.95 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Bound Operations
+  Lower bound
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:281
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set lower_bound (general)                   100             1     23.9844 s
+                                        246.742 ms    242.581 ms    251.556 ms
+                                        22.7701 ms    19.2649 ms    27.5898 ms
+
+j::set lower_bound (numeric)                   100             1     23.9087 s
+                                         250.82 ms    246.351 ms    256.452 ms
+                                        25.4854 ms    20.7047 ms    33.0228 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Bound Operations
+  Upper bound
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:303
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set upper_bound (general)                   100             1     20.9756 s
+                                        245.807 ms    241.711 ms    250.267 ms
+                                        21.7404 ms    19.2345 ms    25.1784 ms
+
+j::set upper_bound (numeric)                   100             1     22.6718 s
+                                        239.696 ms    235.691 ms    244.854 ms
+                                        23.0882 ms    18.8281 ms       29.9 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Bound Operations
+  Equal range
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:325
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set equal_range (general)                   100             1     30.3544 s
+                                        340.371 ms    333.969 ms    349.678 ms
+                                        39.1646 ms    29.0842 ms    54.9392 ms
+
+j::set equal_range (numeric)                   100             1     30.0838 s
+                                        339.037 ms    334.907 ms    343.992 ms
+                                        22.9997 ms    19.4742 ms    29.2945 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Iteration Operations
+  Forward iteration
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:350
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set forward iteration (general)             100             1      15.413 s
+                                        237.797 ms    232.179 ms    243.352 ms
+                                         28.666 ms    24.8463 ms    34.3785 ms
+
+j::set forward iteration (numeric)             100             1     16.2772 s
+                                        234.224 ms    229.431 ms    238.836 ms
+                                         24.058 ms    21.3417 ms    27.4278 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Iteration Operations
+  Reverse iteration
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:370
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set reverse iteration (general)
+(general)                                      100             1     15.5562 s
+                                        223.474 ms    219.616 ms    227.952 ms
+                                        21.1495 ms    17.4936 ms    27.3787 ms
+
+j::set reverse iteration (numeric)             100             1     17.2595 s
+                                        234.995 ms    229.759 ms      240.3 ms
+                                        26.9429 ms    24.0852 ms    30.6043 ms
+
+
+-------------------------------------------------------------------------------
+Skip List O vs N: Mixed Operations Pattern
+  Insert-Find-Erase cycle
+-------------------------------------------------------------------------------
+/workspace/test/datastructures/set/skip_list/bench_o_vs_n.cpp:393
+...............................................................................
+
+benchmark name                       samples       iterations    est run time
+                                     mean          low mean      high mean
+                                     std dev       low std dev   high std dev
+-------------------------------------------------------------------------------
+j::set mixed operations (general)              100             1     8.69463 s
+                                        131.327 ms    127.323 ms     136.16 ms
+                                        22.4483 ms    18.4359 ms    29.8808 ms
+
+j::set mixed operations (numeric)              100             1      9.7186 s
+                                        128.484 ms    125.133 ms    132.092 ms
+                                        17.5874 ms    15.6175 ms     21.569 ms
+
+
+===============================================================================
+test cases: 9 | 9 passed
+assertions: - none -
+

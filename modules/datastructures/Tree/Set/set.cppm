@@ -14,7 +14,7 @@ import :traits;
 import :tree_selector;
 
 namespace j {
-export template <class Key, class Compare, class Allocator, class TreeSelector = use_skip_list> class multiset;
+export template <class Key, class Compare, class Allocator, class TreeSelector> class multiset;
 
 export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>,
                  class TreeSelector = use_skip_list>
@@ -94,6 +94,7 @@ class set {
     template <class... Args>
         requires std::constructible_from<value_type, Args &&...>
     iterator emplace_hint(const_iterator position, Args &&...args);
+
     std::pair<iterator, bool> insert(const value_type &x);
     std::pair<iterator, bool> insert(value_type &&x);
     template <class K>
@@ -116,6 +117,7 @@ class set {
                  !std::is_convertible_v<std::remove_cvref_t<K>, iterator> &&
                  !std::is_convertible_v<std::remove_cvref_t<K>, const_iterator>)
     node_type extract(K &&x);
+
     insert_return_type insert(node_type &&nh);
     iterator insert(const_iterator hint, node_type &&nh);
 
@@ -129,6 +131,7 @@ class set {
                  !std::is_convertible_v<std::remove_cvref_t<K>, const_iterator>)
     size_type erase(K &&x);
     iterator erase(const_iterator first, const_iterator last);
+
     void swap(set &x) noexcept(std::allocator_traits<Allocator>::is_always_equal::value &&
                                std::is_nothrow_swappable_v<Compare>);
     void clear() noexcept;
@@ -723,7 +726,7 @@ set<Key, Compare, Allocator, TreeSelector>::equal_range(const K &x) const {
 } // namespace j
 
 namespace j {
-export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>, class TreeSelector>
+export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>, class TreeSelector = use_skip_list>
 class multiset {
   private:
     using traits = multiset_traits<Key, Compare, Allocator>;
@@ -809,7 +812,11 @@ class multiset {
 
     node_type extract(const_iterator position);
     node_type extract(const key_type &x);
-    template <class K> node_type extract(K &&x);
+    template <class K>
+        requires(IsTransparentlyComparable<K, key_type, key_compare> &&
+                 !std::is_convertible_v<std::remove_cvref_t<K>, iterator> &&
+                 !std::is_convertible_v<std::remove_cvref_t<K>, const_iterator>)
+    node_type extract(K &&x);
     iterator insert(node_type &&nh);
     iterator insert(const_iterator hint, node_type &&nh);
 
@@ -817,12 +824,20 @@ class multiset {
         requires(!std::same_as<iterator, const_iterator>);
     iterator erase(const_iterator position);
     size_type erase(const key_type &x);
-    template <class K> size_type erase(K &&x);
+    template <class K>
+        requires(IsTransparentlyComparable<K, key_type, key_compare> &&
+                 !std::is_convertible_v<std::remove_cvref_t<K>, iterator> &&
+                 !std::is_convertible_v<std::remove_cvref_t<K>, const_iterator>)
+    size_type erase(K &&x);
     iterator erase(const_iterator first, const_iterator last);
     void swap(multiset &) noexcept(std::allocator_traits<Allocator>::is_always_equal::value &&
                                    std::is_nothrow_swappable_v<Compare>);
     void clear() noexcept;
 
+    // Later, we will implement heterogeneous merge for different select_tree_t types.
+    // For now, we only implement merge for the same select_tree_t type.
+    // Also, we only implement fast-path only (same compare).
+    // _tree is private, so we need to implementation `merge(source)` in base tree class. (enhancement)
     template <class C2> void merge(multiset<Key, C2, Allocator, TreeSelector> &source);
     template <class C2> void merge(multiset<Key, C2, Allocator, TreeSelector> &&source);
     template <class C2> void merge(set<Key, C2, Allocator, TreeSelector> &source);
@@ -835,29 +850,49 @@ class multiset {
     // set operations
     [[nodiscard]] iterator find(const key_type &x);
     [[nodiscard]] const_iterator find(const key_type &x) const;
-    template <class K> [[nodiscard]] iterator find(const K &x);
-    template <class K> [[nodiscard]] const_iterator find(const K &x) const;
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] iterator find(const K &x);
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] const_iterator find(const K &x) const;
 
     [[nodiscard]] size_type count(const key_type &x) const;
-    template <class K> [[nodiscard]] size_type count(const K &x) const;
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] size_type count(const K &x) const;
 
     [[nodiscard]] bool contains(const key_type &x) const;
-    template <class K> [[nodiscard]] bool contains(const K &x) const;
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] bool contains(const K &x) const;
 
     [[nodiscard]] iterator lower_bound(const key_type &x);
     [[nodiscard]] const_iterator lower_bound(const key_type &x) const;
-    template <class K> [[nodiscard]] iterator lower_bound(const K &x);
-    template <class K> [[nodiscard]] const_iterator lower_bound(const K &x) const;
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] iterator lower_bound(const K &x);
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] const_iterator lower_bound(const K &x) const;
 
     [[nodiscard]] iterator upper_bound(const key_type &x);
     [[nodiscard]] const_iterator upper_bound(const key_type &x) const;
-    template <class K> [[nodiscard]] iterator upper_bound(const K &x);
-    template <class K> [[nodiscard]] const_iterator upper_bound(const K &x) const;
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] iterator upper_bound(const K &x);
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] const_iterator upper_bound(const K &x) const;
 
     [[nodiscard]] std::pair<iterator, iterator> equal_range(const key_type &x);
     [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const key_type &x) const;
-    template <class K> [[nodiscard]] std::pair<iterator, iterator> equal_range(const K &x);
-    template <class K> [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] std::pair<iterator, iterator> equal_range(const K &x);
+    template <class K>
+    requires IsTransparentlyComparable<K, key_type, key_compare>
+    [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
 };
 
 template <class InputIter, class Compare = std::less<typename std::iterator_traits<InputIter>::value_type>,
@@ -1108,6 +1143,13 @@ multiset<Key, Compare, Allocator, TreeSelector>::extract(const key_type &x) {
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires(
+    IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                              typename multiset_traits<Key, Compare, Allocator>::key_compare> &&
+    !std::is_convertible_v<std::remove_cvref_t<K>,
+                           typename select_tree_t<multiset_traits<Key, Compare, Allocator>, TreeSelector>::iterator> &&
+    !std::is_convertible_v<std::remove_cvref_t<K>, typename select_tree_t<multiset_traits<Key, Compare, Allocator>,
+                                                                          TreeSelector>::const_iterator>)
 multiset<Key, Compare, Allocator, TreeSelector>::node_type
 multiset<Key, Compare, Allocator, TreeSelector>::extract(K &&x) {
     return _tree.extract(std::forward<K>(x));
@@ -1149,6 +1191,13 @@ multiset<Key, Compare, Allocator, TreeSelector>::erase(const key_type &x) {
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires(
+    IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                              typename multiset_traits<Key, Compare, Allocator>::key_compare> &&
+    !std::is_convertible_v<std::remove_cvref_t<K>,
+                           typename select_tree_t<multiset_traits<Key, Compare, Allocator>, TreeSelector>::iterator> &&
+    !std::is_convertible_v<std::remove_cvref_t<K>, typename select_tree_t<multiset_traits<Key, Compare, Allocator>,
+                                                                          TreeSelector>::const_iterator>)
 multiset<Key, Compare, Allocator, TreeSelector>::size_type
 multiset<Key, Compare, Allocator, TreeSelector>::erase(K &&x) {
     return _tree.erase(std::forward<K>(x));
@@ -1229,6 +1278,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::find(const key_type &x) const {
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 multiset<Key, Compare, Allocator, TreeSelector>::iterator
 multiset<Key, Compare, Allocator, TreeSelector>::find(const K &x) {
     return _tree.find(std::forward<const K &>(x));
@@ -1236,6 +1287,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::find(const K &x) {
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 multiset<Key, Compare, Allocator, TreeSelector>::const_iterator
 multiset<Key, Compare, Allocator, TreeSelector>::find(const K &x) const {
     return _tree.find(std::forward<const K &>(x));
@@ -1249,6 +1302,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::count(const key_type &x) const 
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 multiset<Key, Compare, Allocator, TreeSelector>::size_type
 multiset<Key, Compare, Allocator, TreeSelector>::count(const K &x) const {
     return _tree.count(std::forward<const K &>(x));
@@ -1261,6 +1316,8 @@ bool multiset<Key, Compare, Allocator, TreeSelector>::contains(const key_type &x
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 bool multiset<Key, Compare, Allocator, TreeSelector>::contains(const K &x) const {
     return _tree.contains(std::forward<const K &>(x));
 }
@@ -1279,6 +1336,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::lower_bound(const key_type &x) 
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 multiset<Key, Compare, Allocator, TreeSelector>::iterator
 multiset<Key, Compare, Allocator, TreeSelector>::lower_bound(const K &x) {
     return _tree.lower_bound(std::forward<const K &>(x));
@@ -1286,6 +1345,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::lower_bound(const K &x) {
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 multiset<Key, Compare, Allocator, TreeSelector>::const_iterator
 multiset<Key, Compare, Allocator, TreeSelector>::lower_bound(const K &x) const {
     return _tree.lower_bound(std::forward<const K &>(x));
@@ -1305,6 +1366,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::upper_bound(const key_type &x) 
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 multiset<Key, Compare, Allocator, TreeSelector>::iterator
 multiset<Key, Compare, Allocator, TreeSelector>::upper_bound(const K &x) {
     return _tree.upper_bound(std::forward<const K &>(x));
@@ -1312,6 +1375,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::upper_bound(const K &x) {
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 multiset<Key, Compare, Allocator, TreeSelector>::const_iterator
 multiset<Key, Compare, Allocator, TreeSelector>::upper_bound(const K &x) const {
     return _tree.upper_bound(std::forward<const K &>(x));
@@ -1333,6 +1398,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::equal_range(const key_type &x) 
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 std::pair<typename multiset<Key, Compare, Allocator, TreeSelector>::iterator,
           typename multiset<Key, Compare, Allocator, TreeSelector>::iterator>
 multiset<Key, Compare, Allocator, TreeSelector>::equal_range(const K &x) {
@@ -1341,6 +1408,8 @@ multiset<Key, Compare, Allocator, TreeSelector>::equal_range(const K &x) {
 
 template <class Key, class Compare, class Allocator, class TreeSelector>
 template <class K>
+requires IsTransparentlyComparable<K, typename multiset_traits<Key, Compare, Allocator>::key_type,
+                                   typename multiset_traits<Key, Compare, Allocator>::key_compare>
 std::pair<typename multiset<Key, Compare, Allocator, TreeSelector>::const_iterator,
           typename multiset<Key, Compare, Allocator, TreeSelector>::const_iterator>
 multiset<Key, Compare, Allocator, TreeSelector>::equal_range(const K &x) const {
