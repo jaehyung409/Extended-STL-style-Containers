@@ -130,7 +130,7 @@ template <class Traits> class skip_list {
         friend bool operator==(const skip_list<T>::_iterator &lhs, const skip_list<T>::_const_iterator &rhs) noexcept;
     };
 
-    static const size_type MAX_LEVEL = 7; // MAX_LEVELS - 1
+    static const size_type MAX_LEVEL = 32; // MAX_LEVELS - 1
     size_type _max_level; // update only when inserting a new node with higher level (not decrease)
     node_ptr _dummy;
     node_allocator_type _node_alloc;
