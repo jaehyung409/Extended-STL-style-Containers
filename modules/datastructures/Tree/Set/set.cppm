@@ -14,7 +14,7 @@ import :traits;
 import :tree_selector;
 
 namespace j {
-export template <class Key, class Compare, class Allocator, class TreeSelector = use_skip_list> class multiset;
+export template <class Key, class Compare, class Allocator, class TreeSelector> class multiset;
 
 export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>,
                  class TreeSelector = use_skip_list>
@@ -723,7 +723,7 @@ set<Key, Compare, Allocator, TreeSelector>::equal_range(const K &x) const {
 } // namespace j
 
 namespace j {
-export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>, class TreeSelector>
+export template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>, class TreeSelector = use_skip_list>
 class multiset {
   private:
     using traits = multiset_traits<Key, Compare, Allocator>;
