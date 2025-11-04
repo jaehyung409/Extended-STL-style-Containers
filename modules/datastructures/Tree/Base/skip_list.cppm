@@ -32,10 +32,10 @@ template <class Traits> class skip_list {
     static constexpr bool _IS_SET = std::is_same_v<typename Traits::key_type, typename Traits::value_type>;
 
   public:
-    using value_type = typename Traits::value_type;
     using key_type = typename Traits::key_type;
-    using mapped_type = typename Traits::mapped_type;
     using key_compare = typename Traits::key_compare;
+    using mapped_type = typename Traits::mapped_type;
+    using value_type = typename Traits::value_type;
     using value_compare = typename Traits::value_compare;
     using allocator_type = typename Traits::allocator_type;
     using pointer = typename std::allocator_traits<allocator_type>::pointer;
@@ -130,7 +130,7 @@ template <class Traits> class skip_list {
         friend bool operator==(const skip_list<T>::_iterator &lhs, const skip_list<T>::_const_iterator &rhs) noexcept;
     };
 
-    static const size_type MAX_LEVEL = 32;
+    static const size_type MAX_LEVEL = 7; // MAX_LEVELS - 1
     size_type _max_level; // update only when inserting a new node with higher level (not decrease)
     node_ptr _dummy;
     node_allocator_type _node_alloc;
@@ -677,7 +677,7 @@ template <class Traits> skip_list<Traits>::size_type skip_list<Traits>::_random_
         ++level;
     }
     return level;
-}
+} // opt
 
 template <class Traits> auto skip_list<Traits>::_construct_node(size_type level) -> node_forward_guard {
     node_forward_guard node_guard(std::allocator_traits<node_allocator_type>::allocate(_node_alloc, 1), _node_alloc,
