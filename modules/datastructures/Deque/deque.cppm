@@ -1470,7 +1470,7 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
         erase(begin() + sz, end());
     } else if (sz > current_size) {
         const size_type diff = sz - current_size;
-        const size_type space_in_last_buffer = _finish._first + _buffer_size() - _finish._current;
+        const size_type space_in_last_buffer = _finish._last - _finish._current;
         const size_type fill_in_last_buffer = std::min(space_in_last_buffer, diff);
         const size_type num_nodes = (diff - fill_in_last_buffer + _buffer_size() - 1) / _buffer_size();
 
@@ -1490,7 +1490,7 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
             const size_type fill_now = std::min(remain, _buffer_size());
             uninitialized_default_construct_n(get_allocator(), bufs_guard[i].get(), fill_now);
 
-            bufs_guard[i].set_constructed_count(fill_now);
+            bufs_guard[i].add_constructed_count(fill_now);
             remain -= fill_now;
         }
 
@@ -1512,7 +1512,8 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
         erase(begin() + sz, end());
     } else if (sz > current_size) {
         const size_type diff = sz - current_size;
-        const size_type space_in_last_buffer = _finish._first + _buffer_size() - _finish._current;
+        const size_type elements_in_last_buffer = _finish._current - _finish._first;
+        const size_type space_in_last_buffer = _buffer_size() - elements_in_last_buffer;
         const size_type fill_in_last_buffer = std::min(space_in_last_buffer, diff);
         const size_type num_nodes = (diff - fill_in_last_buffer + _buffer_size() - 1) / _buffer_size();
 
@@ -1522,20 +1523,24 @@ template <class T, class Allocator> void deque<T, Allocator>::resize(size_type s
 
         vector<buffer_guard> bufs_guard;
 
-        bufs_guard.reserve(num_nodes);
+        bufs_guard.reserve(num_nodes + 1);
+
+        bufs_guard.emplace_back(_finish._first, _buf_alloc, false);
+        bufs_guard.back().set_offset(elements_in_last_buffer);
+        _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), _finish._current, fill_in_last_buffer, value);
+
+        size_type remaining_elements = diff - fill_in_last_buffer;
+
         for (size_type i = 0; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+            size_type elements_to_fill = (remaining_elements < _buffer_size()) ? remaining_elements : _buffer_size();
+            _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get(), elements_to_fill, value);
+            remaining_elements -= elements_to_fill;
         }
 
-        for (size_type i = 0; i < num_nodes; ++i) {
-            *(_finish._node + 1 + i) = bufs_guard[i].get();
-        }
-
-        _uninitialized_fill_n(_buf_alloc, _finish + fill_in_last_buffer, diff - fill_in_last_buffer, value);
-        _uninitialized_fill_n(_buf_alloc, _finish, fill_in_last_buffer, value);
-
-        for (auto &guard : bufs_guard) {
-            guard.release();
+        bufs_guard[0].release();
+        for (size_type i = 1; i < num_nodes + 1; ++i) {
+            *(_finish._node + i) = bufs_guard[i].release();
         }
 
         _finish += diff;
