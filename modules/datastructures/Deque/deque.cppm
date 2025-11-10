@@ -93,28 +93,34 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         buf _buffer;
         buf_allocator _buf_alloc;
         size_type _constructed_count;
+        size_type _offset;
+        bool _owns;
 
       public:
-        buffer_guard() : _buffer(nullptr), _constructed_count(0) {}
-        buffer_guard(buf buffer, const buf_allocator &allocator)
-            : _buffer(buffer), _buf_alloc(allocator), _constructed_count(0) {}
+        buffer_guard() : _buffer(nullptr), _constructed_count(0), _offset(0), _owns(false) {}
+        buffer_guard(buf buffer, const buf_allocator &allocator, bool owns = true)
+            : _buffer(buffer), _buf_alloc(allocator), _constructed_count(0), _offset(0), _owns(owns) {}
         ~buffer_guard() {
             if (_buffer) {
                 if constexpr (!std::is_trivially_destructible_v<T>) {
                     for (size_type i = 0; i < _constructed_count; ++i) {
-                        std::allocator_traits<buf_allocator>::destroy(_buf_alloc, _buffer + i);
+                        std::allocator_traits<buf_allocator>::destroy(_buf_alloc, _buffer + i + _offset);
                     }
                 }
-                std::allocator_traits<buf_allocator>::deallocate(_buf_alloc, _buffer, _buffer_size());
+                if (_owns) {
+                    std::allocator_traits<buf_allocator>::deallocate(_buf_alloc, _buffer, _buffer_size());
+                }
                 _buffer = nullptr;
             }
         }
         buffer_guard(const buffer_guard &) = delete;
         buffer_guard &operator=(const buffer_guard &) = delete;
         buffer_guard(buffer_guard &&other) noexcept
-            : _buffer(other._buffer), _buf_alloc(other._buf_alloc), _constructed_count(other._constructed_count) {
+            : _buffer(other._buffer), _buf_alloc(other._buf_alloc), _constructed_count(other._constructed_count), _offset(other._offset), _owns(other._owns) {
             other._buffer = nullptr;
             other._constructed_count = 0;
+            other._offset = 0;
+            other._owns = false;
         }
         buffer_guard &operator=(buffer_guard &&other) noexcept {
             if (this != &other) {
@@ -129,14 +135,22 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
                 _buffer = other._buffer;
                 _constructed_count = other._constructed_count;
                 _buf_alloc = std::move(other._buf_alloc);
+                _offset = other._offset;
+                _owns = other._owns;
                 other._buffer = nullptr;
                 other._constructed_count = 0;
+                other._offset = 0;
+                other._owns = false;
             }
             return *this;
         }
 
-        void set_constructed_count(size_type count) {
-            _constructed_count = count;
+        void set_offset(size_type offset) {
+            _offset = offset;
+        }
+
+        void add_constructed_count(size_type count) {
+            _constructed_count += count;
         }
 
         buf release() {
@@ -227,13 +241,13 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         requires std::forward_iterator<InputIter>
     size_type calc_move_backward_now(InputIter last, size_type count, iterator dest);
 
-    void _uninitialized_fill_n(Allocator alloc, iterator first, size_type count, const T &value);
+    void _uninitialized_fill_n(Allocator alloc, buffer_guard& guard, pointer first, size_type count, const T &value);
 
     void _fill_n(iterator first, size_type count, const T &value);
 
     template <class InputIter>
-        requires std::forward_iterator<InputIter>
-    iterator _uninitialized_move_n(Allocator alloc, InputIter first, size_type count, iterator dest);
+        requires std::random_access_iterator<InputIter>
+    void _uninitialized_move_n(Allocator alloc, buffer_guard& guard, InputIter first, size_type count, pointer dest);
 
     template <class InputIter>
         requires std::forward_iterator<InputIter>
@@ -244,8 +258,8 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     iterator _move_backward_n(InputIter first, size_type count, iterator dest);
 
     template <class InputIter>
-        requires std::forward_iterator<InputIter>
-    iterator _uninitialized_copy_n(Allocator alloc, InputIter first, size_type count, iterator dest);
+        requires std::random_access_iterator<InputIter>
+    void _uninitialized_copy_n(Allocator alloc, buffer_guard& guard, InputIter first, size_type count, pointer dest);
 
     template <class InputIter>
         requires std::forward_iterator<InputIter>
@@ -720,27 +734,30 @@ deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_backward_now(Input
 }
 
 template <class T, class Allocator>
-void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, iterator first, size_type count, const T &value) {
+void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, buffer_guard& guard, pointer first, size_type count, const T &value) {
     if (count == 0)
         return;
 
-    iterator original_first = first;
-    try {
-        while (count > 0) {
-            const size_type buffer_remaining = _buffer_size() - (first._current - first._first);
-
-            const size_type fill_now = std::min(count, buffer_remaining);
-
-            uninitialized_fill_n_contiguous(alloc, first._current, fill_now, value);
-
-            first += fill_now;
-            count -= fill_now;
+    if constexpr (std::is_trivially_constructible_v<T> &&
+                  std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>) {
+        if (value == T{}) {
+            std::memset(first, 0, count * sizeof(T));
+            guard.add_constructed_count(count);
+            return;
         }
-    } catch (...) {
-        for (iterator it = original_first; it != first; ++it) {
-            std::allocator_traits<Allocator>::destroy(alloc, std::addressof(*it));
+    }
+
+    if constexpr (std::is_trivially_copyable_v<T>) {
+        for (size_type i = 0; i < count; ++i) {
+            std::allocator_traits<Allocator>::construct(alloc, first + i, value);
         }
-        throw;
+        guard.add_constructed_count(count);
+        return;
+    }
+
+    for (size_type i = 0; i < count; ++i) {
+        std::allocator_traits<Allocator>::construct(alloc, first + i, value);
+        guard.add_constructed_count(1);
     }
 }
 
@@ -762,33 +779,62 @@ template <class T, class Allocator> void deque<T, Allocator>::_fill_n(iterator f
 
 template <class T, class Allocator>
 template <class InputIter>
-    requires std::forward_iterator<InputIter>
-deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_move_n(Allocator alloc, InputIter first,
-                                                                         size_type count, iterator dest) {
+    requires std::random_access_iterator<InputIter>
+void deque<T, Allocator>::_uninitialized_move_n(Allocator alloc, buffer_guard& guard, InputIter first,
+                                                                         size_type count, pointer dest) {
     if (count == 0)
-        return dest;
+        return;
 
-    iterator original_dest = dest;
-
-    try {
-        while (count > 0) {
-            const size_type move_now = calc_move_now(first, count, dest);
-            if constexpr (std::is_same_v<InputIter, iterator>) {
-                uninitialized_move_n_contiguous(alloc, first._current, move_now, dest._current);
-            } else {
-                uninitialized_move_n_contiguous(alloc, first, move_now, dest._current);
+    if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            while (count > 0) {
+                const size_type source_buffer_remaining = _buffer_size() - (first._current - first._first);
+                const size_type move_now = std::min(count, source_buffer_remaining);
+                std::memmove(dest, std::to_address(first), move_now * sizeof(T));
+                guard.add_constructed_count(move_now);
+                first += move_now;
+                dest += move_now;
+                count -= move_now;
             }
+        } else {
+            while (count > 0) {
+                const size_type source_buffer_remaining = _buffer_size() - (first._current - first._first);
+                const size_type move_now = std::min(count, source_buffer_remaining);
+                for (size_type i = 0; i < move_now; ++i) {
+                    std::allocator_traits<Allocator>::construct(alloc, dest + i, std::move(*(first + i)));
+                    guard.add_constructed_count(1);
+                }
+                first += move_now;
+                dest += move_now;
+                count -= move_now;
+            }
+        }
+        return;
+    }
 
-            first += move_now;
-            dest += move_now;
-            count -= move_now;
+    if constexpr (std::contiguous_iterator<InputIter>) {
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            std::memmove(std::to_address(dest), std::to_address(first), count * sizeof(T));
+            guard.add_constructed_count(count);
+        } else {
+            for (size_type i = 0; i < count; ++i) {
+                std::allocator_traits<Allocator>::construct(alloc, std::to_address(dest + i), std::move(*(first + i)));
+                guard.add_constructed_count(1);
+            }
         }
-        return dest;
-    } catch (...) {
-        for (; original_dest != dest; ++original_dest) {
-            std::allocator_traits<Allocator>::destroy(alloc, std::addressof(*original_dest));
+    } else {
+        if constexpr (std::is_trivially_move_constructible_v<T>) {
+            for (size_type i = 0; i < count; ++i, ++first) {
+                std::allocator_traits<Allocator>::construct(alloc, std::to_address(dest + i), std::move(*first));
+            }
+            guard.add_constructed_count(count);
         }
-        throw;
+        else {
+            for (size_type i = 0; i < count; ++i, ++first) {
+                std::allocator_traits<Allocator>::construct(alloc, std::to_address(dest + i), std::move(*first));
+                guard.add_constructed_count(1);
+            }
+        }
     }
 }
 
@@ -844,33 +890,62 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_move_backward_n(InputIter fi
 
 template <class T, class Allocator>
 template <class InputIter>
-    requires std::forward_iterator<InputIter>
-deque<T, Allocator>::iterator deque<T, Allocator>::_uninitialized_copy_n(Allocator alloc, InputIter first,
-                                                                         size_type count, iterator dest) {
+    requires std::random_access_iterator<InputIter>
+void deque<T, Allocator>::_uninitialized_copy_n(Allocator alloc, buffer_guard& guard, InputIter first,
+                                                                         size_type count, pointer dest) {
     if (count == 0)
-        return dest;
+        return;
 
-    iterator original_dest = dest;
-
-    try {
-        while (count > 0) {
-            const size_type move_now = calc_move_now(first, count, dest);
-            if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
-                uninitialized_copy_n_contiguous(alloc, first._current, move_now, dest._current);
-            } else {
-                uninitialized_copy_n_contiguous(alloc, first, move_now, dest._current);
+    if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            while (count > 0) {
+                const size_type source_buffer_remaining = _buffer_size() - (first._current - first._first);
+                const size_type move_now = std::min(count, source_buffer_remaining);
+                std::memcpy(dest, std::to_address(first), move_now * sizeof(T));
+                guard.add_constructed_count(move_now);
+                first += move_now;
+                dest += move_now;
+                count -= move_now;
             }
+        } else {
+            while (count > 0) {
+                const size_type source_buffer_remaining = _buffer_size() - (first._current - first._first);
+                const size_type move_now = std::min(count, source_buffer_remaining);
+                for (size_type i = 0; i < move_now; ++i) {
+                    std::allocator_traits<Allocator>::construct(alloc, dest + i, *(first + i));
+                    guard.add_constructed_count(1);
+                }
+                first += move_now;
+                dest += move_now;
+                count -= move_now;
+            }
+        }
+        return;
+    }
 
-            first += move_now;
-            dest += move_now;
-            count -= move_now;
+    if constexpr (std::contiguous_iterator<InputIter>) {
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            std::memcpy(dest, std::to_address(first), count * sizeof(T));
+            guard.add_constructed_count(count);
+        } else {
+            for (size_type i = 0; i < count; ++i) {
+                std::allocator_traits<Allocator>::construct(alloc, dest + i, *(first + i));
+                guard.add_constructed_count(1);
+            }
         }
-        return dest;
-    } catch (...) {
-        for (; original_dest != dest; ++original_dest) {
-            std::allocator_traits<Allocator>::destroy(alloc, std::addressof(*original_dest));
+    } else {
+        if constexpr (std::is_trivially_copy_constructible_v<T>) {
+            for (size_type i = 0; i < count; ++i, ++first) {
+                std::allocator_traits<Allocator>::construct(alloc, dest + i, *(first + i));
+            }
+            guard.add_constructed_count(count);
         }
-        throw;
+        else {
+            for (size_type i = 0; i < count; ++i, ++first) {
+                std::allocator_traits<Allocator>::construct(alloc, dest + i, *(first + i));
+                guard.add_constructed_count(1);
+            }
+        }
     }
 }
 
