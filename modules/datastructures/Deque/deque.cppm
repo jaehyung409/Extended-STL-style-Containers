@@ -5,8 +5,8 @@
  */
 
 module;
-#include <cstring>
 #include <algorithm>
+#include <cstring>
 #include <initializer_list>
 #include <iterator>
 #include <memory>
@@ -117,7 +117,8 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         buffer_guard(const buffer_guard &) = delete;
         buffer_guard &operator=(const buffer_guard &) = delete;
         buffer_guard(buffer_guard &&other) noexcept
-            : _buffer(other._buffer), _buf_alloc(other._buf_alloc), _constructed_count(other._constructed_count), _offset(other._offset), _owns(other._owns) {
+            : _buffer(other._buffer), _buf_alloc(other._buf_alloc), _constructed_count(other._constructed_count),
+              _offset(other._offset), _owns(other._owns) {
             other._buffer = nullptr;
             other._constructed_count = 0;
             other._offset = 0;
@@ -242,13 +243,13 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         requires std::random_access_iterator<InputIter>
     size_type calc_move_backward_now(InputIter last, size_type count, iterator dest);
 
-    void _uninitialized_fill_n(Allocator alloc, buffer_guard& guard, pointer first, size_type count, const T &value);
+    void _uninitialized_fill_n(Allocator alloc, buffer_guard &guard, pointer first, size_type count, const T &value);
 
     void _fill_n(pointer first, size_type count, const T &value);
 
     template <class InputIter>
         requires std::random_access_iterator<InputIter>
-    void _uninitialized_move_n(Allocator alloc, buffer_guard& guard, InputIter first, size_type count, pointer dest);
+    void _uninitialized_move_n(Allocator alloc, buffer_guard &guard, InputIter first, size_type count, pointer dest);
 
     template <class InputIter>
         requires std::random_access_iterator<InputIter>
@@ -260,7 +261,7 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
 
     template <class InputIter>
         requires std::random_access_iterator<InputIter>
-    void _uninitialized_copy_n(Allocator alloc, buffer_guard& guard, InputIter first, size_type count, pointer dest);
+    void _uninitialized_copy_n(Allocator alloc, buffer_guard &guard, InputIter first, size_type count, pointer dest);
 
     template <class InputIter>
         requires std::random_access_iterator<InputIter>
@@ -269,14 +270,12 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
                                vector<buffer_guard> &bufs_guard);
 
     size_type _uninitialized_move_to_front(size_type count, size_type n_to_move, size_type space_in_first_buffer,
-                                           size_type num_nodes,
-                                           vector<buffer_guard> &bufs_guard);
+                                           size_type num_nodes, vector<buffer_guard> &bufs_guard);
     void _extend_move_to_back(size_type count, size_type space_in_last_buffer, size_type num_nodes,
-                         vector<buffer_guard> &bufs_guard);
+                              vector<buffer_guard> &bufs_guard);
 
-    size_type _uninitialized_move_to_back(size_type count, size_type n_to_move,
-                                         size_type space_in_last_buffer, size_type num_nodes,
-                                         vector<buffer_guard> &bufs_guard);
+    size_type _uninitialized_move_to_back(size_type count, size_type n_to_move, size_type space_in_last_buffer,
+                                          size_type num_nodes, vector<buffer_guard> &bufs_guard);
 
   public:
     deque() : deque(Allocator()) {}
@@ -748,12 +747,13 @@ deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_backward_now(Input
 }
 
 template <class T, class Allocator>
-void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, buffer_guard& guard, pointer first, size_type count, const T &value) {
+void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, buffer_guard &guard, pointer first, size_type count,
+                                                const T &value) {
     if (count == 0)
         return;
 
-    if constexpr (std::is_trivially_constructible_v<T> &&
-                  std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>) {
+    if constexpr (std::is_trivially_constructible_v<T> && std::is_trivially_copyable_v<T> &&
+                  std::is_standard_layout_v<T>) {
         if (value == T{}) {
             std::memset(first, 0, count * sizeof(T));
             guard.add_constructed_count(count);
@@ -775,8 +775,7 @@ void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, buffer_guard& g
     }
 }
 
-template <class T, class Allocator>
-void deque<T, Allocator>::_fill_n(pointer first, size_type count, const T &value) {
+template <class T, class Allocator> void deque<T, Allocator>::_fill_n(pointer first, size_type count, const T &value) {
     if (count == 0)
         return;
 
@@ -786,8 +785,8 @@ void deque<T, Allocator>::_fill_n(pointer first, size_type count, const T &value
 template <class T, class Allocator>
 template <class InputIter>
     requires std::random_access_iterator<InputIter>
-void deque<T, Allocator>::_uninitialized_move_n(Allocator alloc, buffer_guard& guard, InputIter first,
-                                                                         size_type count, pointer dest) {
+void deque<T, Allocator>::_uninitialized_move_n(Allocator alloc, buffer_guard &guard, InputIter first, size_type count,
+                                                pointer dest) {
     if (count == 0)
         return;
 
@@ -834,8 +833,7 @@ void deque<T, Allocator>::_uninitialized_move_n(Allocator alloc, buffer_guard& g
                 std::allocator_traits<Allocator>::construct(alloc, std::to_address(dest + i), std::move(*first));
             }
             guard.add_constructed_count(count);
-        }
-        else {
+        } else {
             for (size_type i = 0; i < count; ++i, ++first) {
                 std::allocator_traits<Allocator>::construct(alloc, std::to_address(dest + i), std::move(*first));
                 guard.add_constructed_count(1);
@@ -893,8 +891,8 @@ void deque<T, Allocator>::_move_backward_n(InputIter first, size_type count, ite
 template <class T, class Allocator>
 template <class InputIter>
     requires std::random_access_iterator<InputIter>
-void deque<T, Allocator>::_uninitialized_copy_n(Allocator alloc, buffer_guard& guard, InputIter first,
-                                                                         size_type count, pointer dest) {
+void deque<T, Allocator>::_uninitialized_copy_n(Allocator alloc, buffer_guard &guard, InputIter first, size_type count,
+                                                pointer dest) {
     if (count == 0)
         return;
 
@@ -941,8 +939,7 @@ void deque<T, Allocator>::_uninitialized_copy_n(Allocator alloc, buffer_guard& g
                 std::allocator_traits<Allocator>::construct(alloc, dest + i, *(first + i));
             }
             guard.add_constructed_count(count);
-        }
-        else {
+        } else {
             for (size_type i = 0; i < count; ++i, ++first) {
                 std::allocator_traits<Allocator>::construct(alloc, dest + i, *(first + i));
                 guard.add_constructed_count(1);
@@ -991,11 +988,11 @@ void deque<T, Allocator>::_copy_n(InputIter first, size_type count, pointer dest
 }
 
 template <class T, class Allocator>
-void
-deque<T, Allocator>::_extend_move_to_front
-(const size_type count, const size_type space_in_first_buffer, const size_type num_nodes, vector<buffer_guard> &bufs_guard) {
+void deque<T, Allocator>::_extend_move_to_front(const size_type count, const size_type space_in_first_buffer,
+                                                const size_type num_nodes, vector<buffer_guard> &bufs_guard) {
     size_type buf_offset = _buffer_size() - (count - space_in_first_buffer + _buffer_size()) % _buffer_size();
-    if (buf_offset == _buffer_size()) buf_offset = 0;
+    if (buf_offset == _buffer_size())
+        buf_offset = 0;
 
     const size_type first_buf_elements = std::min(_buffer_size() - buf_offset, count);
     size_type remaining_move = count;
@@ -1008,7 +1005,8 @@ deque<T, Allocator>::_extend_move_to_front
 
     iterator first_buf_iter = _start;
     bufs_guard.back().set_offset(buf_offset);
-    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), first_buf_iter, first_buf_elements, bufs_guard.back().get() + buf_offset);
+    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), first_buf_iter, first_buf_elements,
+                          bufs_guard.back().get() + buf_offset);
     remaining_move -= first_buf_elements;
     first_buf_iter += first_buf_elements;
 
@@ -1027,13 +1025,14 @@ deque<T, Allocator>::_extend_move_to_front
     }
 }
 
-
 template <class T, class Allocator>
 deque<T, Allocator>::size_type
-deque<T, Allocator>::_uninitialized_move_to_front
-(const size_type count, const size_type n_to_move, const size_type space_in_first_buffer, const size_type num_nodes, vector<buffer_guard> &bufs_guard) {
+deque<T, Allocator>::_uninitialized_move_to_front(const size_type count, const size_type n_to_move,
+                                                  const size_type space_in_first_buffer, const size_type num_nodes,
+                                                  vector<buffer_guard> &bufs_guard) {
     size_type buf_offset = _buffer_size() - (count - space_in_first_buffer + _buffer_size()) % _buffer_size();
-    if (buf_offset == _buffer_size()) buf_offset = 0;
+    if (buf_offset == _buffer_size())
+        buf_offset = 0;
 
     const size_type first_buf_elements = std::min(_buffer_size() - buf_offset, n_to_move);
     size_type remaining_move = n_to_move;
@@ -1049,7 +1048,8 @@ deque<T, Allocator>::_uninitialized_move_to_front
 
     iterator first_buf_iter = _start;
     bufs_guard.back().set_offset(buf_offset);
-    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), first_buf_iter, first_buf_elements, bufs_guard.back().get() + buf_offset);
+    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), first_buf_iter, first_buf_elements,
+                          bufs_guard.back().get() + buf_offset);
     remaining_move -= first_buf_elements;
     buf_offset += first_buf_elements;
     first_buf_iter += first_buf_elements;
@@ -1067,8 +1067,8 @@ deque<T, Allocator>::_uninitialized_move_to_front
 }
 
 template <class T, class Allocator>
-void
-deque<T, Allocator>::_extend_move_to_back(size_type count, const size_type space_in_last_buffer, const size_type num_nodes, vector<buffer_guard>& bufs_guard) {
+void deque<T, Allocator>::_extend_move_to_back(size_type count, const size_type space_in_last_buffer,
+                                               const size_type num_nodes, vector<buffer_guard> &bufs_guard) {
     size_type last_buf_capacity = (count - space_in_last_buffer + _buffer_size()) % _buffer_size();
     if (last_buf_capacity == 0) {
         last_buf_capacity = _buffer_size();
@@ -1085,7 +1085,8 @@ deque<T, Allocator>::_extend_move_to_back(size_type count, const size_type space
     }
 
     iterator last_buf_iter = _finish - last_buf_elements;
-    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, last_buf_elements, bufs_guard.back().get() + buf_elem_pointer);
+    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, last_buf_elements,
+                          bufs_guard.back().get() + buf_elem_pointer);
     remaining_move -= last_buf_elements;
 
     size_type move_now = 0;
@@ -1094,7 +1095,8 @@ deque<T, Allocator>::_extend_move_to_back(size_type count, const size_type space
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         last_buf_iter -= move_now;
         buf_elem_pointer = _buffer_size() - move_now;
-        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, move_now, bufs_guard.back().get() + buf_elem_pointer);
+        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, move_now,
+                              bufs_guard.back().get() + buf_elem_pointer);
         remaining_move -= move_now;
     }
 
@@ -1102,14 +1104,16 @@ deque<T, Allocator>::_extend_move_to_back(size_type count, const size_type space
         bufs_guard.emplace_back(_finish._first, _buf_alloc, false);
         last_buf_iter -= remaining_move;
         buf_elem_pointer = _buffer_size() - remaining_move;
-        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, remaining_move, bufs_guard.back().get() + buf_elem_pointer);
+        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, remaining_move,
+                              bufs_guard.back().get() + buf_elem_pointer);
     }
 }
 
-
 template <class T, class Allocator>
 deque<T, Allocator>::size_type
-deque<T, Allocator>::_uninitialized_move_to_back(size_type count, const size_type n_to_move, const size_type space_in_last_buffer, const size_type num_nodes, vector<buffer_guard>& bufs_guard) {
+deque<T, Allocator>::_uninitialized_move_to_back(size_type count, const size_type n_to_move,
+                                                 const size_type space_in_last_buffer, const size_type num_nodes,
+                                                 vector<buffer_guard> &bufs_guard) {
     size_type last_buf_capacity = (count - space_in_last_buffer + _buffer_size()) % _buffer_size();
     if (last_buf_capacity == 0) {
         last_buf_capacity = _buffer_size();
@@ -1117,7 +1121,6 @@ deque<T, Allocator>::_uninitialized_move_to_back(size_type count, const size_typ
     const size_type last_buf_elements = std::min(last_buf_capacity, n_to_move);
     size_type buf_elem_pointer = last_buf_capacity - last_buf_elements;
     size_type remaining_move = n_to_move;
-
 
     if (num_nodes > 0) {
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
@@ -1129,9 +1132,9 @@ deque<T, Allocator>::_uninitialized_move_to_back(size_type count, const size_typ
     if (n_to_move == 0)
         return buf_elem_pointer;
 
-
     iterator last_buf_iter = _finish - last_buf_elements;
-    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, last_buf_elements, bufs_guard.back().get() + buf_elem_pointer);
+    _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, last_buf_elements,
+                          bufs_guard.back().get() + buf_elem_pointer);
     remaining_move -= last_buf_elements;
 
     size_type move_now = 0;
@@ -1140,7 +1143,8 @@ deque<T, Allocator>::_uninitialized_move_to_back(size_type count, const size_typ
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         last_buf_iter -= move_now;
         buf_elem_pointer = _buffer_size() - move_now;
-        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, move_now, bufs_guard.back().get() + buf_elem_pointer);
+        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), last_buf_iter, move_now,
+                              bufs_guard.back().get() + buf_elem_pointer);
         remaining_move -= move_now;
     }
 
@@ -1175,7 +1179,8 @@ deque<T, Allocator>::deque(size_type n, const T &value, const Allocator &alloc)
     const size_type first_buf_elements = std::min(_buffer_size() - first_buf_offset, n);
     bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
     bufs_guard.back().set_offset(first_buf_offset);
-    _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + first_buf_offset, first_buf_elements, value);
+    _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + first_buf_offset, first_buf_elements,
+                          value);
     size_type remaining_elements = n - first_buf_elements;
 
     for (size_type i = 1; i < num_nodes; ++i) {
@@ -1220,14 +1225,15 @@ deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &all
         const size_type first_buf_elements = std::min(_buffer_size() - first_buf_offset, dist);
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         bufs_guard.back().set_offset(first_buf_offset);
-        _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, first_buf_elements, bufs_guard.back().get() + first_buf_offset);
+        _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, first_buf_elements,
+                              bufs_guard.back().get() + first_buf_offset);
         size_type remaining_elements = dist - first_buf_elements;
 
         for (size_type i = 1; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
             size_type elements_to_copy = (remaining_elements < _buffer_size()) ? remaining_elements : _buffer_size();
-            _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first + first_buf_elements + (i - 1) * _buffer_size(), elements_to_copy,
-                                 bufs_guard.back().get());
+            _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first + first_buf_elements + (i - 1) * _buffer_size(),
+                                  elements_to_copy, bufs_guard.back().get());
             remaining_elements -= elements_to_copy;
         }
 
@@ -1286,14 +1292,16 @@ deque<T, Allocator>::deque(deque &&x, const std::type_identity_t<Allocator> &all
         const size_type first_buf_elements = std::min(_buffer_size() - first_buf_offset, dist);
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
         bufs_guard.back().set_offset(first_buf_offset);
-        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), x.begin(), first_buf_elements, bufs_guard.back().get() + first_buf_offset);
+        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), x.begin(), first_buf_elements,
+                              bufs_guard.back().get() + first_buf_offset);
         size_type remaining_elements = dist - first_buf_elements;
 
         for (size_type i = 1; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
             size_type elements_to_move = (remaining_elements < _buffer_size()) ? remaining_elements : _buffer_size();
-            _uninitialized_move_n(_buf_alloc, bufs_guard.back(), x.begin() + first_buf_elements + (i - 1) * _buffer_size(), elements_to_move,
-                                 bufs_guard.back().get());
+            _uninitialized_move_n(_buf_alloc, bufs_guard.back(),
+                                  x.begin() + first_buf_elements + (i - 1) * _buffer_size(), elements_to_move,
+                                  bufs_guard.back().get());
             remaining_elements -= elements_to_move;
         }
 
@@ -1740,12 +1748,14 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
             _start -= count;
         } else {
             // uninitialized_move: distance_from_begin
-            size_type buf_offset = _uninitialized_move_to_front(count, distance_from_begin, space_in_first_buffer, num_nodes, bufs_guard);
+            size_type buf_offset =
+                _uninitialized_move_to_front(count, distance_from_begin, space_in_first_buffer, num_nodes, bufs_guard);
 
             // uninitialized_fill: count - distance_from_begin
             size_type u_remaining_fill = count - distance_from_begin;
             size_type u_fill_now = std::min(_buffer_size() - buf_offset, u_remaining_fill);
-            _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + buf_offset, u_fill_now, value);
+            _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + buf_offset, u_fill_now,
+                                  value);
             u_remaining_fill -= u_fill_now;
 
             while (u_remaining_fill >= _buffer_size()) {
@@ -1812,13 +1822,15 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
             _finish += count;
         } else {
             // uninitialized_move: distance_from_end
-            size_type buf_elem_pointer = _uninitialized_move_to_back(count, distance_from_end, space_in_last_buffer, num_nodes, bufs_guard);
+            size_type buf_elem_pointer =
+                _uninitialized_move_to_back(count, distance_from_end, space_in_last_buffer, num_nodes, bufs_guard);
 
             // uninitialized_fill: count - distance_from_end
             size_type u_remaining_fill = count - distance_from_end;
             size_type u_fill_now = std::min(buf_elem_pointer, u_remaining_fill);
 
-            _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + buf_elem_pointer - u_fill_now, u_fill_now, value);
+            _uninitialized_fill_n(_buf_alloc, bufs_guard.back(),
+                                  bufs_guard.back().get() + buf_elem_pointer - u_fill_now, u_fill_now, value);
             u_remaining_fill -= u_fill_now;
 
             while (u_remaining_fill > _buffer_size()) {
@@ -1900,25 +1912,29 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
                 _start -= count;
             } else {
                 // uninitialized_move: distance_from_begin
-                size_type buf_offset = _uninitialized_move_to_front(count, distance_from_begin, space_in_first_buffer, num_nodes, bufs_guard);
+                size_type buf_offset = _uninitialized_move_to_front(count, distance_from_begin, space_in_first_buffer,
+                                                                    num_nodes, bufs_guard);
 
                 // uninitialized_copy: count - distance_from_begin
                 size_type u_remaining_copy = count - distance_from_begin;
                 const size_type u_copy_now = std::min(_buffer_size() - buf_offset, u_remaining_copy);
-                _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, u_copy_now, bufs_guard.back().get() + buf_offset);
+                _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, u_copy_now,
+                                      bufs_guard.back().get() + buf_offset);
                 first += u_copy_now;
                 u_remaining_copy -= u_copy_now;
 
                 while (u_remaining_copy > _buffer_size()) {
                     bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
-                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, _buffer_size(), bufs_guard.back().get());
+                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, _buffer_size(),
+                                          bufs_guard.back().get());
                     first += _buffer_size();
                     u_remaining_copy -= _buffer_size();
                 }
 
                 if (u_remaining_copy > 0) {
                     bufs_guard.emplace_back(_start._first, _buf_alloc, false);
-                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, u_remaining_copy, bufs_guard.back().get());
+                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, u_remaining_copy,
+                                          bufs_guard.back().get());
                     first += u_remaining_copy;
                 }
 
@@ -1977,14 +1993,16 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
                 _finish += count;
             } else {
                 // uninitialized_move: distance_from_end
-                size_type buf_offset = _uninitialized_move_to_back(count, distance_from_end, space_in_last_buffer, num_nodes, bufs_guard);
+                size_type buf_offset =
+                    _uninitialized_move_to_back(count, distance_from_end, space_in_last_buffer, num_nodes, bufs_guard);
 
                 // uninitialized_copy: count - distance_from_end
                 size_type u_remaining_copy = count - distance_from_end;
                 size_type u_copy_now = std::min(buf_offset, u_remaining_copy);
 
                 last -= u_copy_now;
-                _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), last, u_copy_now, bufs_guard.back().get() + buf_offset - u_copy_now);
+                _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), last, u_copy_now,
+                                      bufs_guard.back().get() + buf_offset - u_copy_now);
                 u_remaining_copy -= u_copy_now;
 
                 while (u_remaining_copy >= _buffer_size()) {
