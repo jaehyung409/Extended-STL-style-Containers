@@ -1080,7 +1080,7 @@ void deque<T, Allocator>::_extend_move_to_back(size_type count, const size_type 
     if (num_nodes > 0) {
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
     } else {
-        bufs_guard.emplace_back(_finish._first, _buf_alloc);
+        bufs_guard.emplace_back(_finish._first, _buf_alloc, false);
         bufs_guard.back().set_offset(buf_elem_pointer);
     }
 
