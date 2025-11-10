@@ -232,7 +232,7 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
 
     void _shift_left_and_insert(const T &value, const size_type distance_from_begin, iterator insert_pos);
 
-    void _shift_right_and_insert(const T &value, const size_type distance_from_end, iterator insert_pos);
+    void _shift_right_and_insert(const T &value, size_type distance_from_end, iterator insert_pos);
 
     iterator _insert_impl(const_iterator position, const T &value);
 
