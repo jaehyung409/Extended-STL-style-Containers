@@ -5,6 +5,7 @@
  */
 
 module;
+#include <cstring>
 #include <algorithm>
 #include <initializer_list>
 #include <iterator>
@@ -235,35 +236,35 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     iterator _insert_impl(const_iterator position, const T &value);
 
     template <class InputIter>
-        requires std::forward_iterator<InputIter>
+        requires std::random_access_iterator<InputIter>
     size_type calc_move_now(InputIter first, size_type count, iterator dest);
     template <class InputIter>
-        requires std::forward_iterator<InputIter>
+        requires std::random_access_iterator<InputIter>
     size_type calc_move_backward_now(InputIter last, size_type count, iterator dest);
 
     void _uninitialized_fill_n(Allocator alloc, buffer_guard& guard, pointer first, size_type count, const T &value);
 
-    void _fill_n(iterator first, size_type count, const T &value);
+    void _fill_n(pointer first, size_type count, const T &value);
 
     template <class InputIter>
         requires std::random_access_iterator<InputIter>
     void _uninitialized_move_n(Allocator alloc, buffer_guard& guard, InputIter first, size_type count, pointer dest);
 
     template <class InputIter>
-        requires std::forward_iterator<InputIter>
-    iterator _move_n(InputIter first, size_type count, iterator dest);
+        requires std::random_access_iterator<InputIter>
+    void _move_n(InputIter first, size_type count, iterator dest);
 
     template <class InputIter>
-        requires std::forward_iterator<InputIter>
-    iterator _move_backward_n(InputIter first, size_type count, iterator dest);
+        requires std::random_access_iterator<InputIter>
+    void _move_backward_n(InputIter first, size_type count, iterator dest);
 
     template <class InputIter>
         requires std::random_access_iterator<InputIter>
     void _uninitialized_copy_n(Allocator alloc, buffer_guard& guard, InputIter first, size_type count, pointer dest);
 
     template <class InputIter>
-        requires std::forward_iterator<InputIter>
-    iterator _copy_n(InputIter first, size_type count, iterator dest);
+        requires std::random_access_iterator<InputIter>
+    void _copy_n(InputIter first, size_type count, pointer dest);
 
   public:
     deque() : deque(Allocator()) {}
@@ -704,7 +705,7 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_insert_impl(const_iterator p
 
 template <class T, class Allocator>
 template <class InputIter>
-    requires std::forward_iterator<InputIter>
+    requires std::random_access_iterator<InputIter>
 deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(InputIter first, size_type count, iterator dest) {
     const size_type dest_buffer_remaining = _buffer_size() - (dest._current - dest._first);
 
@@ -718,7 +719,7 @@ deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_now(InputIter firs
 
 template <class T, class Allocator>
 template <class InputIter>
-    requires std::forward_iterator<InputIter>
+    requires std::random_access_iterator<InputIter>
 deque<T, Allocator>::size_type deque<T, Allocator>::calc_move_backward_now(InputIter last, size_type count,
                                                                            iterator dest) {
     const size_type dest_buffer_remaining =
@@ -761,20 +762,12 @@ void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, buffer_guard& g
     }
 }
 
-template <class T, class Allocator> void deque<T, Allocator>::_fill_n(iterator first, size_type count, const T &value) {
+template <class T, class Allocator>
+void deque<T, Allocator>::_fill_n(pointer first, size_type count, const T &value) {
     if (count == 0)
         return;
 
-    while (count > 0) {
-        const size_type buffer_remaining = _buffer_size() - (first._current - first._first);
-
-        const size_type fill_now = std::min(count, buffer_remaining);
-
-        std::fill_n(first._current, fill_now, value);
-
-        first += fill_now;
-        count -= fill_now;
-    }
+    std::fill_n(first, count, value);
 }
 
 template <class T, class Allocator>
@@ -840,12 +833,10 @@ void deque<T, Allocator>::_uninitialized_move_n(Allocator alloc, buffer_guard& g
 
 template <class T, class Allocator>
 template <class InputIter>
-    requires std::forward_iterator<InputIter>
-deque<T, Allocator>::iterator deque<T, Allocator>::_move_n(InputIter first, size_type count, iterator dest) {
+    requires std::random_access_iterator<InputIter>
+void deque<T, Allocator>::_move_n(InputIter first, size_type count, iterator dest) {
     if (count == 0)
-        return dest;
-
-    iterator original_dest = dest;
+        return;
 
     while (count > 0) {
         const size_type move_now = calc_move_now(first, count, dest);
@@ -859,15 +850,14 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_move_n(InputIter first, size
         dest += move_now;
         count -= move_now;
     }
-    return dest;
 }
 
 template <class T, class Allocator>
 template <class InputIter>
-    requires std::forward_iterator<InputIter>
-deque<T, Allocator>::iterator deque<T, Allocator>::_move_backward_n(InputIter first, size_type count, iterator dest) {
+    requires std::random_access_iterator<InputIter>
+void deque<T, Allocator>::_move_backward_n(InputIter first, size_type count, iterator dest) {
     if (count == 0)
-        return dest;
+        return;
 
     InputIter last = first + count;
 
@@ -885,7 +875,6 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_move_backward_n(InputIter fi
         dest -= move_now;
         count -= move_now;
     }
-    return dest;
 }
 
 template <class T, class Allocator>
@@ -951,26 +940,45 @@ void deque<T, Allocator>::_uninitialized_copy_n(Allocator alloc, buffer_guard& g
 
 template <class T, class Allocator>
 template <class InputIter>
-    requires std::forward_iterator<InputIter>
-deque<T, Allocator>::iterator deque<T, Allocator>::_copy_n(InputIter first, size_type count, iterator dest) {
+    requires std::random_access_iterator<InputIter>
+void deque<T, Allocator>::_copy_n(InputIter first, size_type count, pointer dest) {
     if (count == 0)
-        return dest;
+        return;
 
-    iterator original_dest = dest;
-
-    while (count > 0) {
-        const size_type move_now = calc_move_now(first, count, dest);
-        if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
-            copy_n_contiguous(first._current, move_now, dest._current);
+    if constexpr (std::is_same_v<InputIter, iterator> || std::is_same_v<InputIter, const_iterator>) {
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            while (count > 0) {
+                const size_type source_buffer_remaining = _buffer_size() - (first._current - first._first);
+                const size_type copy_now = std::min(count, source_buffer_remaining);
+                std::memcpy(dest, std::to_address(first), copy_now * sizeof(T));
+                first += copy_now;
+                dest += copy_now;
+                count -= copy_now;
+            }
         } else {
-            copy_n_contiguous(first, move_now, dest._current);
+            while (count > 0) {
+                const size_type source_buffer_remaining = _buffer_size() - (first._current - first._first);
+                const size_type copy_now = std::min(count, source_buffer_remaining);
+                for (size_type i = 0; i < copy_now; ++i, ++first, ++dest) {
+                    *dest = *first;
+                }
+                count -= copy_now;
+            }
         }
-
-        first += move_now;
-        dest += move_now;
-        count -= move_now;
+        return;
     }
-    return dest;
+
+    if constexpr (std::contiguous_iterator<InputIter> && std::is_trivially_copyable_v<T>) {
+        std::memcpy(dest, std::to_address(first), count * sizeof(T));
+    } else {
+        for (size_type i = 0; i < count; ++i, ++first, ++dest) {
+            *dest = *first;
+        }
+    }
+}
+
+
+    }
 }
 
 template <class T, class Allocator>
