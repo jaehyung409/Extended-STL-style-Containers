@@ -752,7 +752,7 @@ void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, buffer_guard &g
     if (count == 0)
         return;
 
-    if constexpr (std::is_trivially_constructible_v<T> && std::is_trivially_copyable_v<T> &&
+    if constexpr (std::is_integral_v<T> && std::is_trivially_copyable_v<T> &&
                   std::is_standard_layout_v<T>) {
         if (value == T{}) {
             std::memset(first, 0, count * sizeof(T));
