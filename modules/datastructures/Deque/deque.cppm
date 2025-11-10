@@ -1709,81 +1709,151 @@ deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator positio
     if (count == 0)
         return iterator(position._node, const_cast<pointer>(position._current));
 
-    const difference_type distance_from_begin = std::distance(cbegin(), position);
-    const difference_type distance_from_end = std::distance(position, cend());
+    const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), position));
+    const size_type distance_from_end = static_cast<size_type>(std::distance(position, cend()));
     iterator insert_pos;
 
     if (distance_from_begin < distance_from_end) {
+        const size_type space_in_first_buffer = _start._current - _start._first;
+        const size_type num_nodes = (count - space_in_first_buffer + _buffer_size() - 1) / _buffer_size();
+
+        if (_start._node - _map < num_nodes) {
+            _reallocate_map(num_nodes, true);
+        }
+        insert_pos = _start + distance_from_begin;
+
+        vector<buffer_guard> bufs_guard;
+        bufs_guard.reserve(num_nodes + 1); // margin (start)
+
         if (distance_from_begin >= count) {
-            insert_pos = _start + distance_from_begin;
-            _uninitialized_move_n(_buf_alloc, _start, count, _start - count);
+            _extend_move_to_front(count, space_in_first_buffer, num_nodes, bufs_guard);
             _move_n(_start + count, distance_from_begin - count, _start);
             std::fill(insert_pos - count, insert_pos, value);
+            if (bufs_guard.size() > num_nodes) {
+                bufs_guard.back().release();
+            }
+
+            for (size_type i = 0; i < num_nodes; ++i) {
+                *(_start._node - num_nodes + i) = bufs_guard[i].release();
+            }
             _start -= count;
         } else {
-            const size_type space_in_first_buffer = _start._current - _start._first;
-            const size_type num_nodes = (count - space_in_first_buffer + _buffer_size() - 1) / _buffer_size();
+            // uninitialized_move: distance_from_begin
+            size_type buf_offset = _uninitialized_move_to_front(count, distance_from_begin, space_in_first_buffer, num_nodes, bufs_guard);
 
-            if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
-                _reallocate_map(num_nodes, false);
-            }
-            insert_pos = _start + distance_from_begin;
+            // uninitialized_fill: count - distance_from_begin
+            size_type u_remaining_fill = count - distance_from_begin;
+            size_type u_fill_now = std::min(_buffer_size() - buf_offset, u_remaining_fill);
+            _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + buf_offset, u_fill_now, value);
+            u_remaining_fill -= u_fill_now;
 
-            vector<buffer_guard> bufs_guard;
-
-            bufs_guard.reserve(num_nodes);
-            for (size_type i = 0; i < num_nodes; ++i) {
+            while (u_remaining_fill >= _buffer_size()) {
                 bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+                _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get(), _buffer_size(), value);
+                u_remaining_fill -= _buffer_size();
+            }
+
+            if (u_remaining_fill > 0) {
+                bufs_guard.emplace_back(_start._first, _buf_alloc, false);
+                _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get(), u_remaining_fill, value);
+            }
+
+            // fill: distance_from_begin
+            iterator fill_iter = _start;
+            size_type remaining_fill = distance_from_begin;
+            size_type fill_now = std::min(space_in_first_buffer, remaining_fill);
+            _fill_n(fill_iter._current, fill_now, value);
+            remaining_fill -= fill_now;
+            fill_iter += fill_now;
+
+            while (remaining_fill > 0) {
+                fill_now = std::min(remaining_fill, _buffer_size());
+                _fill_n(fill_iter._current, fill_now, value);
+                remaining_fill -= fill_now;
+                fill_iter += fill_now;
+            }
+
+            // commit
+            if (bufs_guard.size() > num_nodes) {
+                bufs_guard.back().release();
             }
 
             for (size_type i = 0; i < num_nodes; ++i) {
-                *(_start._node - 1 - i) = bufs_guard[i].get();
+                *(_start._node - num_nodes + i) = bufs_guard[i].release();
             }
 
-            iterator final_new_start = _start - count;
-            _uninitialized_move_n(_buf_alloc, _start, distance_from_begin, final_new_start);
-            _fill_n(_start, distance_from_begin, value);
-            _uninitialized_fill_n(_buf_alloc, final_new_start + distance_from_begin, count - distance_from_begin,
-                                  value);
-
-            for (auto &guard : bufs_guard) {
-                guard.release();
-            }
-            _start = final_new_start;
+            _start -= count;
         }
     } else {
+        const size_type space_in_last_buffer = _finish._last - _finish._current;
+        const size_type num_nodes = (count - space_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+
+        if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
+            _reallocate_map(num_nodes, false);
+        }
+        insert_pos = _start + distance_from_begin;
+
+        vector<buffer_guard> bufs_guard;
+
+        bufs_guard.reserve(num_nodes + 1); // margin (finish)
+
         if (distance_from_end >= count) {
-            insert_pos = _start + distance_from_begin;
-            _uninitialized_move_n(_buf_alloc, _finish - count, count, _finish);
+            _extend_move_to_back(count, space_in_last_buffer, num_nodes, bufs_guard);
             _move_backward_n(insert_pos, distance_from_end - count, _finish);
             std::fill(insert_pos, insert_pos + count, value);
+            if (bufs_guard.size() > num_nodes) {
+                bufs_guard.back().release();
+            }
+
+            for (size_type i = 0; i < num_nodes; ++i) {
+                *(_finish._node + num_nodes - i) = bufs_guard[i].release();
+            }
             _finish += count;
         } else {
-            const size_type space_in_last_buffer = _finish._last - _finish._current;
-            const size_type num_nodes = (count - space_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+            // uninitialized_move: distance_from_end
+            size_type buf_elem_pointer = _uninitialized_move_to_back(count, distance_from_end, space_in_last_buffer, num_nodes, bufs_guard);
 
-            if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
-                _reallocate_map(num_nodes, true);
-            }
-            insert_pos = _start + distance_from_begin;
+            // uninitialized_fill: count - distance_from_end
+            size_type u_remaining_fill = count - distance_from_end;
+            size_type u_fill_now = std::min(buf_elem_pointer, u_remaining_fill);
 
-            vector<buffer_guard> bufs_guard;
+            _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + buf_elem_pointer - u_fill_now, u_fill_now, value);
+            u_remaining_fill -= u_fill_now;
 
-            bufs_guard.reserve(num_nodes);
-            for (size_type i = 0; i < num_nodes; ++i) {
+            while (u_remaining_fill > _buffer_size()) {
                 bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+                _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get(), _buffer_size(), value);
+                u_remaining_fill -= _buffer_size();
+            }
+
+            if (u_remaining_fill > 0) {
+                bufs_guard.emplace_back(_finish._first, _buf_alloc, false);
+                _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), _finish._current, u_remaining_fill, value);
+            }
+
+            // fill: distance_from_end
+            size_type remaining_fill = distance_from_end;
+            iterator fill_iter = insert_pos;
+            const size_type space_in_fill_buffer = static_cast<size_type>(fill_iter._last - fill_iter._current);
+            size_type fill_now = std::min(space_in_fill_buffer, remaining_fill);
+            _fill_n(fill_iter._current, fill_now, value);
+            fill_iter += fill_now;
+            remaining_fill -= fill_now;
+
+            while (remaining_fill > 0) {
+                fill_now = std::min(remaining_fill, _buffer_size());
+                _fill_n(fill_iter._current, fill_now, value);
+                fill_iter += fill_now;
+                remaining_fill -= fill_now;
+            }
+
+            // commit
+            if (bufs_guard.size() > num_nodes) {
+                bufs_guard.back().release();
             }
 
             for (size_type i = 0; i < num_nodes; ++i) {
-                *(_finish._node + 1 + i) = bufs_guard[i].get();
-            }
-
-            _uninitialized_move_n(_buf_alloc, insert_pos, distance_from_end, _finish + count - distance_from_end);
-            _fill_n(insert_pos, distance_from_end, value);
-            _uninitialized_fill_n(_buf_alloc, _finish, count - distance_from_end, value);
-
-            for (auto &guard : bufs_guard) {
-                guard.release();
+                *(_finish._node + num_nodes - i) = bufs_guard[i].release();
             }
             _finish += count;
         }
@@ -1795,85 +1865,165 @@ template <class T, class Allocator>
 template <class InputIter>
     requires std::input_iterator<InputIter>
 deque<T, Allocator>::iterator deque<T, Allocator>::insert(const_iterator position, InputIter first, InputIter last) {
-    if constexpr (std::forward_iterator<InputIter>) {
-        const difference_type count = std::distance(first, last);
+    if constexpr (std::random_access_iterator<InputIter>) {
+        const size_type count = static_cast<size_type>(std::distance(first, last));
         if (count == 0)
             return iterator(position._node, const_cast<pointer>(position._current));
 
-        const difference_type distance_from_begin = std::distance(cbegin(), position);
-        const difference_type distance_from_end = std::distance(position, cend());
+        const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), position));
+        const size_type distance_from_end = static_cast<size_type>(std::distance(position, cend()));
         iterator insert_pos;
         if (distance_from_begin < distance_from_end) {
+            const size_type space_in_first_buffer = _start._current - _start._first;
+            const size_type num_nodes = (count - space_in_first_buffer + _buffer_size() - 1) / _buffer_size();
+
+            if (_start._node - _map < num_nodes) {
+                _reallocate_map(num_nodes, true);
+            }
+            insert_pos = _start + distance_from_begin;
+
+            vector<buffer_guard> bufs_guard;
+            bufs_guard.reserve(num_nodes + 1); // margin (start)
+
             if (distance_from_begin >= count) {
-                insert_pos = _start + distance_from_begin;
-                _uninitialized_move_n(_buf_alloc, _start, count, _start - count);
+                _extend_move_to_front(count, space_in_first_buffer, num_nodes, bufs_guard);
                 _move_n(_start + count, distance_from_begin - count, _start);
                 std::copy(first, last, insert_pos - count);
+                if (num_nodes == 0) {
+                    bufs_guard.back().release();
+                } else {
+                    for (size_type i = 0; i < num_nodes; ++i) {
+                        *(_start._node - num_nodes + i) = bufs_guard[i].release();
+                    }
+                }
                 _start -= count;
             } else {
-                const size_type space_in_first_buffer = _start._current - _start._first;
-                const size_type num_nodes = (count - space_in_first_buffer + _buffer_size() - 1) / _buffer_size();
+                // uninitialized_move: distance_from_begin
+                size_type buf_offset = _uninitialized_move_to_front(count, distance_from_begin, space_in_first_buffer, num_nodes, bufs_guard);
 
-                if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
-                    _reallocate_map(num_nodes, false);
-                }
-                insert_pos = _start + distance_from_begin;
+                // uninitialized_copy: count - distance_from_begin
+                size_type u_remaining_copy = count - distance_from_begin;
+                const size_type u_copy_now = std::min(_buffer_size() - buf_offset, u_remaining_copy);
+                _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, u_copy_now, bufs_guard.back().get() + buf_offset);
+                first += u_copy_now;
+                u_remaining_copy -= u_copy_now;
 
-                vector<buffer_guard> bufs_guard;
-
-                bufs_guard.reserve(num_nodes);
-                for (size_type i = 0; i < num_nodes; ++i) {
+                while (u_remaining_copy > _buffer_size()) {
                     bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, _buffer_size(), bufs_guard.back().get());
+                    first += _buffer_size();
+                    u_remaining_copy -= _buffer_size();
+                }
+
+                if (u_remaining_copy > 0) {
+                    bufs_guard.emplace_back(_start._first, _buf_alloc, false);
+                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, u_remaining_copy, bufs_guard.back().get());
+                    first += u_remaining_copy;
+                }
+
+                // copy: distance_from_begin
+                iterator copy_iter = _start;
+                size_type remaining_copy = distance_from_begin;
+                size_type copy_now = std::min(_buffer_size() - space_in_first_buffer, remaining_copy);
+                _copy_n(first, copy_now, copy_iter._current);
+                first += copy_now;
+                remaining_copy -= copy_now;
+                copy_iter += copy_now;
+
+                while (remaining_copy > 0) {
+                    copy_now = std::min(remaining_copy, _buffer_size());
+                    _copy_n(first, copy_now, copy_iter._current);
+                    first += copy_now;
+                    remaining_copy -= copy_now;
+                    copy_iter += copy_now;
+                }
+
+                // commit
+                if (bufs_guard.size() > num_nodes) {
+                    bufs_guard.back().release();
                 }
 
                 for (size_type i = 0; i < num_nodes; ++i) {
-                    *(_start._node - 1 - i) = bufs_guard[i].get();
+                    *(_start._node - num_nodes + i) = bufs_guard[i].release();
                 }
 
-                iterator final_new_start = _start - count;
-                _uninitialized_move_n(_buf_alloc, _start, distance_from_begin, final_new_start);
-                _copy_n(first + count - distance_from_begin, distance_from_begin, _start);
-                _uninitialized_copy_n(_buf_alloc, first, count - distance_from_begin,
-                                      final_new_start + distance_from_begin);
-
-                for (auto &guard : bufs_guard) {
-                    guard.release();
-                }
-                _start = final_new_start;
+                _start -= count;
             }
         } else {
+            const size_type space_in_last_buffer = _finish._last - _finish._current;
+            const size_type num_nodes = (count - space_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+
+            if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
+                _reallocate_map(num_nodes, false);
+            }
+            insert_pos = _start + distance_from_begin;
+
+            vector<buffer_guard> bufs_guard;
+
+            bufs_guard.reserve(num_nodes + 1); // margin (finish)
+
             if (distance_from_end >= count) {
-                insert_pos = _start + distance_from_begin;
-                _uninitialized_move_n(_buf_alloc, _finish - count, count, _finish);
+                _extend_move_to_back(count, space_in_last_buffer, num_nodes, bufs_guard);
                 _move_backward_n(insert_pos, distance_from_end - count, _finish);
                 std::copy(first, last, insert_pos);
+                if (bufs_guard.size() > num_nodes) {
+                    bufs_guard.back().release();
+                }
+
+                for (size_type i = 0; i < num_nodes; ++i) {
+                    *(_finish._node + num_nodes - i) = bufs_guard[i].release();
+                }
                 _finish += count;
             } else {
-                const size_type space_in_last_buffer = _finish._last - _finish._current;
-                const size_type num_nodes = (count - space_in_last_buffer + _buffer_size() - 1) / _buffer_size();
+                // uninitialized_move: distance_from_end
+                size_type buf_offset = _uninitialized_move_to_back(count, distance_from_end, space_in_last_buffer, num_nodes, bufs_guard);
 
-                if (_map + _map_capacity - (_finish._node + 1) < num_nodes) {
-                    _reallocate_map(num_nodes, true);
-                }
-                insert_pos = _start + distance_from_begin;
+                // uninitialized_copy: count - distance_from_end
+                size_type u_remaining_copy = count - distance_from_end;
+                size_type u_copy_now = std::min(buf_offset, u_remaining_copy);
 
-                vector<buffer_guard> bufs_guard;
+                last -= u_copy_now;
+                _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), last, u_copy_now, bufs_guard.back().get() + buf_offset - u_copy_now);
+                u_remaining_copy -= u_copy_now;
 
-                bufs_guard.reserve(num_nodes);
-                for (size_type i = 0; i < num_nodes; ++i) {
+                while (u_remaining_copy >= _buffer_size()) {
                     bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+                    last -= _buffer_size();
+                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), last, _buffer_size(), bufs_guard.back().get());
+                    u_remaining_copy -= _buffer_size();
+                }
+
+                if (u_remaining_copy > 0) {
+                    bufs_guard.emplace_back(_finish._first, _buf_alloc, false);
+                    last -= u_remaining_copy;
+                    _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), last, u_remaining_copy, _finish._current);
+                }
+
+                // copy: distance_from_end
+                size_type remaining_copy = distance_from_end;
+                iterator copy_iter = insert_pos;
+                const size_type space_in_fill_buffer = static_cast<size_type>(copy_iter._last - copy_iter._current);
+                size_type copy_now = std::min(space_in_fill_buffer, remaining_copy);
+                _copy_n(first, copy_now, copy_iter._current);
+                first += copy_now;
+                copy_iter += copy_now;
+                remaining_copy -= copy_now;
+
+                while (remaining_copy > 0) {
+                    copy_now = std::min(remaining_copy, _buffer_size());
+                    _copy_n(first, copy_now, copy_iter._current);
+                    first += copy_now;
+                    copy_iter += copy_now;
+                    remaining_copy -= copy_now;
+                }
+
+                // commit
+                if (bufs_guard.size() > num_nodes) {
+                    bufs_guard.back().release();
                 }
 
                 for (size_type i = 0; i < num_nodes; ++i) {
-                    *(_finish._node + 1 + i) = bufs_guard[i].get();
-                }
-
-                _uninitialized_move_n(_buf_alloc, insert_pos, distance_from_end, _finish + count - distance_from_end);
-                _copy_n(first, distance_from_end, insert_pos);
-                _uninitialized_copy_n(_buf_alloc, first + distance_from_end, count - distance_from_end, _finish);
-
-                for (auto &guard : bufs_guard) {
-                    guard.release();
+                    *(_finish._node + num_nodes - i) = bufs_guard[i].release();
                 }
                 _finish += count;
             }
