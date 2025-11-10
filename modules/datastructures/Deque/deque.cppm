@@ -190,7 +190,7 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
         unique_ptr new_map_guard(_allocate_map(new_map_capacity), _map_alloc, new_map_capacity);
 
         buf *new_start_node =
-            new_map_guard.get() + (new_map_capacity - old_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+            new_map_guard.get() + (new_map_capacity - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
         std::copy(_start._node, _finish._node + 1, new_start_node);
 
         _deallocate_map(_map, _map_capacity);
@@ -224,14 +224,14 @@ export template <class T, class Allocator = std::allocator<T>> class deque {
     }
 
     template <class... Args>
-    void _shift_left_and_emplace(const difference_type distance_from_begin, iterator emplace_pos, Args &&...args);
+    void _shift_left_and_emplace(const size_type distance_from_begin, iterator emplace_pos, Args &&...args);
 
     template <class... Args>
-    void _shift_right_and_emplace(const difference_type distance_from_end, iterator emplace_pos, Args &&...args);
+    void _shift_right_and_emplace(const size_type distance_from_end, iterator emplace_pos, Args &&...args);
 
-    void _shift_left_and_insert(const T &value, const difference_type distance_from_begin, iterator emplace_pos);
+    void _shift_left_and_insert(const T &value, const size_type distance_from_begin, iterator insert_pos);
 
-    void _shift_right_and_insert(const T &value, const difference_type distance_from_end, iterator emplace_pos);
+    void _shift_right_and_insert(const T &value, const size_type distance_from_end, iterator insert_pos);
 
     iterator _insert_impl(const_iterator position, const T &value);
 
@@ -642,17 +642,18 @@ template <class T, class Allocator> class deque<T, Allocator>::const_iterator {
 namespace j {
 template <class T, class Allocator>
 template <class... Args>
-void deque<T, Allocator>::_shift_left_and_emplace(const difference_type distance_from_begin, iterator emplace_pos,
+void deque<T, Allocator>::_shift_left_and_emplace(const size_type distance_from_begin, iterator emplace_pos,
                                                   Args &&...args) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, (_start - 1)._current, std::move(*_start._current));
     _move_n(_start + 1, distance_from_begin - 1, _start);
+    --emplace_pos;
     std::allocator_traits<buf_allocator>::destroy(_buf_alloc, emplace_pos._current);
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, emplace_pos._current, std::forward<Args>(args)...);
 }
 
 template <class T, class Allocator>
 template <class... Args>
-void deque<T, Allocator>::_shift_right_and_emplace(const difference_type distance_from_end, iterator emplace_pos,
+void deque<T, Allocator>::_shift_right_and_emplace(const size_type distance_from_end, iterator emplace_pos,
                                                    Args &&...args) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, _finish._current, std::move(*(_finish - 1)._current));
     _move_backward_n(emplace_pos, distance_from_end - 1, _finish);
@@ -661,19 +662,19 @@ void deque<T, Allocator>::_shift_right_and_emplace(const difference_type distanc
 }
 
 template <class T, class Allocator>
-void deque<T, Allocator>::_shift_left_and_insert(const T &value, const difference_type distance_from_begin,
-                                                 iterator emplace_pos) {
+void deque<T, Allocator>::_shift_left_and_insert(const T &value, const size_type distance_from_begin,
+                                                 iterator insert_pos) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, (_start - 1)._current, std::move(*_start._current));
     _move_n(_start + 1, distance_from_begin - 1, _start);
-    *emplace_pos = value;
+    *(insert_pos - 1) = value;
 }
 
 template <class T, class Allocator>
-void deque<T, Allocator>::_shift_right_and_insert(const T &value, const difference_type distance_from_end,
-                                                  iterator emplace_pos) {
+void deque<T, Allocator>::_shift_right_and_insert(const T &value, const size_type distance_from_end,
+                                                  iterator insert_pos) {
     std::allocator_traits<buf_allocator>::construct(_buf_alloc, _finish._current, std::move(*(_finish - 1)._current));
-    _move_backward_n(emplace_pos, distance_from_end - 1, _finish);
-    *emplace_pos = value;
+    _move_backward_n(insert_pos, distance_from_end - 1, _finish);
+    *insert_pos = value;
 }
 
 template <class T, class Allocator>
@@ -686,8 +687,8 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_insert_impl(const_iterator p
         push_back(value);
         return end() - 1;
     }
-    const difference_type distance_from_begin = std::distance(cbegin(), position);
-    const difference_type distance_from_end = std::distance(position, cend());
+    const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), position));
+    const size_type distance_from_end = static_cast<size_type>(std::distance(position, cend()));
     iterator insert_pos = _start + distance_from_begin;
     if (distance_from_begin < distance_from_end) {
         if (_start._current == _start._first) {
@@ -1649,8 +1650,8 @@ deque<T, Allocator>::iterator deque<T, Allocator>::emplace(const_iterator positi
         emplace_back(std::forward<Args>(args)...);
         return end() - 1;
     }
-    const difference_type distance_from_begin = std::distance(cbegin(), position);
-    const difference_type distance_from_end = std::distance(position, cend());
+    const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), position));
+    const size_type distance_from_end = static_cast<size_type>(std::distance(position, cend()));
     iterator emplace_pos = _start + distance_from_begin;
     if (distance_from_begin < distance_from_end) {
         if (_start._current == _start._first) {
@@ -2083,8 +2084,8 @@ template <class T, class Allocator> deque<T, Allocator>::iterator deque<T, Alloc
         pop_back();
         return end();
     }
-    const difference_type distance_from_begin = std::distance(begin(), erase_pos);
-    const difference_type distance_from_end = std::distance(erase_pos, end()) - 1;
+    const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), position));
+    const size_type distance_from_end = static_cast<size_type>(std::distance(position, cend()));
     if (distance_from_begin < distance_from_end) {
         _move_backward_n(begin(), distance_from_begin, erase_pos + 1);
         pop_front();
@@ -2105,8 +2106,8 @@ deque<T, Allocator>::iterator deque<T, Allocator>::erase(const_iterator first, c
         return begin();
     }
 
-    const difference_type distance_from_begin = std::distance(cbegin(), first);
-    const difference_type distance_from_end = std::distance(last, cend());
+    const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), first));
+    const size_type distance_from_end = static_cast<size_type>(std::distance(last, cend()));
 
     iterator first_iter(first._node, const_cast<pointer>(first._current));
     iterator last_iter(last._node, const_cast<pointer>(last._current));
@@ -2154,7 +2155,11 @@ template <class T, class Allocator> void deque<T, Allocator>::clear() noexcept {
             std::allocator_traits<buf_allocator>::destroy(_buf_alloc, std::to_address(it));
         }
     }
+
     buf *start_node = _map + _map_capacity / 2;
+    if (*start_node == nullptr) {
+        std::swap(*start_node, *_start._node);
+    }
     pointer start_pos = *start_node + _buffer_size() / 2;
 
     for (buf *node = _start._node; node < start_node; ++node) {
