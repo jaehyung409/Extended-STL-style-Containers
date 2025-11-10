@@ -1169,24 +1169,29 @@ deque<T, Allocator>::deque(size_type n, const T &value, const Allocator &alloc)
     vector<buffer_guard> bufs_guard;
 
     bufs_guard.reserve(num_nodes);
-    for (size_type i = 0; i < num_nodes; ++i) {
+
+    const size_type first_buf_offset = ((num_nodes * _buffer_size()) - n) / 2;
+    const size_type first_buf_elements = std::min(_buffer_size() - first_buf_offset, n);
+    bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+    bufs_guard.back().set_offset(first_buf_offset);
+    _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get() + first_buf_offset, first_buf_elements, value);
+    size_type remaining_elements = n - first_buf_elements;
+
+    for (size_type i = 1; i < num_nodes; ++i) {
         bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+        size_type elements_to_fill = (remaining_elements < _buffer_size()) ? remaining_elements : _buffer_size();
+        _uninitialized_fill_n(_buf_alloc, bufs_guard.back(), bufs_guard.back().get(), elements_to_fill, value);
+        remaining_elements -= elements_to_fill;
     }
 
     for (size_type i = 0; i < num_nodes; ++i) {
-        *(start_node + i) = bufs_guard[i].get();
+        *(start_node + i) = bufs_guard[i].release();
     }
-
-    iterator new_start(start_node, *start_node + ((num_nodes * _buffer_size()) - n) / 2);
-    auto new_finish = std::uninitialized_fill_n(new_start, n, value);
 
     _map = map_guard.release();
     _map_capacity = new_map_capacity;
-    for (auto &buf_ptr : bufs_guard) {
-        buf_ptr.release();
-    }
-    _start = new_start;
-    _finish = new_finish;
+    _start = iterator(start_node, *start_node + first_buf_offset);
+    _finish = _start + n;
 }
 
 template <class T, class Allocator>
@@ -1195,7 +1200,7 @@ template <class InputIter>
 deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &alloc)
     : _map(nullptr), _map_capacity(0), _start(), _finish(), _map_alloc(alloc), _buf_alloc(alloc) {
     if constexpr (std::random_access_iterator<InputIter>) { // BENCHMARK !! list, linked-list
-        auto dist = std::distance(first, last);
+        size_type dist = static_cast<size_type>(std::distance(first, last));
         if (dist == 0) {
             _initialize_map(_initial_map_size);
             return;
@@ -1209,26 +1214,30 @@ deque<T, Allocator>::deque(InputIter first, InputIter last, const Allocator &all
         vector<buffer_guard> bufs_guard;
 
         bufs_guard.reserve(num_nodes);
-        for (size_type i = 0; i < num_nodes; ++i) {
+
+        const size_type first_buf_offset = ((num_nodes * _buffer_size()) - dist) / 2;
+        const size_type first_buf_elements = std::min(_buffer_size() - first_buf_offset, dist);
+        bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+        bufs_guard.back().set_offset(first_buf_offset);
+        _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first, first_buf_elements, bufs_guard.back().get() + first_buf_offset);
+        size_type remaining_elements = dist - first_buf_elements;
+
+        for (size_type i = 1; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+            size_type elements_to_copy = (remaining_elements < _buffer_size()) ? remaining_elements : _buffer_size();
+            _uninitialized_copy_n(_buf_alloc, bufs_guard.back(), first + first_buf_elements + (i - 1) * _buffer_size(), elements_to_copy,
+                                 bufs_guard.back().get());
+            remaining_elements -= elements_to_copy;
         }
 
         for (size_type i = 0; i < num_nodes; ++i) {
-            *(start_node + i) = bufs_guard[i].get();
+            *(start_node + i) = bufs_guard[i].release();
         }
-
-        const size_type offset = ((num_nodes * _buffer_size()) - dist) / 2;
-        iterator new_start(start_node, *start_node + offset);
-
-        auto new_finish = _uninitialized_copy_n(_buf_alloc, first, dist, new_start);
 
         _map = map_guard.release();
         _map_capacity = new_map_capacity;
-        for (auto &buf_ptr : bufs_guard) {
-            buf_ptr.release();
-        }
-        _start = new_start;
-        _finish = new_finish;
+        _start = iterator(start_node, *start_node + first_buf_offset);
+        _finish = _start + dist;
     } else {
         for (auto it = first; it != last; ++it) {
             emplace_back(*it);
@@ -1272,26 +1281,29 @@ deque<T, Allocator>::deque(deque &&x, const std::type_identity_t<Allocator> &all
         vector<buffer_guard> bufs_guard;
 
         bufs_guard.reserve(num_nodes);
-        for (size_type i = 0; i < num_nodes; ++i) {
+        const size_type first_buf_offset = ((num_nodes * _buffer_size()) - dist) / 2;
+        const size_type first_buf_elements = std::min(_buffer_size() - first_buf_offset, dist);
+        bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+        bufs_guard.back().set_offset(first_buf_offset);
+        _uninitialized_move_n(_buf_alloc, bufs_guard.back(), x.begin(), first_buf_elements, bufs_guard.back().get() + first_buf_offset);
+        size_type remaining_elements = dist - first_buf_elements;
+
+        for (size_type i = 1; i < num_nodes; ++i) {
             bufs_guard.emplace_back(_allocate_buf(), _buf_alloc);
+            size_type elements_to_move = (remaining_elements < _buffer_size()) ? remaining_elements : _buffer_size();
+            _uninitialized_move_n(_buf_alloc, bufs_guard.back(), x.begin() + first_buf_elements + (i - 1) * _buffer_size(), elements_to_move,
+                                 bufs_guard.back().get());
+            remaining_elements -= elements_to_move;
         }
 
         for (size_type i = 0; i < num_nodes; ++i) {
-            *(start_node + i) = bufs_guard[i].get();
+            *(start_node + i) = bufs_guard[i].release();
         }
-
-        const size_type offset = ((num_nodes * _buffer_size()) - dist) / 2;
-        iterator new_start(start_node, *start_node + offset);
-
-        auto new_finish = _uninitialized_move_n(_buf_alloc, x.begin(), dist, new_start);
 
         _map = map_guard.release();
         _map_capacity = new_map_capacity;
-        for (auto &buf_ptr : bufs_guard) {
-            buf_ptr.release();
-        }
-        _start = new_start;
-        _finish = new_finish;
+        _start = iterator(start_node, *start_node + first_buf_offset);
+        _finish = _start + dist;
 
         x.clear();
     }
