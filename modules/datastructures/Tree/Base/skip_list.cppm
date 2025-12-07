@@ -5,6 +5,7 @@
  */
 
 module;
+#include <bit>
 #include <functional>
 #include <memory>
 #include <random>
@@ -58,8 +59,14 @@ template <class Traits> class skip_list {
     using Node = _skip_list_node;
     using node_ptr = Node *;
     using node_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
-    mutable std::mt19937 rng{std::random_device{}()};
-    mutable std::bernoulli_distribution coin_flip{0.5}; // later, make it customizable
+    mutable uint32_t _rng_state;
+    uint32_t _fast_rand() const {
+        uint32_t x = _rng_state;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        return _rng_state = x;
+    }
 
     class node_forward_guard;
     struct _strategy_copy {
@@ -130,8 +137,8 @@ template <class Traits> class skip_list {
         friend bool operator==(const skip_list<T>::_iterator &lhs, const skip_list<T>::_const_iterator &rhs) noexcept;
     };
 
-    static const size_type MAX_LEVEL = 32; // MAX_LEVELS - 1
-    size_type _max_level; // update only when inserting a new node with higher level (not decrease)
+    static const size_type MAX_LEVEL = 16; // MAX_LEVELS - 1
+    size_type _max_level;                  // update only when inserting a new node with higher level (not decrease)
     node_ptr _dummy;
     node_allocator_type _node_alloc;
     size_type _size;
@@ -688,11 +695,8 @@ template <class Traits> class skip_list<Traits>::copy_guard {
 
 namespace j {
 template <class Traits> skip_list<Traits>::size_type skip_list<Traits>::_random_level() const {
-    size_type level = 0;
-    while (coin_flip(rng) && level < MAX_LEVEL) {
-        ++level;
-    }
-    return level;
+    uint32_t r = _fast_rand();
+    return std::countr_zero(r | (1u << MAX_LEVEL));
 } // opt
 
 template <class Traits> auto skip_list<Traits>::_construct_node(size_type level) -> node_forward_guard {
@@ -835,6 +839,7 @@ void skip_list<Traits>::_move_state(skip_list &&x) { // pre-require: _dummy is i
     swap(_dummy, x._dummy);
     swap(_max_level, x._max_level);
     swap(_size, x._size);
+    swap(_rng_state, x._rng_state);
 }
 
 template <class Traits> template <class Strategy> void skip_list<Traits>::_clone_tree(const skip_list &other) {
@@ -972,7 +977,8 @@ std::pair<typename skip_list<Traits>::iterator, bool> skip_list<Traits>::_emplac
 template <class Traits>
 skip_list<Traits>::skip_list(const key_compare &comp, const allocator_type &alloc)
     : _node_alloc(alloc), _key_comp(comp) {
-    rng.seed(std::random_device{}());
+    std::random_device rd;
+    _rng_state = rd();
     _init_dummy();
     _max_level = 0;
     _size = 0;
@@ -982,27 +988,31 @@ template <class Traits>
 skip_list<Traits>::skip_list(const skip_list &other)
     : _node_alloc(std::allocator_traits<allocator_type>::select_on_container_copy_construction(other._node_alloc)),
       _key_comp(other._key_comp) {
+    std::random_device rd;
+    _rng_state = rd();
     _clone_tree<_strategy_copy>(other);
 }
 
 template <class Traits>
 skip_list<Traits>::skip_list(const skip_list &other, const std::type_identity_t<allocator_type> &alloc)
     : _node_alloc(alloc), _key_comp(other._key_comp) {
+    std::random_device rd;
+    _rng_state = rd();
     _clone_tree<_strategy_copy>(other);
 }
 
 template <class Traits>
 skip_list<Traits>::skip_list(skip_list &&x)
-    : rng(std::move(x.rng)), coin_flip(std::move(x.coin_flip)), _max_level(0), _node_alloc(std::move(x._node_alloc)),
-      _size(0), _key_comp(std::move(x._key_comp)) {
+    : _rng_state(std::exchange(x._rng_state, 0)), _max_level(0), _node_alloc(std::move(x._node_alloc)), _size(0),
+      _key_comp(std::move(x._key_comp)) {
     _init_dummy();
     _move_state(std::move(x));
 }
 
 template <class Traits>
 skip_list<Traits>::skip_list(skip_list &&x, const std::type_identity_t<allocator_type> &alloc)
-    : rng(std::move(x.rng)), coin_flip(std::move(x.coin_flip)), _max_level(0), _node_alloc(std::move(x._node_alloc)),
-      _size(0), _key_comp(std::move(x._key_comp)) {
+    : _rng_state(std::exchange(x._rng_state, 0)), _max_level(0), _node_alloc(std::move(x._node_alloc)), _size(0),
+      _key_comp(std::move(x._key_comp)) {
     if constexpr (!std::allocator_traits<allocator_type>::is_always_equal::value) {
         if (_node_alloc != x._node_alloc) {
             _clone_tree<_strategy_move>(x);
@@ -1119,8 +1129,9 @@ skip_list<Traits>::iterator skip_list<Traits>::emplace_hint(const_iterator posit
     size_type new_node_level = _random_level();
     if (position != cbegin()) {
         auto prev = std::prev(position);
-        if (!_key_comp(key, prev._ptr->_key()) && _key_comp(key, position._ptr->_key()) &&
-            prev._ptr->_level >= new_node_level) {
+        const bool lower_ok = !_key_comp(key, prev._ptr->_key());
+        const bool upper_ok = (position == end()) ? true : _key_comp(key, position._ptr->_key());
+        if (lower_ok && upper_ok && prev._ptr->_level >= new_node_level) {
             if (!_MULTI && key == prev._ptr->_key()) {
                 return iterator(prev._ptr);
             }
@@ -1233,8 +1244,7 @@ void skip_list<Traits>::swap(skip_list &x) noexcept(std::allocator_traits<alloca
     if constexpr (std::allocator_traits<typename Traits::allocator_type>::propagate_on_container_swap::value) {
         swap(_node_alloc, x._node_alloc);
     }
-    swap(rng, x.rng);
-    swap(coin_flip, x.coin_flip);
+    swap(_rng_state, x._rng_state);
     swap(_max_level, x._max_level);
     swap(_dummy, x._dummy);
     swap(_size, x._size);
