@@ -5,6 +5,7 @@
  */
 
 module;
+#include <bit>
 #include <functional>
 #include <memory>
 #include <random>
@@ -58,8 +59,14 @@ template <class Traits> class skip_list {
     using Node = _skip_list_node;
     using node_ptr = Node *;
     using node_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
-    mutable std::mt19937 rng{std::random_device{}()};
-    mutable std::bernoulli_distribution coin_flip{0.5}; // later, make it customizable
+    mutable uint32_t _rng_state;
+    uint32_t _fast_rand() const {
+        uint32_t x = _rng_state;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        return _rng_state = x;
+    }
 
     class node_forward_guard;
     struct _strategy_copy {
@@ -101,7 +108,7 @@ template <class Traits> class skip_list {
         }
 
         _const_iterator &operator++() noexcept {
-            _ptr = _ptr->_forward[0];
+            _ptr = _ptr->_forward()[0];
             return *this;
         }
 
@@ -130,18 +137,19 @@ template <class Traits> class skip_list {
         friend bool operator==(const skip_list<T>::_iterator &lhs, const skip_list<T>::_const_iterator &rhs) noexcept;
     };
 
-    static const size_type MAX_LEVEL = 32; // MAX_LEVELS - 1
-    size_type _max_level; // update only when inserting a new node with higher level (not decrease)
+    static const size_type MAX_LEVEL = 16; // MAX_LEVELS - 1
+    size_type _max_level;                  // update only when inserting a new node with higher level (not decrease)
     node_ptr _dummy;
     node_allocator_type _node_alloc;
     size_type _size;
     [[no_unique_address]] key_compare _key_comp;
 
     size_type _random_level() const;
+    static constexpr size_t calculate_node_layout(size_type level) noexcept;
     // Calling `construct` with a level-only constructor would complicate safe initialization and could cause UB.
     // Therefore, we treat Node as POD-like and manually initialize `_level` (and '_forward').
     [[nodiscard]] auto _construct_node(size_type level) -> node_forward_guard;
-    void _deallocate_dummy_node() noexcept;
+    void _deallocate_node_block(node_ptr node) noexcept;
     void _deallocate_node(node_ptr node) noexcept;
     template <class K>
         requires IsTransparentlyComparable<K, key_type, key_compare>
@@ -188,7 +196,7 @@ template <class Traits> class skip_list {
         }
 
         auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                                 std::forward_as_tuple(std::forward<Args>(args)...));
+                              std::forward_as_tuple(std::forward<Args>(args)...));
         auto new_node_guard(std::move(_init_node(val, level)));
         _insert_node(new_node_guard.get(), predecessors);
         return {iterator(new_node_guard.release()), true};
@@ -207,7 +215,7 @@ template <class Traits> class skip_list {
             return {iterator(predecessors[0]), false};
         }
         auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                                 std::forward_as_tuple(std::forward<M>(obj)));
+                              std::forward_as_tuple(std::forward<M>(obj)));
         auto new_node_guard(std::move(_init_node(val, level)));
         _insert_node(new_node_guard.get(), predecessors);
         return {iterator(new_node_guard.release()), true};
@@ -246,7 +254,7 @@ template <class Traits> class skip_list {
     void insert(InputIter first, InputIter last);
     node_type extract(const_iterator position);
 
-    // Defined inline because the iterator would prevent matching with a separate declaration/definition.
+    // Defined inline because iterator would prevent matching with a separate declaration/definition.
     template <class K>
         requires(IsTransparentlyComparable<K, key_type, key_compare> &&
                  !std::is_convertible_v<std::remove_cvref_t<K>, iterator> &&
@@ -284,7 +292,7 @@ template <class Traits> class skip_list {
                 array<node_ptr, MAX_LEVEL + 1> predecessors;
                 std::fill_n(predecessors.begin(), new_node_level + 1, prev._ptr);
                 auto val = value_type(std::piecewise_construct, std::forward_as_tuple(std::forward<K>(key)),
-                                         std::forward_as_tuple(std::forward<Args>(args)...));
+                                      std::forward_as_tuple(std::forward<Args>(args)...));
                 auto new_node_guard(std::move(_init_node(val, new_node_level)));
                 _insert_node(new_node_guard.get(), predecessors);
                 return {iterator(new_node_guard.release()), true};
@@ -324,7 +332,7 @@ template <class Traits> class skip_list {
 
     iterator erase(const_iterator position);
 
-    // Defined inline because the iterator would prevent matching with a separate declaration/definition.
+    // Defined inline because iterator would prevent matching with a separate declaration/definition.
     template <class K>
         requires(IsTransparentlyComparable<K, key_type, key_compare> &&
                  !std::is_convertible_v<std::remove_cvref_t<K>, iterator> &&
@@ -408,7 +416,6 @@ template <class Traits> struct skip_list<Traits>::_skip_list_node {
     using node_pointer = _skip_list_node *;
     value_type _value;
     size_type _level;
-    node_pointer *_forward; // forward[i] = next node at level i
     node_pointer _backward;
 
     const key_type &_key() const noexcept {
@@ -421,6 +428,14 @@ template <class Traits> struct skip_list<Traits>::_skip_list_node {
 
   public:
     ~_skip_list_node() = default;
+
+    node_pointer *_forward() noexcept {
+        return reinterpret_cast<node_pointer *>(this + 1);
+    }
+
+    const node_pointer *_forward() const noexcept {
+        return reinterpret_cast<const node_pointer *>(this + 1);
+    }
 };
 
 template <class Traits> class skip_list<Traits>::_iterator {
@@ -454,7 +469,7 @@ template <class Traits> class skip_list<Traits>::_iterator {
     }
 
     _iterator &operator++() noexcept {
-        _ptr = _ptr->_forward[0];
+        _ptr = _ptr->_forward()[0];
         return *this;
     }
 
@@ -484,8 +499,7 @@ template <class Traits> class skip_list<Traits>::_iterator {
     }
 };
 
-template <class Traits> struct skip_list<Traits>::node_type { // Node handler implementation is incorrect.
-    // https://en.cppreference.com/w/cpp/container/node_handle.html
+template <class Traits> struct skip_list<Traits>::node_type {
     friend skip_list;
 
   public:
@@ -503,17 +517,18 @@ template <class Traits> struct skip_list<Traits>::node_type { // Node handler im
     static constexpr bool _IS_SET = std::is_same_v<key_type, value_type>;
     void _reset() {
         if (_ptr) {
+            std::allocator_traits<allocator_type>::destroy(_alloc, &_ptr->_value);
+
+            const size_t total_size = calculate_node_layout(_level);
+
             using node_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
-            node_allocator_type _node_alloc(_alloc);
-            if (_ptr->_forward) {
-                using node_ptr_allocator =
-                    typename std::allocator_traits<node_allocator_type>::template rebind_alloc<node_ptr>;
-                node_ptr_allocator _node_ptr_alloc(_node_alloc);
-                std::allocator_traits<node_ptr_allocator>::deallocate(_node_ptr_alloc, _ptr->_forward, _level + 1);
-                _ptr->_forward = nullptr;
-            }
-            std::allocator_traits<node_allocator_type>::destroy(_node_alloc, &_ptr->_value);
-            std::allocator_traits<node_allocator_type>::deallocate(_node_alloc, _ptr, 1);
+            using byte_alloc_type =
+                typename std::allocator_traits<node_allocator_type>::template rebind_alloc<std::byte>;
+            using byte_alloc_traits = std::allocator_traits<byte_alloc_type>;
+            byte_alloc_type byte_alloc(_alloc);
+
+            byte_alloc_traits::deallocate(byte_alloc, reinterpret_cast<std::byte *>(_ptr), total_size);
+
             _ptr = nullptr;
         }
         _level = 0;
@@ -584,22 +599,21 @@ template <class Traits> class skip_list<Traits>::node_forward_guard {
 
   public:
     node_forward_guard() : _ptr(nullptr), _level(0) {}
-    node_forward_guard(node_ptr node_ptr, const node_allocator_type &node_alloc, size_type level)
+    node_forward_guard(node_ptr node_ptr, const node_allocator_type &node_alloc, size_type level, size_type total_size)
         : _ptr(node_ptr), _node_alloc(node_alloc), _level(level) {
-        _ptr->_forward = nullptr;
         _ptr->_level = level;
     }
     ~node_forward_guard() {
         if (_ptr) {
-            if (_ptr->_forward) {
-                using node_ptr_allocator =
-                    typename std::allocator_traits<node_allocator_type>::template rebind_alloc<node_ptr>;
-                node_ptr_allocator _node_ptr_alloc(_node_alloc);
-                std::allocator_traits<node_ptr_allocator>::deallocate(_node_ptr_alloc, _ptr->_forward, _level + 1);
-                _ptr->_forward = nullptr;
-            }
-            std::allocator_traits<node_allocator_type>::destroy(_node_alloc, _ptr);
-            std::allocator_traits<node_allocator_type>::deallocate(_node_alloc, _ptr, 1);
+            const size_t total_size = calculate_node_layout(_level);
+
+            using byte_alloc_type =
+                typename std::allocator_traits<node_allocator_type>::template rebind_alloc<std::byte>;
+            using byte_alloc_traits = std::allocator_traits<byte_alloc_type>;
+            byte_alloc_type byte_alloc(_node_alloc);
+
+            byte_alloc_traits::deallocate(byte_alloc, reinterpret_cast<std::byte *>(_ptr), total_size);
+
             _ptr = nullptr;
         }
     }
@@ -672,37 +686,49 @@ template <class Traits> class skip_list<Traits>::copy_guard {
 
 namespace j {
 template <class Traits> skip_list<Traits>::size_type skip_list<Traits>::_random_level() const {
-    size_type level = 0;
-    while (coin_flip(rng) && level < MAX_LEVEL) {
-        ++level;
-    }
-    return level;
-} // opt
-
-template <class Traits> auto skip_list<Traits>::_construct_node(size_type level) -> node_forward_guard {
-    node_forward_guard node_guard(std::allocator_traits<node_allocator_type>::allocate(_node_alloc, 1), _node_alloc,
-                                  level);
-
-    using node_ptr_allocator = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<node_ptr>;
-    node_ptr_allocator _node_ptr_alloc(_node_alloc);
-    node_guard.get()->_forward = std::allocator_traits<node_ptr_allocator>::allocate(_node_ptr_alloc, level + 1);
-
-    return node_guard;
+    uint32_t r = _fast_rand();
+    return std::countr_zero(r | (1u << MAX_LEVEL));
 }
 
-template <class Traits> void skip_list<Traits>::_deallocate_dummy_node() noexcept {
-    using node_ptr_allocator = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<node_ptr>;
-    node_ptr_allocator _node_ptr_alloc(_node_alloc);
-    std::allocator_traits<node_ptr_allocator>::deallocate(_node_ptr_alloc, _dummy->_forward, _dummy->_level + 1);
-    std::allocator_traits<node_allocator_type>::deallocate(_node_alloc, _dummy, 1);
+template <class Traits> constexpr size_t skip_list<Traits>::calculate_node_layout(size_type level) noexcept {
+    const size_t node_size = sizeof(Node);
+    const size_t array_alignment = alignof(typename skip_list<Traits>::node_ptr);
+    const size_t array_start_offset = (node_size + array_alignment - 1) & ~(array_alignment - 1);
+    const size_t array_size = (level + 1) * sizeof(node_ptr);
+    const size_t total_size = array_start_offset + array_size;
+    return total_size;
+}
+
+template <class Traits> auto skip_list<Traits>::_construct_node(size_type level) -> node_forward_guard {
+    const size_t total_size = calculate_node_layout(level);
+
+    using byte_alloc_type = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<std::byte>;
+    using byte_alloc_traits = std::allocator_traits<byte_alloc_type>;
+    byte_alloc_type byte_alloc(_node_alloc);
+
+    std::byte *block = byte_alloc_traits::allocate(byte_alloc, total_size);
+
+    node_ptr new_node = reinterpret_cast<node_ptr>(block);
+
+    return node_forward_guard(new_node, _node_alloc, level, total_size);
+}
+
+template <class Traits> void skip_list<Traits>::_deallocate_node_block(node_ptr node) noexcept {
+    const size_type level = node->_level;
+    const size_t total_size = calculate_node_layout(level);
+
+    using byte_alloc_type = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<std::byte>;
+    using byte_alloc_traits = std::allocator_traits<byte_alloc_type>;
+    byte_alloc_type byte_alloc(_node_alloc);
+
+    byte_alloc_traits::deallocate(byte_alloc, reinterpret_cast<std::byte *>(node), total_size);
 }
 
 template <class Traits> void skip_list<Traits>::_deallocate_node(node_ptr node) noexcept {
-    std::allocator_traits<node_allocator_type>::destroy(_node_alloc, &node->_value);
-    using node_ptr_allocator = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<node_ptr>;
-    node_ptr_allocator _node_ptr_alloc(_node_alloc);
-    std::allocator_traits<node_ptr_allocator>::deallocate(_node_ptr_alloc, node->_forward, node->_level + 1);
-    std::allocator_traits<node_allocator_type>::deallocate(_node_alloc, node, 1);
+    allocator_type _alloc = get_allocator();
+    std::allocator_traits<allocator_type>::destroy(_alloc, &node->_value);
+
+    _deallocate_node_block(node);
 }
 
 template <class Traits>
@@ -712,8 +738,8 @@ auto skip_list<Traits>::_find_predecessors(K &&key) const -> array<node_ptr, MAX
     array<node_ptr, MAX_LEVEL + 1> predecessors;
     node_ptr current = _dummy;
     for (size_type i = _max_level + 1; i > 0; --i) { // avoid unsigned int underflow
-        while (current->_forward[i - 1] != _dummy && !_key_comp(key, current->_forward[i - 1]->_key())) {
-            current = current->_forward[i - 1];
+        while (current->_forward()[i - 1] != _dummy && !_key_comp(key, current->_forward()[i - 1]->_key())) {
+            current = current->_forward()[i - 1];
         }
         predecessors[i - 1] = current;
     }
@@ -727,8 +753,8 @@ auto skip_list<Traits>::_find_predecessors_lower(K &&key) const -> array<node_pt
     array<node_ptr, MAX_LEVEL + 1> predecessors;
     node_ptr current = _dummy;
     for (size_type i = _max_level + 1; i > 0; --i) { // avoid unsigned int underflow
-        while (current->_forward[i - 1] != _dummy && _key_comp(current->_forward[i - 1]->_key(), key)) {
-            current = current->_forward[i - 1];
+        while (current->_forward()[i - 1] != _dummy && _key_comp(current->_forward()[i - 1]->_key(), key)) {
+            current = current->_forward()[i - 1];
         }
         predecessors[i - 1] = current;
     }
@@ -738,13 +764,13 @@ auto skip_list<Traits>::_find_predecessors_lower(K &&key) const -> array<node_pt
 template <class Traits>
 auto skip_list<Traits>::_find_predecessors(const_iterator position) const -> array<node_ptr, MAX_LEVEL + 1> {
     array<node_ptr, MAX_LEVEL + 1> predecessors = _find_predecessors_lower(position._ptr->_key());
-    node_ptr current_node = predecessors[0]->_forward[0];
+    node_ptr current_node = predecessors[0]->_forward()[0];
 
     while (current_node != position._ptr) {
         for (size_type i = 0; i <= current_node->_level; ++i) {
             predecessors[i] = current_node;
         }
-        current_node = current_node->_forward[0];
+        current_node = current_node->_forward()[0];
     }
 
     return predecessors;
@@ -754,16 +780,16 @@ auto skip_list<Traits>::_find_predecessors(const_iterator position) const -> arr
 template <class Traits>
 void skip_list<Traits>::_update_predecessors(key_type key, array<node_ptr, MAX_LEVEL + 1> &predecessors) {
     for (size_type i = _max_level + 1; i > 0; --i) {
-        while (predecessors[i - 1]->_forward[i - 1] != _dummy &&
-               !_key_comp(key, predecessors[i - 1]->_forward[i - 1]->_key())) {
-            predecessors[i - 1] = predecessors[i - 1]->_forward[i - 1];
+        while (predecessors[i - 1]->_forward()[i - 1] != _dummy &&
+               !_key_comp(key, predecessors[i - 1]->_forward()[i - 1]->_key())) {
+            predecessors[i - 1] = predecessors[i - 1]->_forward()[i - 1];
         }
     }
 }
 
 // Incrementally updates the 'predecessors' array from prev(position) to position.
 template <class Traits> void skip_list<Traits>::_advance_predecessors(array<node_ptr, MAX_LEVEL + 1> &predecessors) {
-    node_ptr current_node = predecessors[0]->_forward[0];
+    node_ptr current_node = predecessors[0]->_forward()[0];
 
     for (size_type i = 0; i <= current_node->_level; ++i) {
         predecessors[i] = current_node;
@@ -791,7 +817,7 @@ auto skip_list<Traits>::_init_node(V &&value, size_type level) -> node_forward_g
 template <class Traits> void skip_list<Traits>::_init_dummy() {
     node_forward_guard head_guard(std::move(_construct_node(MAX_LEVEL)));
     for (size_type i = 0; i <= MAX_LEVEL; ++i) {
-        head_guard.get()->_forward[i] = head_guard.get();
+        head_guard.get()->_forward()[i] = head_guard.get();
     }
     head_guard.get()->_backward = head_guard.get();
     _dummy = head_guard.release();
@@ -803,6 +829,7 @@ void skip_list<Traits>::_move_state(skip_list &&x) { // pre-require: _dummy is i
     swap(_dummy, x._dummy);
     swap(_max_level, x._max_level);
     swap(_size, x._size);
+    swap(_rng_state, x._rng_state);
 }
 
 template <class Traits> template <class Strategy> void skip_list<Traits>::_clone_tree(const skip_list &other) {
@@ -818,7 +845,7 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
     guard.reserve(other._size - 1); // excluding dummy node
 
     guard.insert_without_owning(other._dummy, _dummy);
-    node_ptr current_other = other._dummy->_forward[0];
+    node_ptr current_other = other._dummy->_forward()[0];
     while (current_other != other._dummy) {
         if constexpr (Strategy::copy) {
             node_forward_guard new_guard(std::move(_init_node(current_other->_value, current_other->_level)));
@@ -830,7 +857,7 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
             guard.insert(current_other, new_guard.get());
             new_guard.release();
         }
-        current_other = current_other->_forward[0];
+        current_other = current_other->_forward()[0];
     }
     // now all nodes are created, we need to set forward and backward pointers (noexception)
     // current_other is now other._dummy
@@ -838,11 +865,11 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
         node_ptr new_node = guard.get_new_node(current_other);
 
         for (size_type i = 0; i <= current_other->_level; ++i) {
-            new_node->_forward[i] = guard.get_new_node(current_other->_forward[i]);
+            new_node->_forward()[i] = guard.get_new_node(current_other->_forward()[i]);
         }
         new_node->_backward = guard.get_new_node(current_other->_backward);
 
-        current_other = current_other->_forward[0];
+        current_other = current_other->_forward()[0];
     } while (current_other != other._dummy);
 
     guard.release();
@@ -851,13 +878,13 @@ template <class Traits> template <class Strategy> void skip_list<Traits>::_clone
 }
 
 template <class Traits> void skip_list<Traits>::_destroy_tree() noexcept {
-    node_ptr current = _dummy->_forward[0];
+    node_ptr current = _dummy->_forward()[0];
     while (current != _dummy) {
-        node_ptr next = current->_forward[0];
+        node_ptr next = current->_forward()[0];
         _deallocate_node(current);
         current = next;
     }
-    _deallocate_dummy_node();
+    _deallocate_node_block(_dummy);
 }
 
 template <class Traits>
@@ -866,11 +893,11 @@ template <class K>
 skip_list<Traits>::const_iterator skip_list<Traits>::_find_lower_bound(K &&key) const {
     node_ptr current = _dummy;
     for (size_type i = _max_level + 1; i > 0; --i) {
-        while (current->_forward[i - 1] != _dummy && _key_comp(current->_forward[i - 1]->_key(), key)) {
-            current = current->_forward[i - 1];
+        while (current->_forward()[i - 1] != _dummy && _key_comp(current->_forward()[i - 1]->_key(), key)) {
+            current = current->_forward()[i - 1];
         }
     }
-    return const_iterator(current->_forward[0]);
+    return const_iterator(current->_forward()[0]);
 }
 
 template <class Traits>
@@ -879,11 +906,11 @@ template <class K>
 skip_list<Traits>::const_iterator skip_list<Traits>::_find_upper_bound(K &&key) const {
     node_ptr current = _dummy;
     for (size_type i = _max_level + 1; i > 0; --i) {
-        while (current->_forward[i - 1] != _dummy && !_key_comp(key, current->_forward[i - 1]->_key())) {
-            current = current->_forward[i - 1];
+        while (current->_forward()[i - 1] != _dummy && !_key_comp(key, current->_forward()[i - 1]->_key())) {
+            current = current->_forward()[i - 1];
         }
     }
-    return const_iterator(current->_forward[0]);
+    return const_iterator(current->_forward()[0]);
 }
 
 template <class Traits>
@@ -891,9 +918,9 @@ skip_list<Traits>::node_ptr
 skip_list<Traits>::_extract_node(const_iterator position, const array<node_ptr, MAX_LEVEL + 1> &predecessors) noexcept {
     const size_type pos_level = position._ptr->_level;
     for (size_type i = 0; i <= pos_level; ++i) {
-        predecessors[i]->_forward[i] = position._ptr->_forward[i];
+        predecessors[i]->_forward()[i] = position._ptr->_forward()[i];
     }
-    position._ptr->_forward[0]->_backward = position._ptr->_backward;
+    position._ptr->_forward()[0]->_backward = position._ptr->_backward;
     --_size;
     return position._ptr;
 }
@@ -906,12 +933,12 @@ void skip_list<Traits>::_insert_node(node_ptr new_node, array<node_ptr, MAX_LEVE
     }
 
     for (size_type i = 0; i <= new_node->_level; ++i) {
-        new_node->_forward[i] = predecessors[i]->_forward[i];
-        predecessors[i]->_forward[i] = new_node;
+        new_node->_forward()[i] = predecessors[i]->_forward()[i];
+        predecessors[i]->_forward()[i] = new_node;
     }
     new_node->_backward = predecessors[0];
 
-    new_node->_forward[0]->_backward = new_node;
+    new_node->_forward()[0]->_backward = new_node;
     ++_size;
 }
 
@@ -940,7 +967,8 @@ std::pair<typename skip_list<Traits>::iterator, bool> skip_list<Traits>::_emplac
 template <class Traits>
 skip_list<Traits>::skip_list(const key_compare &comp, const allocator_type &alloc)
     : _node_alloc(alloc), _key_comp(comp) {
-    rng.seed(std::random_device{}());
+    std::random_device rd;
+    _rng_state = rd();
     _init_dummy();
     _max_level = 0;
     _size = 0;
@@ -950,27 +978,31 @@ template <class Traits>
 skip_list<Traits>::skip_list(const skip_list &other)
     : _node_alloc(std::allocator_traits<allocator_type>::select_on_container_copy_construction(other._node_alloc)),
       _key_comp(other._key_comp) {
+    std::random_device rd;
+    _rng_state = rd();
     _clone_tree<_strategy_copy>(other);
 }
 
 template <class Traits>
 skip_list<Traits>::skip_list(const skip_list &other, const std::type_identity_t<allocator_type> &alloc)
     : _node_alloc(alloc), _key_comp(other._key_comp) {
+    std::random_device rd;
+    _rng_state = rd();
     _clone_tree<_strategy_copy>(other);
 }
 
 template <class Traits>
 skip_list<Traits>::skip_list(skip_list &&x)
-    : rng(std::move(x.rng)), coin_flip(std::move(x.coin_flip)), _max_level(0), _node_alloc(std::move(x._node_alloc)),
-      _size(0), _key_comp(std::move(x._key_comp)) {
+    : _rng_state(std::exchange(x._rng_state, std::random_device{}())), _max_level(0),
+      _node_alloc(std::move(x._node_alloc)), _size(0), _key_comp(std::move(x._key_comp)) {
     _init_dummy();
     _move_state(std::move(x));
 }
 
 template <class Traits>
 skip_list<Traits>::skip_list(skip_list &&x, const std::type_identity_t<allocator_type> &alloc)
-    : rng(std::move(x.rng)), coin_flip(std::move(x.coin_flip)), _max_level(0), _node_alloc(std::move(x._node_alloc)),
-      _size(0), _key_comp(std::move(x._key_comp)) {
+    : _rng_state(std::exchange(x._rng_state, std::random_device{}())), _max_level(0),
+      _node_alloc(std::move(x._node_alloc)), _size(0), _key_comp(std::move(x._key_comp)) {
     if constexpr (!std::allocator_traits<allocator_type>::is_always_equal::value) {
         if (_node_alloc != x._node_alloc) {
             _clone_tree<_strategy_move>(x);
@@ -1034,11 +1066,11 @@ template <class Traits> skip_list<Traits>::~skip_list() noexcept {
 }
 
 template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::begin() noexcept {
-    return iterator(_dummy->_forward[0]);
+    return iterator(_dummy->_forward()[0]);
 }
 
 template <class Traits> skip_list<Traits>::const_iterator skip_list<Traits>::cbegin() const noexcept {
-    return const_iterator(_dummy->_forward[0]);
+    return const_iterator(_dummy->_forward()[0]);
 }
 
 template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::end() noexcept {
@@ -1087,8 +1119,9 @@ skip_list<Traits>::iterator skip_list<Traits>::emplace_hint(const_iterator posit
     size_type new_node_level = _random_level();
     if (position != cbegin()) {
         auto prev = std::prev(position);
-        if (!_key_comp(key, prev._ptr->_key()) && _key_comp(key, position._ptr->_key()) &&
-            prev._ptr->_level >= new_node_level) {
+        const bool lower_ok = !_key_comp(key, prev._ptr->_key());
+        const bool upper_ok = (position == end()) ? true : _key_comp(key, position._ptr->_key());
+        if (lower_ok && upper_ok && prev._ptr->_level >= new_node_level) {
             if (!_MULTI && key == prev._ptr->_key()) {
                 return iterator(prev._ptr);
             }
@@ -1152,7 +1185,7 @@ template <class Traits> skip_list<Traits>::insert_return_type skip_list<Traits>:
     }
     _insert_node(nh._ptr, predecessors);
     nh._ptr = nullptr;
-    return {iterator(predecessors[0]->_forward[0]), true, std::move(nh)};
+    return {iterator(predecessors[0]->_forward()[0]), true, std::move(nh)};
 }
 
 template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::insert(const_iterator position, node_type &&nh) {
@@ -1169,14 +1202,14 @@ template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::insert(co
             array<node_ptr, MAX_LEVEL + 1> predecessors;
             _insert_node(nh._ptr, predecessors);
             nh._ptr = nullptr;
-            return iterator(predecessors[0]->_forward[0]);
+            return iterator(predecessors[0]->_forward()[0]);
         }
     }
     return insert(std::move(nh)).first;
 }
 
 template <class Traits> skip_list<Traits>::iterator skip_list<Traits>::erase(const_iterator position) {
-    auto next_it = iterator(position._ptr->_forward[0]);
+    auto next_it = iterator(position._ptr->_forward()[0]);
     _deallocate_node(_extract_node(position, _find_predecessors(position)));
     return next_it;
 }
@@ -1201,8 +1234,7 @@ void skip_list<Traits>::swap(skip_list &x) noexcept(std::allocator_traits<alloca
     if constexpr (std::allocator_traits<typename Traits::allocator_type>::propagate_on_container_swap::value) {
         swap(_node_alloc, x._node_alloc);
     }
-    swap(rng, x.rng);
-    swap(coin_flip, x.coin_flip);
+    swap(_rng_state, x._rng_state);
     swap(_max_level, x._max_level);
     swap(_dummy, x._dummy);
     swap(_size, x._size);
@@ -1210,14 +1242,14 @@ void skip_list<Traits>::swap(skip_list &x) noexcept(std::allocator_traits<alloca
 }
 
 template <class Traits> void skip_list<Traits>::clear() noexcept {
-    node_ptr current = _dummy->_forward[0];
+    node_ptr current = _dummy->_forward()[0];
     while (current != _dummy) {
-        node_ptr next = current->_forward[0];
+        node_ptr next = current->_forward()[0];
         _deallocate_node(current);
         current = next;
     }
     for (size_type i = 0; i <= _max_level; ++i) {
-        _dummy->_forward[i] = _dummy;
+        _dummy->_forward()[i] = _dummy;
     }
     _dummy->_backward = _dummy;
     _max_level = 0;

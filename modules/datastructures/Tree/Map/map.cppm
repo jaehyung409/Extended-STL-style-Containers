@@ -18,8 +18,7 @@ namespace j {
 export template <class Key, class T, class Compare, class Allocator, class TreeSelector> class multimap;
 
 export template <class Key, class T, class Compare = std::less<Key>,
-                 class Allocator = std::allocator<std::pair<const Key, T>>,
-                 class TreeSelector = use_skip_list>
+                 class Allocator = std::allocator<std::pair<const Key, T>>, class TreeSelector = use_skip_list>
 class map {
   private:
     using traits = map_traits<Key, T, Compare, Allocator>;
@@ -53,7 +52,7 @@ class map {
         requires std::input_iterator<InputIter> && std::constructible_from<value_type, std::iter_reference_t<InputIter>>
     map(InputIter first, InputIter last, const Compare &comp = Compare(), const Allocator &alloc = Allocator());
     map(const map &x) = default; // Rule of zero
-    map(map &&x) = default; // Rule of zero
+    map(map &&x) = default;      // Rule of zero
     explicit map(const Allocator &alloc);
     map(const map &x, const std::type_identity_t<Allocator> &alloc);
     map(map &&x, const std::type_identity_t<Allocator> &alloc);
@@ -65,7 +64,7 @@ class map {
     ~map() = default; // Rule of zero
 
     map &operator=(const map &x) = default; // Rule of zero
-    map &operator=(map &&x) = default; // Rule of zero (noexcept depends on tree_type, compiler can optimize it)
+    map &operator=(map &&x) = default;      // Rule of zero (noexcept depends on tree_type, compiler can optimize it)
     map &operator=(std::initializer_list<value_type> il);
     [[nodiscard]] allocator_type get_allocator() const noexcept;
 
@@ -113,32 +112,25 @@ class map {
         requires std::constructible_from<value_type, Args &&...>
     iterator emplace_hint(const_iterator position, Args &&...args);
 
-    template <class... Args>
-    std::pair<iterator, bool> try_emplace(const key_type &k, Args &&...args);
-    template <class... Args>
-    std::pair<iterator, bool> try_emplace(key_type &&k, Args &&...args);
+    template <class... Args> std::pair<iterator, bool> try_emplace(const key_type &k, Args &&...args);
+    template <class... Args> std::pair<iterator, bool> try_emplace(key_type &&k, Args &&...args);
     template <class K, class... Args>
         requires IsTransparentlyComparable<K, key_type, key_compare> && std::constructible_from<key_type, K>
     std::pair<iterator, bool> try_emplace(K &&k, Args &&...args);
     template <class... Args>
     std::pair<iterator, bool> try_emplace(const_iterator hint, const key_type &k, Args &&...args);
-    template <class... Args>
-    std::pair<iterator, bool> try_emplace(const_iterator hint, key_type &&k, Args &&...args);
+    template <class... Args> std::pair<iterator, bool> try_emplace(const_iterator hint, key_type &&k, Args &&...args);
     template <class K, class... Args>
         requires IsTransparentlyComparable<K, key_type, key_compare> && std::constructible_from<key_type, K>
     std::pair<iterator, bool> try_emplace(const_iterator hint, K &&k, Args &&...args);
 
-    template <class M>
-    std::pair<iterator, bool> insert_or_assign(const key_type &k, M &&obj);
-    template <class M>
-    std::pair<iterator, bool> insert_or_assign(key_type &&k, M &&obj);
+    template <class M> std::pair<iterator, bool> insert_or_assign(const key_type &k, M &&obj);
+    template <class M> std::pair<iterator, bool> insert_or_assign(key_type &&k, M &&obj);
     template <class K, class M>
         requires IsTransparentlyComparable<K, key_type, key_compare> && std::constructible_from<key_type, K>
     std::pair<iterator, bool> insert_or_assign(K &&k, M &&obj);
-    template <class M>
-    iterator insert_or_assign(const_iterator hint, const key_type &k, M &&obj);
-    template <class M>
-    iterator insert_or_assign(const_iterator hint, key_type &&k, M &&obj);
+    template <class M> iterator insert_or_assign(const_iterator hint, const key_type &k, M &&obj);
+    template <class M> iterator insert_or_assign(const_iterator hint, key_type &&k, M &&obj);
     template <class K, class M>
         requires IsTransparentlyComparable<K, key_type, key_compare> && std::constructible_from<key_type, K>
     iterator insert_or_assign(const_iterator hint, K &&k, M &&obj);
@@ -243,15 +235,13 @@ class map {
     [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
 };
 
-template <class InputIter,
-          class Compare = std::less<typename std::iterator_traits<InputIter>::value_type::first_type>,
+template <class InputIter, class Compare = std::less<typename std::iterator_traits<InputIter>::value_type::first_type>,
           class Allocator = std::allocator<typename std::iterator_traits<InputIter>::value_type>>
 map(InputIter, InputIter, Compare = Compare(), Allocator = Allocator())
     -> map<typename std::iterator_traits<InputIter>::value_type::first_type,
            typename std::iterator_traits<InputIter>::value_type::second_type, Compare, Allocator>;
 
-template <class Key, class T, class Compare = std::less<Key>,
-          class Allocator = std::allocator<std::pair<const Key, T>>>
+template <class Key, class T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T>>>
 map(std::initializer_list<std::pair<const Key, T>>, Compare = Compare(), Allocator = Allocator())
     -> map<Key, T, Compare, Allocator>;
 
@@ -262,8 +252,7 @@ map(InputIter, InputIter, Allocator)
            std::less<typename std::iterator_traits<InputIter>::value_type::first_type>, Allocator>;
 
 template <class Key, class T, class Allocator>
-map(std::initializer_list<std::pair<const Key, T>>, Allocator)
-    -> map<Key, T, std::less<Key>, Allocator>;
+map(std::initializer_list<std::pair<const Key, T>>, Allocator) -> map<Key, T, std::less<Key>, Allocator>;
 
 export template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 bool operator==(const map<Key, T, Compare, Allocator, TreeSelector> &lhs,
@@ -285,8 +274,8 @@ void swap(map<Key, T, Compare, Allocator, TreeSelector> &x,
 }
 
 export template <class Key, class T, class Compare, class Allocator, class TreeSelector, class Pred>
-map<Key, T, Compare, Allocator, TreeSelector>::size_type
-erase_if(map<Key, T, Compare, Allocator, TreeSelector> &c, Pred pred) {
+map<Key, T, Compare, Allocator, TreeSelector>::size_type erase_if(map<Key, T, Compare, Allocator, TreeSelector> &c,
+                                                                  Pred pred) {
     auto it = std::remove_if(c.begin(), c.end(), pred);
     auto r = c.end() - it;
     c.erase(it, c.end());
@@ -417,8 +406,7 @@ map<Key, T, Compare, Allocator, TreeSelector>::begin() const noexcept {
 }
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
-map<Key, T, Compare, Allocator, TreeSelector>::iterator
-map<Key, T, Compare, Allocator, TreeSelector>::end() noexcept {
+map<Key, T, Compare, Allocator, TreeSelector>::iterator map<Key, T, Compare, Allocator, TreeSelector>::end() noexcept {
     return _tree.end();
 }
 
@@ -674,12 +662,11 @@ template <class K>
     requires(
         IsTransparentlyComparable<K, typename map_traits<Key, T, Compare, Allocator>::key_type,
                                   typename map_traits<Key, T, Compare, Allocator>::key_compare> &&
-        !std::is_convertible_v<std::remove_cvref_t<K>,
-                               typename select_tree_t<map_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator> &&
+        !std::is_convertible_v<std::remove_cvref_t<K>, typename select_tree_t<map_traits<Key, T, Compare, Allocator>,
+                                                                              TreeSelector>::iterator> &&
         !std::is_convertible_v<std::remove_cvref_t<K>, typename select_tree_t<map_traits<Key, T, Compare, Allocator>,
                                                                               TreeSelector>::const_iterator>)
-map<Key, T, Compare, Allocator, TreeSelector>::node_type
-map<Key, T, Compare, Allocator, TreeSelector>::extract(K &&x) {
+map<Key, T, Compare, Allocator, TreeSelector>::node_type map<Key, T, Compare, Allocator, TreeSelector>::extract(K &&x) {
     return _tree.extract(std::forward<K>(x));
 }
 
@@ -698,8 +685,9 @@ map<Key, T, Compare, Allocator, TreeSelector>::insert(const_iterator hint, node_
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 map<Key, T, Compare, Allocator, TreeSelector>::iterator
 map<Key, T, Compare, Allocator, TreeSelector>::erase(iterator position)
-    requires(!std::same_as<typename select_tree_t<map_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator,
-                           typename select_tree_t<map_traits<Key, T, Compare, Allocator>, TreeSelector>::const_iterator>)
+    requires(
+        !std::same_as<typename select_tree_t<map_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator,
+                      typename select_tree_t<map_traits<Key, T, Compare, Allocator>, TreeSelector>::const_iterator>)
 {
     return _tree.erase(position);
 }
@@ -721,12 +709,11 @@ template <class K>
     requires(
         IsTransparentlyComparable<K, typename map_traits<Key, T, Compare, Allocator>::key_type,
                                   typename map_traits<Key, T, Compare, Allocator>::key_compare> &&
-        !std::is_convertible_v<std::remove_cvref_t<K>,
-                               typename select_tree_t<map_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator> &&
+        !std::is_convertible_v<std::remove_cvref_t<K>, typename select_tree_t<map_traits<Key, T, Compare, Allocator>,
+                                                                              TreeSelector>::iterator> &&
         !std::is_convertible_v<std::remove_cvref_t<K>, typename select_tree_t<map_traits<Key, T, Compare, Allocator>,
                                                                               TreeSelector>::const_iterator>)
-map<Key, T, Compare, Allocator, TreeSelector>::size_type
-map<Key, T, Compare, Allocator, TreeSelector>::erase(K &&x) {
+map<Key, T, Compare, Allocator, TreeSelector>::size_type map<Key, T, Compare, Allocator, TreeSelector>::erase(K &&x) {
     return _tree.erase(std::forward<K>(x));
 }
 
@@ -946,15 +933,14 @@ map<Key, T, Compare, Allocator, TreeSelector>::equal_range(const K &x) const {
 
 namespace j {
 export template <class Key, class T, class Compare = std::less<Key>,
-                 class Allocator = std::allocator<std::pair<const Key, T>>,
-                 class TreeSelector = use_skip_list>
+                 class Allocator = std::allocator<std::pair<const Key, T>>, class TreeSelector = use_skip_list>
 class multimap {
-private:
+  private:
     using traits = multimap_traits<Key, T, Compare, Allocator>;
     using tree_type = select_tree_t<traits, TreeSelector>;
     tree_type _tree;
 
-public:
+  public:
     using key_type = typename traits::key_type;
     using mapped_type = typename traits::mapped_type;
     using key_compare = typename traits::key_compare;
@@ -984,7 +970,8 @@ public:
     explicit multimap(const Allocator &alloc);
     multimap(const multimap &x, const std::type_identity_t<Allocator> &alloc);
     multimap(multimap &&x, const std::type_identity_t<Allocator> &alloc);
-    multimap(std::initializer_list<value_type> il, const Compare &comp = Compare(), const Allocator &alloc = Allocator());
+    multimap(std::initializer_list<value_type> il, const Compare &comp = Compare(),
+             const Allocator &alloc = Allocator());
     template <class InputIter>
         requires std::input_iterator<InputIter> && std::constructible_from<value_type, std::iter_reference_t<InputIter>>
     multimap(InputIter first, InputIter last, const Allocator &a) : multimap(first, last, Compare(), a) {}
@@ -1125,15 +1112,13 @@ public:
     [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const K &x) const;
 };
 
-template <class InputIter,
-          class Compare = std::less<typename std::iterator_traits<InputIter>::value_type::first_type>,
+template <class InputIter, class Compare = std::less<typename std::iterator_traits<InputIter>::value_type::first_type>,
           class Allocator = std::allocator<typename std::iterator_traits<InputIter>::value_type>>
 multimap(InputIter, InputIter, Compare = Compare(), Allocator = Allocator())
     -> multimap<typename std::iterator_traits<InputIter>::value_type::first_type,
                 typename std::iterator_traits<InputIter>::value_type::second_type, Compare, Allocator>;
 
-template <class Key, class T, class Compare = std::less<Key>,
-          class Allocator = std::allocator<std::pair<const Key, T>>>
+template <class Key, class T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T>>>
 multimap(std::initializer_list<std::pair<const Key, T>>, Compare = Compare(), Allocator = Allocator())
     -> multimap<Key, T, Compare, Allocator>;
 
@@ -1144,8 +1129,7 @@ multimap(InputIter, InputIter, Allocator)
                 std::less<typename std::iterator_traits<InputIter>::value_type::first_type>, Allocator>;
 
 template <class Key, class T, class Allocator>
-multimap(std::initializer_list<std::pair<const Key, T>>, Allocator)
-    -> multimap<Key, T, std::less<Key>, Allocator>;
+multimap(std::initializer_list<std::pair<const Key, T>>, Allocator) -> multimap<Key, T, std::less<Key>, Allocator>;
 
 export template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 bool operator==(const multimap<Key, T, Compare, Allocator, TreeSelector> &lhs,
@@ -1201,13 +1185,12 @@ multimap<Key, T, Compare, Allocator, TreeSelector>::multimap(const multimap &x,
     : _tree(x._tree, alloc) {}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
-multimap<Key, T, Compare, Allocator, TreeSelector>::multimap(multimap &&x,
-                                                             const std::type_identity_t<Allocator> &alloc)
+multimap<Key, T, Compare, Allocator, TreeSelector>::multimap(multimap &&x, const std::type_identity_t<Allocator> &alloc)
     : _tree(std::move(x._tree), alloc) {}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
-multimap<Key, T, Compare, Allocator, TreeSelector>::multimap(std::initializer_list<value_type> il,
-                                                             const Compare &comp, const Allocator &alloc)
+multimap<Key, T, Compare, Allocator, TreeSelector>::multimap(std::initializer_list<value_type> il, const Compare &comp,
+                                                             const Allocator &alloc)
     : _tree(comp, alloc) {
     _tree.insert(il.begin(), il.end());
 }
@@ -1228,62 +1211,92 @@ multimap<Key, T, Compare, Allocator, TreeSelector>::get_allocator() const noexce
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::begin() noexcept { return _tree.begin(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::begin() noexcept {
+    return _tree.begin();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::begin() const noexcept { return _tree.cbegin(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::begin() const noexcept {
+    return _tree.cbegin();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::end() noexcept { return _tree.end(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::end() noexcept {
+    return _tree.end();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::end() const noexcept { return _tree.cend(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::end() const noexcept {
+    return _tree.cend();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::reverse_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::rbegin() noexcept { return reverse_iterator(end()); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::rbegin() noexcept {
+    return reverse_iterator(end());
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_reverse_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::rbegin() const noexcept { return const_reverse_iterator(end()); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::rbegin() const noexcept {
+    return const_reverse_iterator(end());
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::reverse_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::rend() noexcept { return reverse_iterator(begin()); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::rend() noexcept {
+    return reverse_iterator(begin());
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_reverse_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::rend() const noexcept { return const_reverse_iterator(begin()); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::rend() const noexcept {
+    return const_reverse_iterator(begin());
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::cbegin() const noexcept { return _tree.cbegin(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::cbegin() const noexcept {
+    return _tree.cbegin();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::cend() const noexcept { return _tree.cend(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::cend() const noexcept {
+    return _tree.cend();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_reverse_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::crbegin() const noexcept { return const_reverse_iterator(cend()); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_reverse_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::crend() const noexcept { return const_reverse_iterator(cbegin()); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
-bool multimap<Key, T, Compare, Allocator, TreeSelector>::empty() const noexcept { return _tree.empty(); }
+bool multimap<Key, T, Compare, Allocator, TreeSelector>::empty() const noexcept {
+    return _tree.empty();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::size_type
-multimap<Key, T, Compare, Allocator, TreeSelector>::size() const noexcept { return _tree.size(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::size() const noexcept {
+    return _tree.size();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::size_type
-multimap<Key, T, Compare, Allocator, TreeSelector>::max_size() const noexcept { return _tree.max_size(); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::max_size() const noexcept {
+    return _tree.max_size();
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 template <class... Args>
@@ -1369,12 +1382,12 @@ template <class Key, class T, class Compare, class Allocator, class TreeSelector
 template <class K>
     requires(IsTransparentlyComparable<K, typename multimap_traits<Key, T, Compare, Allocator>::key_type,
                                        typename multimap_traits<Key, T, Compare, Allocator>::key_compare> &&
-             !std::is_convertible_v<std::remove_cvref_t<K>,
-                                    typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>,
-                                                          TreeSelector>::iterator> &&
-             !std::is_convertible_v<std::remove_cvref_t<K>,
-                                    typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>,
-                                                          TreeSelector>::const_iterator>)
+             !std::is_convertible_v<
+                 std::remove_cvref_t<K>,
+                 typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator> &&
+             !std::is_convertible_v<
+                 std::remove_cvref_t<K>,
+                 typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::const_iterator>)
 multimap<Key, T, Compare, Allocator, TreeSelector>::node_type
 multimap<Key, T, Compare, Allocator, TreeSelector>::extract(K &&x) {
     return _tree.extract(std::forward<K>(x));
@@ -1395,8 +1408,9 @@ multimap<Key, T, Compare, Allocator, TreeSelector>::insert(const_iterator hint, 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::iterator
 multimap<Key, T, Compare, Allocator, TreeSelector>::erase(iterator position)
-    requires(!std::same_as<typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator,
-                           typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::const_iterator>)
+    requires(!std::same_as<
+             typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator,
+             typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::const_iterator>)
 {
     return _tree.erase(position);
 }
@@ -1417,12 +1431,12 @@ template <class Key, class T, class Compare, class Allocator, class TreeSelector
 template <class K>
     requires(IsTransparentlyComparable<K, typename multimap_traits<Key, T, Compare, Allocator>::key_type,
                                        typename multimap_traits<Key, T, Compare, Allocator>::key_compare> &&
-             !std::is_convertible_v<std::remove_cvref_t<K>,
-                                    typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>,
-                                                          TreeSelector>::iterator> &&
-             !std::is_convertible_v<std::remove_cvref_t<K>,
-                                    typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>,
-                                                          TreeSelector>::const_iterator>)
+             !std::is_convertible_v<
+                 std::remove_cvref_t<K>,
+                 typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::iterator> &&
+             !std::is_convertible_v<
+                 std::remove_cvref_t<K>,
+                 typename select_tree_t<multimap_traits<Key, T, Compare, Allocator>, TreeSelector>::const_iterator>)
 multimap<Key, T, Compare, Allocator, TreeSelector>::size_type
 multimap<Key, T, Compare, Allocator, TreeSelector>::erase(K &&x) {
     return _tree.erase(std::forward<K>(x));
@@ -1492,11 +1506,15 @@ multimap<Key, T, Compare, Allocator, TreeSelector>::value_comp() const {
 // multimap operations (delegate to tree)
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::find(const key_type &x) { return _tree.find(x); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::find(const key_type &x) {
+    return _tree.find(x);
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::const_iterator
-multimap<Key, T, Compare, Allocator, TreeSelector>::find(const key_type &x) const { return _tree.find(x); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::find(const key_type &x) const {
+    return _tree.find(x);
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 template <class K>
@@ -1518,7 +1536,9 @@ multimap<Key, T, Compare, Allocator, TreeSelector>::find(const K &x) const {
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 multimap<Key, T, Compare, Allocator, TreeSelector>::size_type
-multimap<Key, T, Compare, Allocator, TreeSelector>::count(const key_type &x) const { return _tree.count(x); }
+multimap<Key, T, Compare, Allocator, TreeSelector>::count(const key_type &x) const {
+    return _tree.count(x);
+}
 
 template <class Key, class T, class Compare, class Allocator, class TreeSelector>
 template <class K>

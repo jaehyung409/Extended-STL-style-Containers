@@ -43,6 +43,7 @@ template <class Key, class T, class Compare, class Allocator> struct map_traits 
     using key_compare = Compare;
     struct value_compare {
         friend struct map_traits;
+
       public:
         Compare comp;
         explicit value_compare(Compare c) : comp(c) {}
@@ -50,12 +51,12 @@ template <class Key, class T, class Compare, class Allocator> struct map_traits 
             return comp(lhs.first, rhs.first);
         }
         template <class K>
-        requires IsTransparentlyComparable<K, key_type, Compare>
+            requires IsTransparentlyComparable<K, key_type, Compare>
         bool operator()(const value_type &lhs, const K &rhs) const {
             return comp(lhs.first, rhs);
         }
         template <class K>
-        requires IsTransparentlyComparable<K, key_type, Compare>
+            requires IsTransparentlyComparable<K, key_type, Compare>
         bool operator()(const K &lhs, const value_type &rhs) const {
             return comp(lhs, rhs.first);
         }
@@ -71,6 +72,7 @@ template <class Key, class T, class Compare, class Allocator> struct multimap_tr
     using key_compare = Compare;
     struct value_compare {
         friend struct multimap_traits;
+
       public:
         Compare comp;
         explicit value_compare(Compare c) : comp(c) {}
@@ -78,12 +80,12 @@ template <class Key, class T, class Compare, class Allocator> struct multimap_tr
             return comp(lhs.first, rhs.first);
         }
         template <class K>
-        requires IsTransparentlyComparable<K, key_type, Compare>
+            requires IsTransparentlyComparable<K, key_type, Compare>
         bool operator()(const value_type &lhs, const K &rhs) const {
             return comp(lhs.first, rhs);
         }
         template <class K>
-        requires IsTransparentlyComparable<K, key_type, Compare>
+            requires IsTransparentlyComparable<K, key_type, Compare>
         bool operator()(const K &lhs, const value_type &rhs) const {
             return comp(lhs, rhs.first);
         }
