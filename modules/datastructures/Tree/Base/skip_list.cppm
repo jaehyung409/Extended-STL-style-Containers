@@ -145,6 +145,7 @@ template <class Traits> class skip_list {
     [[no_unique_address]] key_compare _key_comp;
 
     size_type _random_level() const;
+    static constexpr size_t calculate_node_layout(size_type level) noexcept;
     // Calling `construct` with a level-only constructor would complicate safe initialization and could cause UB.
     // Therefore, we treat Node as POD-like and manually initialize `_level` (and '_forward').
     [[nodiscard]] auto _construct_node(size_type level) -> node_forward_guard;
@@ -498,8 +499,7 @@ template <class Traits> class skip_list<Traits>::_iterator {
     }
 };
 
-template <class Traits> struct skip_list<Traits>::node_type { // Node handler implementation is incorrect.
-    // https://en.cppreference.com/w/cpp/container/node_handle.html
+template <class Traits> struct skip_list<Traits>::node_type {
     friend skip_list;
 
   public:
@@ -519,11 +519,7 @@ template <class Traits> struct skip_list<Traits>::node_type { // Node handler im
         if (_ptr) {
             std::allocator_traits<allocator_type>::destroy(_alloc, &_ptr->_value);
 
-            const size_t node_size = sizeof(Node);
-            const size_t array_alignment = alignof(typename skip_list<Traits>::node_ptr);
-            const size_t array_start_offset = (node_size + array_alignment - 1) & ~(array_alignment - 1);
-            const size_t array_size = (_level + 1) * sizeof(node_ptr);
-            const size_t total_size = array_start_offset + array_size;
+            const size_t total_size = calculate_node_layout(_level);
 
             using node_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<Node>;
             using byte_alloc_type =
@@ -600,21 +596,16 @@ template <class Traits> class skip_list<Traits>::node_forward_guard {
     node_ptr _ptr;
     node_allocator_type _node_alloc;
     size_type _level;
-    size_type _total_size;
 
   public:
-    node_forward_guard() : _ptr(nullptr), _level(0), _total_size(0) {}
+    node_forward_guard() : _ptr(nullptr), _level(0) {}
     node_forward_guard(node_ptr node_ptr, const node_allocator_type &node_alloc, size_type level, size_type total_size)
-        : _ptr(node_ptr), _node_alloc(node_alloc), _level(level), _total_size(total_size) {
+        : _ptr(node_ptr), _node_alloc(node_alloc), _level(level) {
         _ptr->_level = level;
     }
     ~node_forward_guard() {
         if (_ptr) {
-            const size_t node_size = sizeof(Node);
-            const size_t array_alignment = alignof(typename skip_list<Traits>::node_ptr);
-            const size_t array_start_offset = (node_size + array_alignment - 1) & ~(array_alignment - 1);
-            const size_t array_size = (_level + 1) * sizeof(node_ptr);
-            const size_t total_size = array_start_offset + array_size;
+            const size_t total_size = calculate_node_layout(_level);
 
             using byte_alloc_type =
                 typename std::allocator_traits<node_allocator_type>::template rebind_alloc<std::byte>;
@@ -697,16 +688,19 @@ namespace j {
 template <class Traits> skip_list<Traits>::size_type skip_list<Traits>::_random_level() const {
     uint32_t r = _fast_rand();
     return std::countr_zero(r | (1u << MAX_LEVEL));
-} // opt
+}
 
-template <class Traits> auto skip_list<Traits>::_construct_node(size_type level) -> node_forward_guard {
+template <class Traits> constexpr size_t skip_list<Traits>::calculate_node_layout(size_type level) noexcept {
     const size_t node_size = sizeof(Node);
-    const size_t array_alignment = alignof(typename skip_list<Traits>::node_ptr); // 8바이트 정렬
-
+    const size_t array_alignment = alignof(typename skip_list<Traits>::node_ptr);
     const size_t array_start_offset = (node_size + array_alignment - 1) & ~(array_alignment - 1);
-
     const size_t array_size = (level + 1) * sizeof(node_ptr);
     const size_t total_size = array_start_offset + array_size;
+    return total_size;
+}
+
+template <class Traits> auto skip_list<Traits>::_construct_node(size_type level) -> node_forward_guard {
+    const size_t total_size = calculate_node_layout(level);
 
     using byte_alloc_type = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<std::byte>;
     using byte_alloc_traits = std::allocator_traits<byte_alloc_type>;
@@ -721,11 +715,7 @@ template <class Traits> auto skip_list<Traits>::_construct_node(size_type level)
 
 template <class Traits> void skip_list<Traits>::_deallocate_node_block(node_ptr node) noexcept {
     const size_type level = node->_level;
-    const size_t node_size = sizeof(Node);
-    const size_t array_alignment = alignof(typename skip_list<Traits>::node_ptr);
-    const size_t array_start_offset = (node_size + array_alignment - 1) & ~(array_alignment - 1);
-    const size_t array_size = (level + 1) * sizeof(node_ptr);
-    const size_t total_size = array_start_offset + array_size;
+    const size_t total_size = calculate_node_layout(level);
 
     using byte_alloc_type = typename std::allocator_traits<node_allocator_type>::template rebind_alloc<std::byte>;
     using byte_alloc_traits = std::allocator_traits<byte_alloc_type>;
@@ -1003,16 +993,16 @@ skip_list<Traits>::skip_list(const skip_list &other, const std::type_identity_t<
 
 template <class Traits>
 skip_list<Traits>::skip_list(skip_list &&x)
-    : _rng_state(std::exchange(x._rng_state, 0)), _max_level(0), _node_alloc(std::move(x._node_alloc)), _size(0),
-      _key_comp(std::move(x._key_comp)) {
+    : _rng_state(std::exchange(x._rng_state, std::random_device{}())), _max_level(0),
+      _node_alloc(std::move(x._node_alloc)), _size(0), _key_comp(std::move(x._key_comp)) {
     _init_dummy();
     _move_state(std::move(x));
 }
 
 template <class Traits>
 skip_list<Traits>::skip_list(skip_list &&x, const std::type_identity_t<allocator_type> &alloc)
-    : _rng_state(std::exchange(x._rng_state, 0)), _max_level(0), _node_alloc(std::move(x._node_alloc)), _size(0),
-      _key_comp(std::move(x._key_comp)) {
+    : _rng_state(std::exchange(x._rng_state, std::random_device{}())), _max_level(0),
+      _node_alloc(std::move(x._node_alloc)), _size(0), _key_comp(std::move(x._key_comp)) {
     if constexpr (!std::allocator_traits<allocator_type>::is_always_equal::value) {
         if (_node_alloc != x._node_alloc) {
             _clone_tree<_strategy_move>(x);
