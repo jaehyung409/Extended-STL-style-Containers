@@ -1,5 +1,5 @@
 /*
-* @ Created by jaehyung409 on 25. 8. 22.
+ * @ Created by jaehyung409 on 25. 8. 22.
  * @ Copyright (c) 2025 jaehyung409.
  * This software is licensed under the MIT License.
  * Note: This test code was generated with the assistance of an AI agent.
@@ -8,7 +8,7 @@
 #define CATCH_CONFIG_MAIN
 
 #include <catch2/catch_all.hpp>
-#include <algorithm>
+#include <deque>
 #include <iterator>
 #include <random>
 import j;
@@ -25,11 +25,13 @@ TEST_CASE("Deque Basic") {
 
         j::deque<int> size_d(5);
         REQUIRE(size_d.size() == 5);
-        for (auto& x : size_d) REQUIRE(x == 0);
+        for (auto &x : size_d)
+            REQUIRE(x == 0);
 
         j::deque<int> val_d(3, 42);
         REQUIRE(val_d.size() == 3);
-        for (auto& x : val_d) REQUIRE(x == 42);
+        for (auto &x : val_d)
+            REQUIRE(x == 42);
 
         j::deque<int> src = {1, 2, 3};
         j::deque<int> iter_d(src.begin(), src.end());
@@ -65,7 +67,8 @@ TEST_CASE("Deque Basic") {
         j::deque<int> d;
         d.assign(4, 99);
         REQUIRE(d.size() == 4);
-        for (auto x : d) REQUIRE(x == 99);
+        for (auto x : d)
+            REQUIRE(x == 99);
 
         d.assign(src.begin(), src.end());
         REQUIRE(d.size() == src.size());
@@ -82,17 +85,22 @@ TEST_CASE("Deque Basic") {
         auto it = d.begin();
         REQUIRE(*it == 1);
         REQUIRE(*(it + 2) == 3);
-        ++it; REQUIRE(*it == 2);
-        --it; REQUIRE(*it == 1);
-        it += 3; REQUIRE(*it == 4);
-        it -= 2; REQUIRE(*it == 2);
+        ++it;
+        REQUIRE(*it == 2);
+        --it;
+        REQUIRE(*it == 1);
+        it += 3;
+        REQUIRE(*it == 4);
+        it -= 2;
+        REQUIRE(*it == 2);
         REQUIRE(it[1] == 3);
 
         auto rit = d.rbegin();
         REQUIRE(*rit == 5);
-        ++rit; REQUIRE(*rit == 4);
+        ++rit;
+        REQUIRE(*rit == 4);
 
-        const auto& cd = d;
+        const auto &cd = d;
         REQUIRE(*cd.cbegin() == 1);
         REQUIRE(std::distance(d.begin(), d.end()) == 5);
         REQUIRE(std::distance(d.rbegin(), d.rend()) == 5);
@@ -122,7 +130,7 @@ TEST_CASE("Deque Basic") {
         REQUIRE(d.back() == 3);
         REQUIRE_THROWS_AS(d.at(10), std::out_of_range);
 
-        const auto& cd = d;
+        const auto &cd = d;
         REQUIRE(cd[0] == 1);
         REQUIRE(cd.at(1) == 2);
         REQUIRE(cd.front() == 1);
@@ -206,7 +214,8 @@ TEST_CASE("Deque Edge Cases") {
 
         d.resize(3, 42);
         REQUIRE(d.size() == 3);
-        for (auto& val : d) REQUIRE(val == 42);
+        for (auto &val : d)
+            REQUIRE(val == 42);
 
         d.clear();
         REQUIRE(d.empty());
@@ -258,7 +267,8 @@ TEST_CASE("Deque Edge Cases") {
 
     SECTION("Forward and Reverse Iteration") {
         j::deque<int> d;
-        for (int i = 0; i < 100; ++i) d.push_back(i);
+        for (int i = 0; i < 100; ++i)
+            d.push_back(i);
 
         // Forward iteration
         int expected = 0;
@@ -273,9 +283,10 @@ TEST_CASE("Deque Edge Cases") {
         }
 
         // Const iteration
-        const j::deque<int>& cd = d;
+        const j::deque<int> &cd = d;
         int sum = 0;
-        for (auto it = cd.cbegin(); it != cd.cend(); ++it) sum += *it;
+        for (auto it = cd.cbegin(); it != cd.cend(); ++it)
+            sum += *it;
         REQUIRE(sum == 4950);
     }
 }
@@ -283,7 +294,8 @@ TEST_CASE("Deque Edge Cases") {
 TEST_CASE("Deque Large Dataset") {
     SECTION("Push Back Operations") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_back(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_back(i);
         REQUIRE(d.size() == N);
 
         int v = 1;
@@ -294,7 +306,8 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Push Front Operations") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_front(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_front(i);
         REQUIRE(d.size() == N);
 
         int v = N;
@@ -305,7 +318,8 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Pop Back Operations") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_back(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_back(i);
 
         for (int i = N; i >= 1; --i) {
             REQUIRE(d.back() == i);
@@ -316,7 +330,8 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Pop Front Operations") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_back(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_back(i);
 
         for (int i = 1; i <= N; ++i) {
             REQUIRE(d.front() == i);
@@ -327,23 +342,26 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Erase Range") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_back(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_back(i);
 
-        d.erase(d.begin() + N/4, d.begin() + 3*N/4);
-        REQUIRE(d.size() == N/2);
+        d.erase(d.begin() + N / 4, d.begin() + 3 * N / 4);
+        REQUIRE(d.size() == N / 2);
 
         int v = 1;
         for (auto it = d.begin(); it != d.end(); ++it, ++v) {
-            if (v == N/4 + 1) v = 3*N/4 + 1;
+            if (v == N / 4 + 1)
+                v = 3 * N / 4 + 1;
             REQUIRE(*it == v);
         }
     }
 
     SECTION("Erase Single Element") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_back(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_back(i);
 
-        size_t erase_pos = N/2;
+        size_t erase_pos = N / 2;
         d.erase(d.begin() + erase_pos);
         REQUIRE(d.size() == N - 1);
 
@@ -357,48 +375,51 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Insert Middle Element") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_back(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_back(i);
 
-        auto mid_pos = d.begin() + N/2;
+        auto mid_pos = d.begin() + N / 2;
         d.emplace(mid_pos, -999);
         REQUIRE(d.size() == N + 1);
-        REQUIRE(d[N/2] == -999);
+        REQUIRE(d[N / 2] == -999);
 
-        for (int i = 0; i < N/2; ++i) {
+        for (int i = 0; i < N / 2; ++i) {
             REQUIRE(d[i] == i + 1);
         }
-        for (int i = N/2 + 1; i < N + 1; ++i) {
+        for (int i = N / 2 + 1; i < N + 1; ++i) {
             REQUIRE(d[i] == i);
         }
     }
 
     SECTION("Insert Range") {
         j::deque<int> d;
-        for (int i = 1; i <= N; ++i) d.push_back(i);
+        for (int i = 1; i <= N; ++i)
+            d.push_back(i);
 
         std::vector<int> range_to_insert;
         for (int i = 2000; i < 2000 + N; ++i) {
             range_to_insert.push_back(i);
         }
 
-        auto insert_pos = d.begin() + N/3;
+        auto insert_pos = d.begin() + N / 3;
         d.insert(insert_pos, range_to_insert.begin(), range_to_insert.end());
         REQUIRE(d.size() == N + N);
 
-        for (int i = 0; i < N/3; ++i) {
+        for (int i = 0; i < N / 3; ++i) {
             REQUIRE(d[i] == i + 1);
         }
-        for (int i = N/3; i < N/3 + N; ++i) {
-            REQUIRE(d[i] == 2000 + (i - N/3));
+        for (int i = N / 3; i < N / 3 + N; ++i) {
+            REQUIRE(d[i] == 2000 + (i - N / 3));
         }
-        for (int i = N/3 + N; i < 2*N; ++i) {
+        for (int i = N / 3 + N; i < 2 * N; ++i) {
             REQUIRE(d[i] == (i - N) + 1);
         }
     }
 
     SECTION("Insert Near Front - Count <= Distance") {
         j::deque<int> d;
-        for (int i = 0; i < 10000; ++i) d.push_back(i);
+        for (int i = 0; i < 10000; ++i)
+            d.push_back(i);
 
         std::vector<int> to_insert;
         for (int i = 0; i < 50; ++i) {
@@ -419,7 +440,8 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Insert Near End - Count <= Distance") {
         j::deque<int> d;
-        for (int i = 0; i < 10000; ++i) d.push_back(i);
+        for (int i = 0; i < 10000; ++i)
+            d.push_back(i);
 
         std::vector<int> to_insert;
         for (int i = 0; i < 50; ++i) {
@@ -440,7 +462,8 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Insert Near End - Count > Distance") {
         j::deque<int> d;
-        for (int i = 0; i < 10000; ++i) d.push_back(i);
+        for (int i = 0; i < 10000; ++i)
+            d.push_back(i);
 
         std::vector<int> to_insert;
         for (int i = 0; i < 500; ++i) {
@@ -461,24 +484,25 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Mixed Front and Back Operations") {
         j::deque<int> d;
-        for (int i = 0; i < N/2; ++i) {
+        for (int i = 0; i < N / 2; ++i) {
             d.push_back(i);
             d.push_front(-i - 1);
         }
         REQUIRE(d.size() == N);
-        REQUIRE(d.front() == -(N/2));
-        REQUIRE(d.back() == (N/2 - 1));
+        REQUIRE(d.front() == -(N / 2));
+        REQUIRE(d.back() == (N / 2 - 1));
 
-        for (int i = 0; i < N/4; ++i) {
+        for (int i = 0; i < N / 4; ++i) {
             d.pop_front();
             d.pop_back();
         }
-        REQUIRE(d.size() == N/2);
+        REQUIRE(d.size() == N / 2);
     }
 
     SECTION("Resize Larger Then Smaller") {
         j::deque<int> d;
-        for (int i = 0; i < 100; ++i) d.push_back(i);
+        for (int i = 0; i < 100; ++i)
+            d.push_back(i);
 
         d.resize(N, 999);
         REQUIRE(d.size() == N);
@@ -495,12 +519,13 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Insert Multiple Times at Different Positions") {
         j::deque<int> d;
-        for (int i = 0; i < N; ++i) d.push_back(i);
+        for (int i = 0; i < N; ++i)
+            d.push_back(i);
 
-        d.insert(d.begin() + N/4, 100, -1);
+        d.insert(d.begin() + N / 4, 100, -1);
         REQUIRE(d.size() == N + 100);
 
-        d.insert(d.begin() + N/2, 50, -2);
+        d.insert(d.begin() + N / 2, 50, -2);
         REQUIRE(d.size() == N + 150);
 
         d.insert(d.end() - 10, 75, -3);
@@ -509,7 +534,8 @@ TEST_CASE("Deque Large Dataset") {
 
     SECTION("Erase and Insert Pattern") {
         j::deque<int> d;
-        for (int i = 0; i < N; ++i) d.push_back(i);
+        for (int i = 0; i < N; ++i)
+            d.push_back(i);
 
         d.erase(d.begin() + 100, d.begin() + 200);
         REQUIRE(d.size() == N - 100);
@@ -801,7 +827,7 @@ TEST_CASE("Deque Iterator Advanced") {
 
     SECTION("Const Iterator Operations") {
         j::deque<int> d = {1, 2, 3, 4, 5};
-        const auto& cd = d;
+        const auto &cd = d;
 
         auto cit = cd.cbegin();
         REQUIRE(*cit == 1);
@@ -881,7 +907,6 @@ TEST_CASE("Deque Stress Tests") {
         for (int i = 5000; i < 6000; ++i) {
             REQUIRE(d[i] == i - 5000);
         }
-
     }
 
     SECTION("Large Insert at End") {
@@ -968,4 +993,88 @@ TEST_CASE("Deque Stress Tests") {
     }
 }
 
+TEST_CASE("Deque Regression: Middle Insert and Boundaries") {
+    SECTION("Insert Middle Repeatedly (map reallocation boundary)") {
+        j::deque<int> d;
+        std::deque<int> expected;
 
+        for (int i = 0; i < 100; ++i) {
+            d.push_back(i);
+            expected.push_back(i);
+        }
+
+        for (size_t i = 0; i < 1200; ++i) {
+            INFO("iteration=" << i << ", size(before)=" << d.size());
+            auto d_it = d.begin() + static_cast<std::ptrdiff_t>(d.size() / 2);
+            auto e_it = expected.begin() + static_cast<std::ptrdiff_t>(expected.size() / 2);
+            d.insert(d_it, 999);
+            expected.insert(e_it, 999);
+
+            REQUIRE(d.size() == expected.size());
+            REQUIRE(d.front() == expected.front());
+            REQUIRE(d.back() == expected.back());
+            REQUIRE(d[d.size() / 2] == expected[expected.size() / 2]);
+            REQUIRE(d[d.size() / 3] == expected[expected.size() / 3]);
+            REQUIRE(d[(d.size() * 2) / 3] == expected[(expected.size() * 2) / 3]);
+        }
+    }
+
+    SECTION("Emplace Middle Repeatedly (map reallocation boundary)") {
+        j::deque<int> d;
+        std::deque<int> expected;
+
+        for (int i = 0; i < 100; ++i) {
+            d.push_back(i);
+            expected.push_back(i);
+        }
+
+        for (size_t i = 0; i < 1200; ++i) {
+            INFO("iteration=" << i << ", size(before)=" << d.size());
+            auto d_it = d.begin() + static_cast<std::ptrdiff_t>(d.size() / 2);
+            auto e_it = expected.begin() + static_cast<std::ptrdiff_t>(expected.size() / 2);
+            d.emplace(d_it, 777);
+            expected.emplace(e_it, 777);
+
+            REQUIRE(d.size() == expected.size());
+            REQUIRE(d.front() == expected.front());
+            REQUIRE(d.back() == expected.back());
+            REQUIRE(d[d.size() / 2] == expected[expected.size() / 2]);
+            REQUIRE(d[d.size() / 3] == expected[expected.size() / 3]);
+            REQUIRE(d[(d.size() * 2) / 3] == expected[(expected.size() * 2) / 3]);
+        }
+    }
+
+    SECTION("Zero-size constructor initializes internal map") {
+        j::deque<int> d(0);
+        REQUIRE(d.empty());
+        REQUIRE(d.size() == 0);
+
+        d.push_back(42);
+        REQUIRE(d.size() == 1);
+        REQUIRE(d.front() == 42);
+        REQUIRE(d.back() == 42);
+    }
+
+    SECTION("Count insert at exact buffer multiple boundary") {
+        constexpr size_t kIntBufferSize = 512 / sizeof(int);
+        constexpr size_t kInsertCount = kIntBufferSize * 2;
+
+        j::deque<int> d;
+        std::deque<int> expected;
+
+        for (int i = 0; i < 300; ++i) {
+            d.push_back(i);
+            expected.push_back(i);
+        }
+
+        auto d_pos = d.begin() + 150;
+        auto e_pos = expected.begin() + 150;
+        d.insert(d_pos, kInsertCount, -5);
+        expected.insert(e_pos, kInsertCount, -5);
+
+        REQUIRE(d.size() == expected.size());
+        for (size_t i = 0; i < d.size(); ++i) {
+            REQUIRE(d[i] == expected[i]);
+        }
+    }
+}
