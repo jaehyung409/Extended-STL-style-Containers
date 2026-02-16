@@ -21,7 +21,7 @@ jobs:
   format-check:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:main
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -59,7 +59,7 @@ jobs:
   #           cc: clang-20
   #           cxx: clang++-20
   #   container:
-  #     image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+  #     image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:main
   #     credentials:
   #       username: ${{ github.actor }}
   #       password: ${{ secrets.GITHUB_TOKEN }}
@@ -106,7 +106,7 @@ jobs:
             cc: clang-20
             cxx: clang++-20
     container:
-      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:main
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     container:
-      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:latest
+      image: ghcr.io/jaehyung409/extended-stl-style-containers/cpp-dev:main
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

@@ -1,5 +1,9 @@
 name: Build and Push Docker Image
 
+concurrency:
+  group: docker-build-main
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ "main" ]
@@ -44,22 +48,24 @@ jobs:
         with:
           images: ${{ steps.image.outputs.full_name }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+            type=raw,value=main,enable={{is_default_branch}}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64
           push: true
+          provenance: false
+          sbom: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Verify image
+      - name: Verify image by digest
         run: |
-          docker run --rm ${{ steps.image.outputs.full_name }}:latest bash -c "
+          docker run --rm ${{ steps.image.outputs.full_name }}@${{ steps.build.outputs.digest }} bash -c "
             gcc-15 --version > /dev/null &&
             g++-15 --version > /dev/null &&
             clang-20 --version > /dev/null &&
