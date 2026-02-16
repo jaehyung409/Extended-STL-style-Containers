@@ -688,12 +688,13 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_insert_impl(const_iterator p
     }
     const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), position));
     const size_type distance_from_end = static_cast<size_type>(std::distance(position, cend()));
-    iterator insert_pos = _start + distance_from_begin;
     if (distance_from_begin < distance_from_end) {
+        iterator insert_pos = _start + distance_from_begin;
         if (_start._current == _start._first) {
             _ensure_front_map_space();
             buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
             *(_start._node - 1) = buf_guard.get();
+            insert_pos = _start + distance_from_begin;
             _shift_left_and_insert(value, distance_from_begin, insert_pos);
             buf_guard.release();
         } else {
@@ -701,10 +702,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_insert_impl(const_iterator p
         }
         --_start;
     } else {
+        iterator insert_pos = _start + distance_from_begin;
         if (_finish._current == _finish._last - 1) {
             _ensure_back_map_space();
             buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
             *(_finish._node + 1) = buf_guard.get();
+            insert_pos = _start + distance_from_begin;
             _shift_right_and_insert(value, distance_from_end, insert_pos);
             buf_guard.release();
         } else {
@@ -712,7 +715,7 @@ deque<T, Allocator>::iterator deque<T, Allocator>::_insert_impl(const_iterator p
         }
         ++_finish;
     }
-    return insert_pos;
+    return _start + distance_from_begin;
 }
 
 template <class T, class Allocator>
@@ -752,8 +755,7 @@ void deque<T, Allocator>::_uninitialized_fill_n(Allocator alloc, buffer_guard &g
     if (count == 0)
         return;
 
-    if constexpr (std::is_integral_v<T> && std::is_trivially_copyable_v<T> &&
-                  std::is_standard_layout_v<T>) {
+    if constexpr (std::is_integral_v<T> && std::is_trivially_copyable_v<T> && std::is_standard_layout_v<T>) {
         if (value == T{}) {
             std::memset(first, 0, count * sizeof(T));
             guard.add_constructed_count(count);
@@ -1163,8 +1165,10 @@ deque<T, Allocator>::deque(size_type n, const Allocator &alloc) : deque(n, T(), 
 template <class T, class Allocator>
 deque<T, Allocator>::deque(size_type n, const T &value, const Allocator &alloc)
     : _map(nullptr), _map_capacity(0), _start(), _finish(), _map_alloc(alloc), _buf_alloc(alloc) {
-    if (n == 0)
+    if (n == 0) {
+        _initialize_map(_initial_map_size);
         return;
+    }
     const size_type num_nodes = (n + _buffer_size() - 1) / _buffer_size();
     const size_type new_map_capacity = std::max(_initial_map_size, num_nodes + 2);
 
@@ -1660,12 +1664,13 @@ deque<T, Allocator>::iterator deque<T, Allocator>::emplace(const_iterator positi
     }
     const size_type distance_from_begin = static_cast<size_type>(std::distance(cbegin(), position));
     const size_type distance_from_end = static_cast<size_type>(std::distance(position, cend()));
-    iterator emplace_pos = _start + distance_from_begin;
     if (distance_from_begin < distance_from_end) {
+        iterator emplace_pos = _start + distance_from_begin;
         if (_start._current == _start._first) {
             _ensure_front_map_space();
             buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
             *(_start._node - 1) = buf_guard.get();
+            emplace_pos = _start + distance_from_begin;
             _shift_left_and_emplace(distance_from_begin, emplace_pos, std::forward<Args>(args)...);
             buf_guard.release();
         } else {
@@ -1673,10 +1678,12 @@ deque<T, Allocator>::iterator deque<T, Allocator>::emplace(const_iterator positi
         }
         --_start;
     } else {
+        iterator emplace_pos = _start + distance_from_begin;
         if (_finish._current == _finish._last - 1) {
             _ensure_back_map_space();
             buffer_guard buf_guard(_allocate_buf(), _buf_alloc);
             *(_finish._node + 1) = buf_guard.get();
+            emplace_pos = _start + distance_from_begin;
             _shift_right_and_emplace(distance_from_end, emplace_pos, std::forward<Args>(args)...);
             buf_guard.release();
         } else {
@@ -1684,7 +1691,7 @@ deque<T, Allocator>::iterator deque<T, Allocator>::emplace(const_iterator positi
         }
         ++_finish;
     }
-    return emplace_pos;
+    return _start + distance_from_begin;
 }
 
 template <class T, class Allocator> void deque<T, Allocator>::push_front(const T &value) {
