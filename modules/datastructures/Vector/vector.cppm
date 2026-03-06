@@ -665,7 +665,7 @@ template <class T, class Allocator> constexpr bool vector<T, Allocator>::empty()
 
 template <class T, class Allocator>
 constexpr vector<T, Allocator>::size_type vector<T, Allocator>::size() const noexcept {
-    return static_cast<size_type>(_last - _first);
+    return _first == _last ? 0 : static_cast<size_type>(_last - _first);
 }
 
 template <class T, class Allocator>

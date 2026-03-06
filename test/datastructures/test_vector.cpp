@@ -475,3 +475,20 @@ TEST_CASE("Vector Large Dataset") {
         }
     }
 }
+
+TEST_CASE("Vector size() null-backed empty states") {
+    SECTION("default constructed") {
+        j::vector<int> v;
+        REQUIRE(v.size() == 0);
+        REQUIRE(v.empty());
+    }
+
+    SECTION("moved-from") {
+        j::vector<int> src = {1, 2, 3};
+        j::vector<int> dst(std::move(src));
+
+        REQUIRE(dst.size() == 3);
+        REQUIRE(src.size() == 0);
+        REQUIRE(src.empty());
+    }
+}
