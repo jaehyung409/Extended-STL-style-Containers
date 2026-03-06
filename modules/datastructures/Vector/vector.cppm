@@ -410,11 +410,11 @@ constexpr vector<T, Allocator>::vector(const vector &x, const std::type_identity
 
 template <class T, class Allocator>
 constexpr vector<T, Allocator>::vector(vector &&x, const std::type_identity_t<Allocator> &alloc)
-    : _capacity(x._capacity), _alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
+    : _first(nullptr), _last(nullptr), _capacity(x._capacity),
+      _alloc(std::allocator_traits<Allocator>::select_on_container_copy_construction(alloc)) {
     if (alloc == x._alloc) {
         _first = x._first;
         _last = x._last;
-        _capacity = x._capacity;
 
         x._first = nullptr;
         x._last = nullptr;
@@ -431,6 +431,10 @@ constexpr vector<T, Allocator>::vector(vector &&x, const std::type_identity_t<Al
             _last = _first + moved_size;
             _capacity = moved_size;
 
+            if constexpr (!std::is_trivially_destructible_v<T>) {
+                std::destroy(x._first, x._last);
+            }
+            std::allocator_traits<Allocator>::deallocate(x._alloc, x._first, x._capacity);
             x._first = nullptr;
             x._last = nullptr;
             x._capacity = 0;
@@ -496,20 +500,26 @@ constexpr vector<T, Allocator> &vector<T, Allocator>::operator=(vector &&x) noex
                 x._first = x._last = nullptr;
                 x._capacity = 0;
             } else {
-                _first = std::allocator_traits<Allocator>::allocate(_alloc, x.size());
+                const size_type moved_size = x.size();
+                _first = moved_size == 0 ? nullptr : std::allocator_traits<Allocator>::allocate(_alloc, moved_size);
                 try {
                     if constexpr (std::is_trivially_move_constructible_v<T>) {
-                        std::memmove(_first, x._first, x.size() * sizeof(T));
+                        std::memmove(_first, x._first, moved_size * sizeof(T));
                     } else {
                         std::uninitialized_move(x._first, x._last, _first);
                     }
-                    _last = _first + x.size();
-                    _capacity = x.size();
+                    _last = _first + moved_size;
+                    _capacity = moved_size;
                 } catch (...) {
-                    std::allocator_traits<Allocator>::deallocate(_alloc, _first, x.size());
+                    if (_first != nullptr) {
+                        std::allocator_traits<Allocator>::deallocate(_alloc, _first, moved_size);
+                    }
                     _first = _last = nullptr;
                     _capacity = 0;
                     throw;
+                }
+                if constexpr (!std::is_trivially_destructible_v<T>) {
+                    std::destroy(x._first, x._last);
                 }
                 std::allocator_traits<Allocator>::deallocate(x._alloc, x._first, x._capacity);
                 x._first = x._last = nullptr;
