@@ -5,6 +5,8 @@
  */
 
 module;
+#include <algorithm>
+#include <iterator>
 #include <stdexcept>
 
 export module j:array;
